@@ -1,0 +1,36 @@
+{
+    "name": "kamu/framework",
+    "description": "The Kamu Framework.",
+    "keywords": [
+        "framework",
+        "kamu"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/dewanakl/framework",
+    "support": {
+        "issues": "https://github.com/dewanakl/framework/issues",
+        "source": "https://github.com/dewanakl/framework"
+    },
+    "authors": [
+        {
+            "name": "Dewana Kretarta Lokeswara",
+            "email": "dewanakretarta29@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.0.2",
+        "ext-openssl": "*"
+    },
+    "autoload": {
+        "files": [
+            "src/helpers/helpers.php"
+        ],
+        "psr-4": {
+            "Core\\": "src/Core/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "prefer-stable": true
+}
