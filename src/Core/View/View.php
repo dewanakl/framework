@@ -3,7 +3,7 @@
 namespace Core\View;
 
 /**
- * Template view dengan parent
+ * Template view dengan parent.
  *
  * @class View
  * @package \Core\View
@@ -11,35 +11,35 @@ namespace Core\View;
 class View
 {
     /**
-     * Data dari setiap section
+     * Data dari setiap section.
      * 
      * @var array $section
      */
     private $section;
 
     /**
-     * Variabel yang di inject
+     * Variabel yang di inject.
      * 
      * @var array $variables
      */
     private $variables;
 
     /**
-     * Nama parentnya
+     * Nama parentnya.
      * 
      * @var string|null $parent
      */
     private $parent;
 
     /**
-     * Content final
+     * Content final.
      * 
      * @var Render|null $content
      */
     private $content;
 
     /**
-     * Magic to string
+     * Magic to string.
      * 
      * @return string
      */
@@ -48,16 +48,16 @@ class View
         $content = strval($this->content);
         clear_ob();
 
-        $this->section = [];
-        $this->variables = [];
-        $this->parent = null;
-        $this->content = null;
+        unset($this->parent);
+        unset($this->section);
+        unset($this->content);
+        unset($this->variables);
 
         return $content;
     }
 
     /**
-     * Show html template
+     * Show html template.
      * 
      * @param string $name
      * @return void
@@ -68,13 +68,13 @@ class View
         $this->content = $this->including($name);
 
         if (!is_null($this->parent)) {
-            $this->content = null;
+            unset($this->content);
             $this->show($this->parent);
         }
     }
 
     /**
-     * Insert variabel
+     * Insert variabel.
      * 
      * @param array $variables
      * @return void
@@ -85,7 +85,7 @@ class View
     }
 
     /**
-     * Set parent html
+     * Set parent html.
      * 
      * @param string $name
      * @param array $variables
@@ -98,18 +98,18 @@ class View
     }
 
     /**
-     * Masukan html opsional
+     * Masukan html opsional.
      * 
      * @param string $name
      * @return Render
      */
     public function including(string $name): Render
     {
-        return render($name, $this->variables ?? []);
+        return render('resources/views/' . $name, $this->variables ?? []);
     }
 
     /**
-     * Bagian awal dari html
+     * Bagian awal dari html.
      * 
      * @param string $name
      * @return void
@@ -121,7 +121,7 @@ class View
     }
 
     /**
-     * Tampilkan bagian dari html
+     * Tampilkan bagian dari html.
      * 
      * @param string $name
      * @return string|null
@@ -135,7 +135,7 @@ class View
     }
 
     /**
-     * Bagian akhir dari html
+     * Bagian akhir dari html.
      * 
      * @param string $name
      * @return void

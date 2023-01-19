@@ -2,6 +2,8 @@
 
 namespace Core\Routing;
 
+use Core\Facades\App;
+
 /**
  * Helper class untuk routing url
  *
@@ -98,7 +100,7 @@ final class Route
      */
     public static function setRouteFromFile(): void
     {
-        require_once __DIR__ . '/../../routes/routes.php';
+        require_once basepath() . '/routes/routes.php';
     }
 
     /**
@@ -108,7 +110,7 @@ final class Route
      */
     public static function setRouteFromCacheIfExist(): void
     {
-        $cache = __DIR__ . '/../../app/cache/routes.php';
+        $cache = basepath() . '/app/cache/routes.php';
         if (!is_readable($cache)) {
             static::setRouteFromFile();
         } else {
@@ -124,6 +126,6 @@ final class Route
      */
     public static function router(): Router
     {
-        return app(Router::class);
+        return App::get()->singleton(Router::class);
     }
 }

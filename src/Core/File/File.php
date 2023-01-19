@@ -6,7 +6,7 @@ use Core\Http\Request;
 use Core\Valid\Hash;
 
 /**
- * File uploaded
+ * File uploaded.
  *
  * @class File
  * @package \Core\File
@@ -14,21 +14,21 @@ use Core\Valid\Hash;
 class File
 {
     /**
-     * Request object
+     * Request object.
      * 
      * @var Request $request
      */
     private $request;
 
     /**
-     * File object
+     * File object.
      * 
      * @var object $file
      */
     private $file;
 
     /**
-     * Init objek
+     * Init objek.
      * 
      * @param Request $request
      * @return void
@@ -39,7 +39,7 @@ class File
     }
 
     /**
-     * Dapatkan file dari request
+     * Dapatkan file dari request.
      * 
      * @param string $name
      * @return void
@@ -50,7 +50,7 @@ class File
     }
 
     /**
-     * Dapatkan nama aslinya
+     * Dapatkan nama aslinya.
      * 
      * @return string
      */
@@ -60,7 +60,7 @@ class File
     }
 
     /**
-     * Dapatkan extensi aslinya
+     * Dapatkan extensi aslinya.
      * 
      * @return string
      */
@@ -70,7 +70,7 @@ class File
     }
 
     /**
-     * Apakah ada file yang di upload ?
+     * Apakah ada file yang di upload?.
      * 
      * @return bool
      */
@@ -80,7 +80,7 @@ class File
     }
 
     /**
-     * Dapatkan extensi aslinya dengan mime
+     * Dapatkan extensi aslinya dengan mime.
      * 
      * @return string
      */
@@ -90,7 +90,7 @@ class File
     }
 
     /**
-     * Bikin namanya unik
+     * Bikin namanya unik.
      * 
      * @return string
      */
@@ -100,7 +100,7 @@ class File
     }
 
     /**
-     * Simpan filenya
+     * Simpan filenya.
      * 
      * @param string $name
      * @param string $folder
@@ -110,12 +110,12 @@ class File
     {
         return move_uploaded_file(
             $this->file->tmp_name,
-            __DIR__ . '/../../' . $folder . '/' . $name . '.' . $this->getClientOriginalExtension()
+            basepath() . '/' . $folder . '/' . $name . '.' . $this->getClientOriginalExtension()
         );
     }
 
     /**
-     * Simpan filenya secara bertahap
+     * Simpan filenya secara bertahap.
      * 
      * @param string $name
      * @param string $folder
@@ -123,7 +123,7 @@ class File
      */
     public function chunk(string $name, string $folder = 'shared'): bool
     {
-        $filePath = __DIR__ . '/../../' . $folder . '/' . $name;
+        $filePath = basepath() . '/' . $folder . '/' . $name;
 
         $chunk = isset($this->request->chunk) ? intval($this->request->chunk) : 0;
         $chunks = isset($this->request->chunks) ? intval($this->request->chunks) : 0;
@@ -138,6 +138,7 @@ class File
 
                 fclose($in);
             } else {
+                fclose($in);
                 fclose($out);
                 return false;
             }

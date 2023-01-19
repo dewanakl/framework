@@ -49,7 +49,7 @@ class Console
      */
     function __construct(array $argv)
     {
-        $this->timenow = START_TIME;
+        $this->timenow = env('_STARTTIME');
         $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
 
         if (PHP_MAJOR_VERSION < 8) {
@@ -145,7 +145,7 @@ class Console
      */
     private function migrasi(bool $up): void
     {
-        $baseFile = __DIR__ . '/../../database/schema/';
+        $baseFile = basepath() . '/database/schema/';
 
         $files = scandir($baseFile, ($up) ? 0 : 1);
         $files = array_diff($files, array('..', '.'));
@@ -165,7 +165,7 @@ class Console
      */
     private function generator(): void
     {
-        $arg = require_once __DIR__ . '/../../database/generator.php';
+        $arg = require_once basepath() . '/database/generator.php';
         $arg->run();
         print("\nGenerator" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
@@ -195,8 +195,8 @@ class Console
                 $type = 'templateModel';
                 break;
         }
-
-        return require_once __DIR__ . '/../../helpers/templates/' . $type . '.php';
+        $path = str_replace(basepath(), '', __DIR__);
+        return require_once $path . '/../../helpers/templates/' . $type . '.php';
     }
 
     /**
@@ -217,17 +217,17 @@ class Console
                 $optional = strtotime('now') . '_';
                 break;
             case 2:
-                $type = 'middleware';
+                $type = 'app/Middleware';
                 break;
             case 3:
-                $type = 'controllers';
+                $type = 'app/Controllers';
                 break;
             default:
-                $type = 'models';
+                $type = 'app/Models';
                 break;
         }
 
-        $result = file_put_contents(__DIR__ . '/../../' . $type . '/' . $optional . $name . '.php', $data);
+        $result = file_put_contents(basepath() . '/' . $type . '/' . $optional . $name . '.php', $data);
         $this->exception('Gagal membuat ' . $type, !$result, 'Berhasil membuat ' . $type . ' ' . $name);
     }
 
@@ -294,12 +294,13 @@ class Console
     private function createMail(mixed $name): void
     {
         $this->exception('Butuh Nama file !', !$name);
-        $folder =  __DIR__ . '/../../views/email/';
+        $folder =  basepath() . '/resources/views/email/';
         if (!is_dir($folder)) {
             mkdir($folder, 7777, true);
         }
 
-        $result = copy(__DIR__ . '/../../helpers/templates/templateMail.php', $folder . $name . '.php');
+        $path = str_replace(basepath(), '', __DIR__);
+        $result = copy($path . '/../../helpers/templates/templateMail.php', $folder . $name . '.php');
         $this->exception('Gagal membuat email', !$result, 'Berhasil membuat email ' . $name);
     }
 
@@ -310,7 +311,7 @@ class Console
      */
     private function createKey(): void
     {
-        $env = __DIR__ . '/../../.env';
+        $env = basepath() . '/.env';
         if (!file_exists($env)) {
             $this->exception('env tidak ada !');
         }
@@ -341,7 +342,7 @@ class Console
         $route = Route::router()->routes();
         $data = '<?php return ' . var_export($route, true) . ';';
 
-        $folder =  __DIR__ . '/../../app/cache/';
+        $folder =  basepath() . '/app/cache/';
         if (!is_dir($folder)) {
             mkdir($folder, 7777, true);
         }
@@ -358,7 +359,7 @@ class Console
      */
     private function deleteCache(): void
     {
-        $status = @unlink(__DIR__ . '/../../app/cache/routes.php');
+        $status = @unlink(basepath() . '/app/cache/routes.php');
         if ($status) {
             print("\nCache dihapus !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
         } else {

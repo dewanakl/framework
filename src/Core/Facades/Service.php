@@ -2,15 +2,12 @@
 
 namespace Core\Facades;
 
-use App\Providers\AppServiceProvider;
-use App\Providers\RouteServiceProvider;
+use App\Kernel;
 use Closure;
 use Core\Http\Request;
 use Core\Http\Respond;
 use Core\Middleware\Middleware;
 use Core\Routing\Route;
-use Middleware\CorsMiddleware;
-use Middleware\CsrfMiddleware;
 
 /**
  * Class untuk menjalankan middleware dan controller
@@ -56,10 +53,7 @@ class Service
      */
     private function providers(Closure $fn): void
     {
-        $services = [
-            AppServiceProvider::class,
-            RouteServiceProvider::class,
-        ];
+        $services = App::get()->singleton(Kernel::class)->services();
 
         foreach ($services as $service) {
             $fn($service);
@@ -98,16 +92,14 @@ class Service
      */
     private function invokeMiddleware(array $route): void
     {
-        $middlewares = [
-            CorsMiddleware::class,
-            CsrfMiddleware::class
-        ];
-
+        $middlewares = App::get()->singleton(Kernel::class)->middlewares();
         $middlewarePool = array_map(fn ($middleware) => new $middleware(), array_merge($middlewares, $route['middleware']));
 
         $middleware = new Middleware($middlewarePool);
         $middleware->handle($this->request);
+
         unset($middleware);
+        unset($middlewarePool);
     }
 
     /**
@@ -162,9 +154,9 @@ class Service
     /**
      * Jalankan servicenya
      *
-     * @return void
+     * @return int
      */
-    public function run(): void
+    public function run(): int
     {
         $path = parse_url($this->request->server('REQUEST_URI'), PHP_URL_PATH);
         $method = strtoupper($this->request->method() == 'POST'
@@ -177,7 +169,7 @@ class Service
         $routes = Route::router()->routes();
         foreach ($routes as $route) {
             $pattern = '#^' . $route['path'] . '$#';
-            $variables = null;
+            $variables = [];
 
             if (preg_match($pattern, $path, $variables)) {
                 $routeMatch = true;
@@ -193,5 +185,7 @@ class Service
         }
 
         $this->outOfRoute($routeMatch, $methodMatch);
+
+        return 0;
     }
 }

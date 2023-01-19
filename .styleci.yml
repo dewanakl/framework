@@ -1,5 +1,0 @@
-php:
-  preset: kamu
-  version: 8.1
-js: true
-css: true

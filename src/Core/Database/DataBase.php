@@ -71,7 +71,7 @@ class DataBase
     private function queryException(mixed $e): void
     {
         $sql = (@$this->stmt->queryString) ? PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"' : null;
-        throw new Exception($e->getMessage() . $sql);
+        throw new Exception($e->getMessage() . $sql, 0, $e);
     }
 
     /**
@@ -82,15 +82,11 @@ class DataBase
      */
     public function catchException(mixed $e): void
     {
-        if (defined('DEBUG')) {
-            if (DEBUG) {
-                $this->queryException($e);
-            }
-
-            unavailable();
+        if (debug()) {
+            $this->queryException($e);
         }
 
-        $this->queryException($e);
+        unavailable();
     }
 
     /**

@@ -40,7 +40,7 @@ class Session
      */
     function __construct()
     {
-        $this->name = (HTTPS ? '__Secure-' : '') . env('APP_NAME', 'kamu') . '_sessid';
+        $this->name = (https() ? '__Secure-' : '') . env('APP_NAME', 'kamu') . '_sessid';
         $this->expires = intval(env('COOKIE_LIFETIME', 86400)) + time();
         $this->data = [];
 
@@ -51,6 +51,8 @@ class Session
         if (is_null($this->get('_token'))) {
             $this->set('_token', Hash::rand(20));
         }
+
+        unset($GLOBALS['_COOKIE']);
     }
 
     /**
@@ -65,9 +67,9 @@ class Session
         $header .= '; Expires=' . date('D, d-M-Y H:i:s', $this->expires) . ' GMT';
         $header .= '; Max-Age=' . strval($this->expires - time());
         $header .= '; Path=/';
-        $header .= '; Domain=' . parse_url(BASEURL, PHP_URL_HOST);
+        $header .= '; Domain=' . parse_url(baseurl(), PHP_URL_HOST);
 
-        if (HTTPS) {
+        if (https()) {
             $header .= '; Secure';
         }
 

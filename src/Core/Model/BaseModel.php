@@ -1,11 +1,11 @@
 <?php
 
-namespace Core\Database;
+namespace Core\Model;
 
 use ArrayIterator;
 use Closure;
+use Core\Database\DataBase;
 use Core\Facades\App;
-use Countable;
 use Exception;
 use IteratorAggregate;
 use JsonSerializable;
@@ -16,9 +16,9 @@ use Traversable;
  * Simple query builder
  *
  * @class BaseModel
- * @package \Core\Database
+ * @package \Core\Model
  */
-class BaseModel implements Countable, IteratorAggregate, JsonSerializable
+class BaseModel implements IteratorAggregate, JsonSerializable
 {
     /**
      * String query sql
@@ -58,7 +58,7 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Attributes hasil query
      * 
-     * @var array $attributes
+     * @var mixed $attributes
      */
     private $attributes;
 
@@ -262,16 +262,6 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Hitung jumlah data attribute
-     *
-     * @return int
-     */
-    public function count(): int
-    {
-        return count($this->attribute());
-    }
-
-    /**
      * Refresh attributnya
      *
      * @return BaseModel
@@ -384,12 +374,16 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Group By syntax sql
      *
-     * @param string $param
+     * @param string|array $param
      * @return BaseModel
      */
-    public function groupBy(string ...$param): BaseModel
+    public function groupBy(string|array $param): BaseModel
     {
-        $this->query = $this->query . ' GROUP BY ' . implode(', ', $param);
+        if (is_array($param)) {
+            $param = implode(', ', $param);
+        }
+
+        $this->query = $this->query . ' GROUP BY ' . $param;
         return $this;
     }
 
@@ -425,7 +419,7 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
      */
     public function offset(int $param): BaseModel
     {
-        $this->query = $this->query . ' OFFSET ' . $param;
+        $this->query = $this->query . ' OFFSET ' . strval($param);
         return $this;
     }
 
@@ -456,9 +450,9 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
      * @param string $name
      * @return BaseModel
      */
-    public function counts(string $name = '*'): BaseModel
+    public function count(string $name = '*'): BaseModel
     {
-        return $this->select('COUNT(' . $name . ')' . ($name == '*' ? null : ' AS ' . $name));
+        return $this->select('COUNT(' . $name . ')' . ($name == '*' ? '' : ' AS ' . $name));
     }
 
     /**
@@ -546,16 +540,6 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil semua datanya dari tabel ini
-     *
-     * @return BaseModel
-     */
-    public function all(): BaseModel
-    {
-        return $this->get();
-    }
-
-    /**
      * Ambil atau error "tidak ada"
      *
      * @return mixed
@@ -578,7 +562,7 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
     public function fail(Closure $fn): mixed
     {
         if (!$this->attributes) {
-            return $fn();
+            return App::get()->resolve($fn);
         }
 
         return $this;
@@ -657,9 +641,11 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
      * Isi datanya
      * 
      * @param array $data
-     * @return mixed
+     * @return BaseModel
+     * 
+     * @throws Exception
      */
-    public function create(array $data): mixed
+    public function create(array $data): BaseModel
     {
         if ($this->dates) {
             $now = now('Y-m-d H:i:s.u');
@@ -679,14 +665,14 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
         $result = $this->db->execute();
 
         if ($result === false) {
-            return false;
+            throw new Exception('Error insert new data [' . implode(', ', $keys) . ']');
         }
 
         $this->attributes = $data;
 
         $id = $this->db->lastInsertId();
         if ($id) {
-            $this->attributes[$this->primaryKey] = intval($id);
+            $this->attributes[$this->primaryKey] = $id;
         }
 
         return $this;
@@ -704,8 +690,8 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
             $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
         }
 
-        $query = ($this->query) ? str_replace('SELECT * FROM', 'UPDATE', $this->query) : 'UPDATE ' . $this->table . ' WHERE';
-        $setQuery = 'SET ' . implode(', ',  array_map(fn ($data) => $data . ' = :' . $data, array_keys($data))) . (($this->query) ? ' WHERE' : '');
+        $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
+        $setQuery = 'SET ' . implode(', ',  array_map(fn ($data) => $data . ' = :' . $data, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
         $result = $this->db->execute();
@@ -720,7 +706,7 @@ class BaseModel implements Countable, IteratorAggregate, JsonSerializable
      */
     public function delete(): bool
     {
-        $query = ($this->query) ? str_replace('SELECT *', 'DELETE', $this->query) : 'DELETE FROM ' . $this->table;
+        $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
 
         $this->bind($query, $this->param ?? []);
         $result = $this->db->execute();

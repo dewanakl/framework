@@ -3,7 +3,7 @@
 namespace Core\View;
 
 /**
- * Tampilkan html dan juga injek variabel
+ * Tampilkan html dan juga injek variabel.
  *
  * @class Render
  * @package \Core\View
@@ -11,39 +11,39 @@ namespace Core\View;
 class Render
 {
     /**
-     * Path file html
+     * Path file html.
      * 
      * @var string $path
      */
     private $path;
 
     /**
-     * Isi file html
+     * Isi file html.
      * 
      * @var string $path
      */
     private $content;
 
     /**
-     * Injek variabel
+     * Injek variabel.
      * 
      * @var array $variables
      */
     private $variables;
 
     /**
-     * Init objek
+     * Init objek.
      * 
      * @param string $path
      * @return void
      */
     function __construct(string $path)
     {
-        $this->path = __DIR__ . '/../../views/' . $path . '.php';
+        $this->path = basepath() . '/' . $path . '.php';
     }
 
     /**
-     * Magic to string
+     * Magic to string.
      * 
      * @return string
      */
@@ -51,15 +51,15 @@ class Render
     {
         $content = $this->content;
 
-        $this->path = null;
-        $this->content = null;
-        $this->variables = [];
+        unset($this->path);
+        unset($this->content);
+        unset($this->variables);
 
         return $content;
     }
 
     /**
-     * Set variabel ke template html
+     * Set variabel ke template html.
      * 
      * @param array $variables
      * @return void
@@ -70,7 +70,7 @@ class Render
     }
 
     /**
-     * Eksekusi template html
+     * Eksekusi template html.
      * 
      * @return void
      */
@@ -84,6 +84,8 @@ class Render
             $content = ob_get_contents();
 
             ob_end_clean();
+            unset($__path);
+            unset($__data);
             return strval($content);
         })($this->path, $this->variables);
     }

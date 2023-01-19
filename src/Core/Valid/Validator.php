@@ -2,6 +2,8 @@
 
 namespace Core\Valid;
 
+use Core\Facades\App;
+
 /**
  * Validasi sebuah nilai
  * 
@@ -31,7 +33,7 @@ class Validator
      * @param array $rule
      * @return void
      */
-    function __construct(array $data, array $rule)
+    function __construct(array $data = [], array $rule = [])
     {
         $this->data = $data;
         $this->validate($rule);
@@ -167,10 +169,10 @@ class Validator
             case str_contains($rule, 'unik'):
                 $command = explode(':', $rule);
 
-                $model = 'Models\\' . (empty($command[1]) ? 'User' : ucfirst($command[1]));
+                $model = 'App\Models\\' . (empty($command[1]) ? 'User' : ucfirst($command[1]));
                 $column = $command[2] ?? $param;
 
-                $user = app($model)->find($value, $column);
+                $user = App::get()->singleton($model)->find($value, $column);
                 if ($user->$column) {
                     $this->setError($param, 'sudah ada !');
                 }
@@ -258,7 +260,7 @@ class Validator
     private function setError(string $param, string $alert, mixed $optional = null): void
     {
         if (empty($this->errors[$param])) {
-            $this->errors[$param] = "$param $alert" . ($optional ? " " . strval($optional) : null);
+            $this->errors[$param] = "$param $alert" . ($optional ? ' ' . strval($optional) : null);
         }
     }
 

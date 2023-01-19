@@ -95,7 +95,6 @@ class Stream
         header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
         header('Etag: ' . $hashFile);
 
-        set_time_limit(0);
         $this->file = @fopen($file, 'r');
         $this->name = @basename($file);
         $this->boundary = $hashFile;

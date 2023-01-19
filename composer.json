@@ -18,7 +18,7 @@
         }
     ],
     "require": {
-        "php": "^8.0.2",
+        "php": "^8.1",
         "ext-openssl": "*"
     },
     "autoload": {
@@ -28,9 +28,5 @@
         "psr-4": {
             "Core\\": "src/Core/"
         }
-    },
-    "config": {
-        "sort-packages": true
-    },
-    "prefer-stable": true
+    }
 }

@@ -2,15 +2,17 @@
 
 namespace Core\Auth;
 
+use Core\Facades\App;
+
 /**
- * Helper class Autentikasi
+ * Helper class Autentikasi.
  * 
  * @method static bool check()
  * @method static int|null id()
- * @method static \Core\Database\BaseModel|null user()
+ * @method static \Core\Model\BaseModel|null user()
  * @method static void logout()
  * @method static void login(object $user)
- * @method static bool attempt(array $credential, string $model = 'Models\User')
+ * @method static bool attempt(array $credential, string $model = 'App\Models\User')
  * 
  * @see \Core\Auth\AuthManager
  *
@@ -20,19 +22,7 @@ namespace Core\Auth;
 final class Auth
 {
     /**
-     * Eksekusi method pada AuthManager
-     *
-     * @param string $method
-     * @param array $parameters
-     * @return mixed
-     */
-    private static function call(string $method, array $parameters): mixed
-    {
-        return app()->invoke(AuthManager::class, $method, $parameters);
-    }
-
-    /**
-     * Panggil method secara static
+     * Panggil method secara static.
      *
      * @param string $method
      * @param array $parameters
@@ -40,11 +30,11 @@ final class Auth
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        return self::call($method, $parameters);
+        return App::get()->singleton(self::class)->__call($method, $parameters);
     }
 
     /**
-     * Panggil method secara object
+     * Panggil method secara object.
      *
      * @param string $method
      * @param array $parameters
@@ -52,6 +42,6 @@ final class Auth
      */
     public function __call(string $method, array $parameters): mixed
     {
-        return self::call($method, $parameters);
+        return App::get()->invoke(AuthManager::class, $method, $parameters);
     }
 }

@@ -4,11 +4,9 @@ namespace Core\Facades;
 
 use Closure;
 use Exception;
-use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
-use ReflectionMethod;
 
 /**
  * Aplikasi untuk menampung kumpulan objek yang bisa digunakan kembali serta
@@ -57,9 +55,10 @@ class Application
             $constructor = $reflector->getConstructor();
             $args = is_null($constructor) ? null : $constructor->getParameters();
 
-            $result = $reflector->newInstanceArgs($this->getDependencies($args, $param));
+            $result = new $name(...$this->getDependencies($args, $param));
+            unset($reflector);
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), 0, $e);
         }
 
         return $result;
@@ -75,7 +74,7 @@ class Application
     private function getDependencies(mixed $parameters = null, array $value = []): array
     {
         $args = [];
-        $paramid = 0;
+        $id = 0;
 
         if (!$parameters) {
             return $args;
@@ -85,8 +84,8 @@ class Application
             if ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
                 $args[] = $this->singleton($parameter->getType()->getName());
             } else {
-                $args[] = $value[$paramid] ?? $parameter->getDefaultValue();
-                $paramid++;
+                $args[] = $value[$id] ?? $parameter->getDefaultValue();
+                $id++;
             }
         }
 
@@ -147,12 +146,11 @@ class Application
 
         try {
             $reflector = new ReflectionClass($name);
-            $reflectionMethod = new ReflectionMethod($name, $method);
-
             $params = $this->getDependencies($reflector->getMethod($method)->getParameters(), $value);
-            $result = $reflectionMethod->invokeArgs($name, $params);
+            $result = $name->{$method}(...$params);
+            unset($reflector);
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), 0, $e);
         }
 
         return $result;
@@ -186,9 +184,10 @@ class Application
 
         try {
             $reflector = new ReflectionFunction($name);
-            $result = $reflector->invokeArgs($this->getDependencies($reflector->getParameters(), $param));
+            $result = $name(...$this->getDependencies($reflector->getParameters(), $param));
+            unset($reflector);
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new Exception($e->getMessage(), 0, $e);
         }
 
         return $result;
@@ -201,22 +200,20 @@ class Application
      * @param Closure|string $class
      * @return void
      * 
-     * @throws InvalidArgumentException
+     * @throws Exception
      */
     public function bind(string $interface, Closure|string $class): void
     {
-        if (empty($this->objectPool[$interface])) {
-            if ($class instanceof Closure) {
-                $result = $this->resolve($class, array($this));
+        if ($class instanceof Closure) {
+            $result = $this->resolve($class, array($this));
 
-                if (!is_object($result)) {
-                    throw new InvalidArgumentException('Return value harus sebuah object !');
-                }
-
-                $class = $result;
+            if (!is_object($result)) {
+                throw new Exception('Return value harus sebuah object !');
             }
 
-            $this->objectPool[$interface] = $class;
+            $class = $result;
         }
+
+        $this->objectPool[$interface] = $class;
     }
 }

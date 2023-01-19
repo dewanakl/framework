@@ -1,5 +1,6 @@
 <?php
 
+use App\Kernel;
 use Core\Facades\App;
 use Core\Auth\AuthManager;
 use Core\View\Render;
@@ -9,25 +10,6 @@ use Core\Routing\Route;
 use Core\Http\Session;
 use Core\View\View;
 
-if (!function_exists('app')) {
-    /**
-     * Helper method untuk membuat objek secara tunggal
-     * 
-     * @param mixed $class
-     * @return object
-     */
-    function app(mixed $class = null): object
-    {
-        $app = App::get();
-
-        if ($class) {
-            return $app->singleton($class);
-        }
-
-        return $app;
-    }
-}
-
 if (!function_exists('session')) {
     /**
      * Helper method untuk membuat objek session
@@ -36,7 +18,7 @@ if (!function_exists('session')) {
      */
     function session(): Session
     {
-        return app(Session::class);
+        return App::get()->singleton(Session::class);
     }
 }
 
@@ -48,7 +30,7 @@ if (!function_exists('respond')) {
      */
     function respond(): Respond
     {
-        return app(Respond::class);
+        return App::get()->singleton(Respond::class);
     }
 }
 
@@ -60,7 +42,7 @@ if (!function_exists('auth')) {
      */
     function auth(): AuthManager
     {
-        return app(AuthManager::class);
+        return App::get()->singleton(AuthManager::class);
     }
 }
 
@@ -126,6 +108,18 @@ if (!function_exists('e')) {
     }
 }
 
+if (!function_exists('basepath')) {
+    /**
+     * Lokasi dari aplikasi
+     * 
+     * @return string
+     */
+    function basepath(): string
+    {
+        return App::get()->singleton(Kernel::class)->getPath();
+    }
+}
+
 if (!function_exists('trace')) {
     /**
      * Lacak erornya
@@ -138,7 +132,8 @@ if (!function_exists('trace')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 500 Internal Server Error', true, 500);
-        respond()->terminate(render('../helpers/errors/trace', ['error' => $error]));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->terminate(render($path . '/errors/trace', ['error' => $error]));
     }
 }
 
@@ -153,7 +148,8 @@ if (!function_exists('dd')) {
     {
         clear_ob();
         header('Content-Type: text/html');
-        respond()->terminate(render('../helpers/errors/dd', ['param' => $param]));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->terminate(render($path . '/errors/dd', ['param' => $param]));
     }
 }
 
@@ -168,7 +164,8 @@ if (!function_exists('abort')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 403 Forbidden', true, 403);
-        respond()->send(render('../helpers/errors/error', ['pesan' => 'Forbidden 403']));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->send(render($path . '/errors/error', ['pesan' => 'Forbidden 403']));
     }
 }
 
@@ -183,7 +180,8 @@ if (!function_exists('notFound')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 404 Not Found', true, 404);
-        respond()->send(render('../helpers/errors/error', ['pesan' => 'Not Found 404']));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->send(render($path . '/errors/error', ['pesan' => 'Not Found 404']));
     }
 }
 
@@ -198,7 +196,8 @@ if (!function_exists('notAllowed')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 405 Method Not Allowed', true, 405);
-        respond()->send(render('../helpers/errors/error', ['pesan' => 'Method Not Allowed 405']));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->send(render($path . '/errors/error', ['pesan' => 'Method Not Allowed 405']));
     }
 }
 
@@ -213,7 +212,8 @@ if (!function_exists('pageExpired')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 400 Bad Request', true, 400);
-        respond()->send(render('../helpers/errors/error', ['pesan' => 'Page Expired !']));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->send(render($path . '/errors/error', ['pesan' => 'Page Expired !']));
     }
 }
 
@@ -228,7 +228,8 @@ if (!function_exists('unavailable')) {
         clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 503 Service Unavailable', true, 503);
-        respond()->send(render('../helpers/errors/error', ['pesan' => 'Service Unavailable !']));
+        $path = str_replace(basepath(), '', __DIR__);
+        respond()->send(render($path . '/errors/error', ['pesan' => 'Service Unavailable !']));
     }
 }
 
@@ -283,6 +284,62 @@ if (!function_exists('flash')) {
     }
 }
 
+if (!function_exists('env')) {
+    /**
+     * Dapatkan nilai dari env
+     * 
+     * @param string $key
+     * @param mixed $optional
+     * @return mixed
+     */
+    function env(string $key, mixed $optional = null): mixed
+    {
+        $key = $_ENV[$key] ?? $optional;
+
+        if ($key == 'null') {
+            return $optional;
+        }
+
+        return $key;
+    }
+}
+
+if (!function_exists('baseurl')) {
+    /**
+     * URL dari aplikasi
+     * 
+     * @return string
+     */
+    function baseurl(): string
+    {
+        return env('_BASEURL');
+    }
+}
+
+if (!function_exists('https')) {
+    /**
+     * Apakah https?
+     * 
+     * @return bool
+     */
+    function https(): bool
+    {
+        return env('_HTTPS');
+    }
+}
+
+if (!function_exists('debug')) {
+    /**
+     * Apakah debug?
+     * 
+     * @return bool
+     */
+    function debug(): bool
+    {
+        return env('_DEBUG', true);
+    }
+}
+
 if (!function_exists('asset')) {
     /**
      * Gabungkan dengan base url
@@ -296,7 +353,7 @@ if (!function_exists('asset')) {
             $param = '/' . $param;
         }
 
-        return BASEURL . $param;
+        return baseurl() . $param;
     }
 }
 
@@ -401,7 +458,7 @@ if (!function_exists('routeIs')) {
      */
     function routeIs(string $param, mixed $optional = null, bool $notcontains = false): mixed
     {
-        $now = app(Request::class)->server('REQUEST_URI');
+        $now = App::get()->singleton(Request::class)->server('REQUEST_URI');
         $route = $notcontains ? $now == $param : str_contains($now, $param);
 
         if ($route && $optional) {
@@ -409,26 +466,6 @@ if (!function_exists('routeIs')) {
         }
 
         return $route;
-    }
-}
-
-if (!function_exists('env')) {
-    /**
-     * Dapatkan nilai dari env
-     * 
-     * @param string $key
-     * @param mixed $optional
-     * @return mixed
-     */
-    function env(string $key, mixed $optional = null): mixed
-    {
-        $key = $_ENV[$key] ?? $optional;
-
-        if ($key == 'null') {
-            return $optional;
-        }
-
-        return $key;
     }
 }
 
@@ -455,7 +492,7 @@ if (!function_exists('parents')) {
      */
     function parents(string $name, array $variables = []): void
     {
-        app(View::class)->parents($name, $variables);
+        App::get()->singleton(View::class)->parents($name, $variables);
     }
 }
 
@@ -468,7 +505,7 @@ if (!function_exists('section')) {
      */
     function section(string $name): void
     {
-        app(View::class)->section($name);
+        App::get()->singleton(View::class)->section($name);
     }
 }
 
@@ -481,7 +518,7 @@ if (!function_exists('content')) {
      */
     function content(string $name): string|null
     {
-        return app(View::class)->content($name);
+        return App::get()->singleton(View::class)->content($name);
     }
 }
 
@@ -494,7 +531,7 @@ if (!function_exists('endsection')) {
      */
     function endsection(string $name): void
     {
-        app(View::class)->endsection($name);
+        App::get()->singleton(View::class)->endsection($name);
     }
 }
 
@@ -507,7 +544,7 @@ if (!function_exists('including')) {
      */
     function including(string $name): Render
     {
-        return app(View::class)->including($name);
+        return App::get()->singleton(View::class)->including($name);
     }
 }
 
@@ -550,6 +587,6 @@ if (!function_exists('getPageTime')) {
      */
     function getPageTime(): int
     {
-        return diffTime(START_TIME, microtime(true));
+        return diffTime(env('_STARTTIME'), microtime(true));
     }
 }

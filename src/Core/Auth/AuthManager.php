@@ -2,13 +2,14 @@
 
 namespace Core\Auth;
 
-use Core\Database\BaseModel;
+use Core\Model\BaseModel;
+use Core\Facades\App;
 use Core\Http\Session;
 use Core\Valid\Hash;
 use Exception;
 
 /**
- * Autentikasi user dengan basemodel
+ * Autentikasi user dengan basemodel.
  *
  * @class AuthManager
  * @package \Core\Auth
@@ -16,21 +17,21 @@ use Exception;
 class AuthManager
 {
     /**
-     * Object basemodel
+     * Object basemodel.
      * 
      * @var BaseModel|null $user
      */
     private $user;
 
     /**
-     * Object session
+     * Object session.
      * 
      * @var Session $session
      */
     private $session;
 
     /**
-     * Init obejct
+     * Init obejct.
      * 
      * @param Session $session
      * @return void
@@ -41,49 +42,47 @@ class AuthManager
     }
 
     /**
-     * Check usernya
+     * Check usernya.
      * 
      * @return bool
      */
     public function check(): bool
     {
-        return empty($this->user()) ? false : !empty($this->user->fail(
-            function () {
-                $this->logout();
-                return false;
-            }
-        ));
+        $check = empty($this->user()) ? false : !empty($this->user->fail(fn () => false));
+        if (!$check) {
+            $this->logout();
+        }
+
+        return $check;
     }
 
     /**
-     * Dapatkan id usernya
+     * Dapatkan id usernya.
      * 
-     * @return int|null
+     * @return int|string|null
      */
-    public function id(): int|null
+    public function id(): int|string|null
     {
-        return empty($this->user) ? null : intval($this->user->{$this->user->getPrimaryKey()});
+        return empty($this->user) ? null : $this->user->{$this->user->getPrimaryKey()};
     }
 
     /**
-     * Dapatkan obejek usernya
+     * Dapatkan obejek usernya.
      * 
      * @return BaseModel|null
      */
     public function user(): BaseModel|null
     {
-        if ($this->user instanceof BaseModel) {
-            return $this->user;
+        if (!($this->user instanceof BaseModel)) {
+            $user = $this->session->get('_user');
+            $this->user = empty($user) ? null : unserialize($user)->refresh();
         }
-
-        $user = $this->session->get('_user');
-        $this->user = empty($user) ? null : unserialize($user)->refresh();
 
         return $this->user;
     }
 
     /**
-     * Logoutkan usernya
+     * Logoutkan usernya.
      * 
      * @return void
      */
@@ -94,7 +93,7 @@ class AuthManager
     }
 
     /**
-     * Loginkan usernya dengan object
+     * Loginkan usernya dengan object.
      * 
      * @param object $user
      * @return void
@@ -113,17 +112,17 @@ class AuthManager
     }
 
     /**
-     * Loginkan usernya
+     * Loginkan usernya.
      * 
      * @param array $credential
      * @param string $model
      * @return bool
      */
-    public function attempt(array $credential, string $model = 'Models\User'): bool
+    public function attempt(array $credential, string $model = 'App\Models\User'): bool
     {
         list($first, $last) = array_keys($credential);
 
-        $user = app($model)->find($credential[$first], $first);
+        $user = App::get()->singleton($model)->find($credential[$first], $first);
         $this->logout();
 
         if ($user->fail(fn () => false)) {

@@ -6,7 +6,7 @@ use Core\Facades\App;
 use Core\Http\Stream;
 
 /**
- * Storage manipulation
+ * Storage manipulation.
  *
  * @class Storage
  * @package \Core\File
@@ -14,21 +14,14 @@ use Core\Http\Stream;
 final class Storage
 {
     /**
-     * Folder name
+     * Folder name.
      * 
      * @var string $folderName
      */
     private static string $folderName = 'shared';
 
     /**
-     * Base location
-     * 
-     * @var string $location
-     */
-    private static string $location = __DIR__ . '/../../';
-
-    /**
-     * Set folder name
+     * Set folder name.
      * 
      * @param string $name
      * @return void
@@ -39,17 +32,17 @@ final class Storage
     }
 
     /**
-     * Get name location
+     * Get name location.
      * 
      * @return string
      */
     public static function getLocation(): string
     {
-        return self::$location . self::$folderName . '/';
+        return basepath() . '/' . self::$folderName . '/';
     }
 
     /**
-     * Tampilkan filenya
+     * Tampilkan filenya.
      * 
      * @param string $filename
      * @return Stream
@@ -60,7 +53,7 @@ final class Storage
     }
 
     /**
-     * Download filenya
+     * Download filenya.
      * 
      * @param string $filename
      * @return Stream
@@ -71,7 +64,7 @@ final class Storage
     }
 
     /**
-     * Ukuran filenya
+     * Ukuran filenya.
      * 
      * @param string $filename
      * @return int|false
@@ -82,7 +75,7 @@ final class Storage
     }
 
     /**
-     * Filenya ada ?
+     * Filenya ada?.
      * 
      * @param string $filename
      * @return bool
@@ -93,7 +86,7 @@ final class Storage
     }
 
     /**
-     * Terakhir diubah
+     * Terakhir diubah.
      * 
      * @param string $filename
      * @return int|false
@@ -104,7 +97,7 @@ final class Storage
     }
 
     /**
-     * Get extension
+     * Get extension.
      * 
      * @param string $filename
      * @return string|false
@@ -119,7 +112,7 @@ final class Storage
     }
 
     /**
-     * Get name
+     * Get name.
      * 
      * @param string $filename
      * @return string|false
@@ -134,7 +127,7 @@ final class Storage
     }
 
     /**
-     * Get mimeType
+     * Get mimeType.
      * 
      * @param string $filename
      * @return string|false
@@ -145,7 +138,7 @@ final class Storage
     }
 
     /**
-     * Copy filenya ?
+     * Copy filenya?.
      * 
      * @param string $from
      * @param string $to
@@ -157,7 +150,7 @@ final class Storage
     }
 
     /**
-     * Ganti namanya
+     * Ganti namanya.
      * 
      * @param string $from
      * @param string $to
@@ -169,7 +162,7 @@ final class Storage
     }
 
     /**
-     * Hapus filenya
+     * Hapus filenya.
      * 
      * @param string $filename
      * @return bool
@@ -180,7 +173,7 @@ final class Storage
     }
 
     /**
-     * Baca file dalam folder
+     * Baca file dalam folder.
      * 
      * @return array
      */
@@ -191,7 +184,7 @@ final class Storage
     }
 
     /**
-     * Pindahkan file
+     * Pindahkan file.
      * 
      * @param string $from
      * @param string $to
@@ -199,6 +192,6 @@ final class Storage
      */
     public static function move(string $from, string $to): bool
     {
-        return rename(self::getLocation() . $from, self::$location . $to . '/' . $from);
+        return rename(self::getLocation() . $from, basepath() . '/' . $to . '/' . $from);
     }
 }

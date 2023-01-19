@@ -118,7 +118,7 @@ class Mail
     {
         $this->server = env('MAIL_HOST');
         $this->port = intval(env('MAIL_PORT'));
-        $this->hostname = parse_url(BASEURL, PHP_URL_HOST);
+        $this->hostname = parse_url(baseurl(), PHP_URL_HOST);
         $this->username = env('MAIL_USERNAME');
         $this->password = env('MAIL_PASSWORD');
         $this->from = array(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));

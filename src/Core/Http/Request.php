@@ -45,6 +45,11 @@ class Request
         $inputRaw = json_decode(file_get_contents('php://input'), true);
         $this->requestData = array_merge($_REQUEST, $_FILES, $inputRaw ?? []);
         $this->serverData = $_SERVER;
+        unset($GLOBALS['_GET']);
+        unset($GLOBALS['_POST']);
+        unset($GLOBALS['_FILES']);
+        unset($GLOBALS['_SERVER']);
+        unset($GLOBALS['_REQUEST']);
     }
 
     /**
