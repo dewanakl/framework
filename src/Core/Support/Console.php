@@ -195,8 +195,8 @@ class Console
                 $type = 'templateModel';
                 break;
         }
-        $path = str_replace(basepath(), '', __DIR__);
-        return require_once $path . '/../../../helpers/templates/' . $type . '.php';
+
+        return require_once __DIR__ . '/../../helpers/templates/' . $type . '.php';
     }
 
     /**
@@ -299,8 +299,7 @@ class Console
             mkdir($folder, 7777, true);
         }
 
-        $path = str_replace(basepath(), '', __DIR__);
-        $result = copy($path . '/../../../helpers/templates/templateMail.php', $folder . $name . '.php');
+        $result = copy(__DIR__ . '/../../helpers/templates/templateMail.php', $folder . $name . '.php');
         $this->exception('Gagal membuat email', !$result, 'Berhasil membuat email ' . $name);
     }
 
