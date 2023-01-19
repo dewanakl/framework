@@ -84,9 +84,9 @@ final class Kernel
         $https = (!empty(@$_SERVER['HTTPS']) && @$_SERVER['HTTPS'] != 'off') || @$_SERVER['SERVER_PORT'] == '443' || @$_ENV['HTTPS'] == 'true';
         $debug = @$_ENV['DEBUG'] == 'true';
 
-        $_ENV['_BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : ($https ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
-        $_ENV['_HTTPS'] = $https;
-        $_ENV['_DEBUG'] = $debug;
+        $_ENV['__BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : ($https ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
+        $_ENV['__HTTPS'] = $https;
+        $_ENV['__DEBUG'] = $debug;
 
         error_reporting($debug ? E_ALL : 0);
         set_exception_handler(function (mixed $error) use ($debug) {

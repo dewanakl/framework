@@ -312,7 +312,7 @@ if (!function_exists('baseurl')) {
      */
     function baseurl(): string
     {
-        return env('_BASEURL');
+        return env('__BASEURL');
     }
 }
 
@@ -324,7 +324,7 @@ if (!function_exists('https')) {
      */
     function https(): bool
     {
-        return env('_HTTPS');
+        return env('__HTTPS');
     }
 }
 
@@ -336,7 +336,7 @@ if (!function_exists('debug')) {
      */
     function debug(): bool
     {
-        return env('_DEBUG', true);
+        return env('__DEBUG', true);
     }
 }
 
