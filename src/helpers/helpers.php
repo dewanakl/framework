@@ -296,7 +296,7 @@ if (!function_exists('env')) {
     {
         $key = $_ENV[$key] ?? $optional;
 
-        if ($key == 'null') {
+        if ($key === 'null') {
             return $optional;
         }
 
@@ -324,7 +324,7 @@ if (!function_exists('https')) {
      */
     function https(): bool
     {
-        return env('__HTTPS');
+        return env('__HTTPS', false);
     }
 }
 
@@ -369,7 +369,7 @@ if (!function_exists('getPathFromRoute')) {
     function getPathFromRoute(string $name): string
     {
         foreach (Route::router()->routes() as $route) {
-            if ($route['name'] == $name) {
+            if ($route['name'] === $name) {
                 return $route['path'];
             }
         }
@@ -459,7 +459,7 @@ if (!function_exists('routeIs')) {
     function routeIs(string $param, mixed $optional = null, bool $notcontains = false): mixed
     {
         $now = App::get()->singleton(Request::class)->server('REQUEST_URI');
-        $route = $notcontains ? $now == $param : str_contains($now, $param);
+        $route = $notcontains ? $now === $param : str_contains($now, $param);
 
         if ($route && $optional) {
             return $optional;

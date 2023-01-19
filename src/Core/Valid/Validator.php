@@ -208,7 +208,7 @@ class Validator
         } else {
             switch (true) {
                 case $rule == 'required':
-                    if ($value['error'] == 4 || $value['size'] == 0 || empty($value['name'])) {
+                    if ($value['error'] === 4 || $value['size'] === 0 || empty($value['name'])) {
                         @unlink($value['tmp_name']);
                         $this->setError($param, 'dibutuhkan !');
                     }

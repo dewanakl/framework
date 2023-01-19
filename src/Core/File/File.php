@@ -76,7 +76,7 @@ class File
      */
     public function exists(): bool
     {
-        return $this->file->error == 0;
+        return $this->file->error === 0;
     }
 
     /**
@@ -128,7 +128,7 @@ class File
         $chunk = isset($this->request->chunk) ? intval($this->request->chunk) : 0;
         $chunks = isset($this->request->chunks) ? intval($this->request->chunks) : 0;
 
-        $out = fopen("{$filePath}.part", $chunk == 0 ? 'wb' : 'ab');
+        $out = fopen("{$filePath}.part", $chunk === 0 ? 'wb' : 'ab');
         if ($out) {
             $in = fopen($this->file->tmp_name, 'rb');
             if ($in) {
@@ -148,7 +148,7 @@ class File
             return false;
         }
 
-        if (!$chunks || $chunk == $chunks - 1) {
+        if (!$chunks || ($chunk === $chunks - 1)) {
             rename("{$filePath}.part", $filePath);
         }
 

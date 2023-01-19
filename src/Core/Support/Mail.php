@@ -124,7 +124,7 @@ class Mail
         $this->from = array(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
         $this->protocol = env('MAIL_ENCRYPTION');
 
-        if ($this->protocol == 'tcp') {
+        if ($this->protocol === 'tcp') {
             $this->isTLS = true;
         }
     }
@@ -161,7 +161,7 @@ class Mail
         $response = '';
         while (($line = fgets($this->socket, 515)) !== false) {
             $response .= trim($line) . "\n";
-            if (substr($line, 3, 1) == ' ') {
+            if (substr($line, 3, 1) === ' ') {
                 break;
             }
         }
@@ -310,6 +310,6 @@ class Mail
         $this->sendCommand('QUIT');
         fclose($this->socket);
 
-        return intval(substr($result, 0, 3)) == 250;
+        return intval(substr($result, 0, 3)) === 250;
     }
 }

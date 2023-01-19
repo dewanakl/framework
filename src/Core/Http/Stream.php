@@ -86,7 +86,7 @@ class Stream
         $timeFile = @filemtime($file);
         $hashFile = @md5($file);
 
-        if (@strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
+        if (@strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) === $timeFile || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) === $hashFile) {
             http_response_code(304);
             header('HTTP/1.1 304 Not Modified', true, 304);
             exit;
@@ -169,7 +169,7 @@ class Stream
         list($start, $end) = explode('-', $range);
         $fileSize = $this->size;
 
-        if ($start == '') {
+        if ($start === '') {
             $tmp = intval($end);
             $end = $fileSize - 1;
             $start = $fileSize - $tmp;
@@ -177,7 +177,7 @@ class Stream
                 $start = 0;
             }
         } else {
-            if (strval($end) == '' || intval($end) > ($fileSize - 1)) {
+            if (strval($end) === '' || intval($end) > ($fileSize - 1)) {
                 $end = $fileSize - 1;
             }
         }
@@ -275,7 +275,7 @@ class Stream
         $ranges = [];
         $t = 0;
 
-        if ($this->request->method() == 'GET' && ($this->request->server('HTTP_RANGE') !== null)) {
+        if ($this->request->method() === 'GET' && ($this->request->server('HTTP_RANGE') !== null)) {
             $range = substr(stristr(trim($this->request->server('HTTP_RANGE')), 'bytes='), 6);
             $ranges = explode(',', $range);
             $t = count($ranges);
