@@ -7,7 +7,7 @@ use Core\Facades\App;
 use Exception;
 
 /**
- * Helper class DB untuk customizable nama table
+ * Helper class DB untuk customizable nama table.
  *
  * @class DB
  * @package \Core\Model
@@ -15,7 +15,7 @@ use Exception;
 final class DB
 {
     /**
-     * Nama tabelnya apah ?
+     * Nama tabelnya apah?.
      *
      * @param string $name
      * @return BaseModel
@@ -28,7 +28,7 @@ final class DB
     }
 
     /**
-     * Mulai transaksinya
+     * Mulai transaksinya.
      *
      * @return bool
      */
@@ -38,7 +38,7 @@ final class DB
     }
 
     /**
-     * Commit transaksinya
+     * Commit transaksinya.
      *
      * @return bool
      */
@@ -48,7 +48,7 @@ final class DB
     }
 
     /**
-     * Kembalikan transaksinya
+     * Kembalikan transaksinya.
      *
      * @return bool
      */
@@ -58,7 +58,7 @@ final class DB
     }
 
     /**
-     * Tampilkan errornya
+     * Tampilkan errornya.
      *
      * @param mixed $e
      * @return void
@@ -69,7 +69,7 @@ final class DB
     }
 
     /**
-     * DB transaction sederhana
+     * DB transaction sederhana.
      *
      * @param Closure $fn
      * @return void

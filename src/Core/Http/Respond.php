@@ -7,7 +7,7 @@ use Core\View\Render;
 use Core\View\View;
 
 /**
- * Respond dari request yang masuk
+ * Respond dari request yang masuk.
  *
  * @class Respond
  * @package \Core\Http
@@ -15,21 +15,21 @@ use Core\View\View;
 class Respond
 {
     /**
-     * Session obj
+     * Session object.
      * 
      * @var Session $session
      */
     private $session;
 
     /**
-     * Url redirect
+     * Url redirect.
      * 
      * @var string|null $redirect
      */
     private $redirect;
 
     /**
-     * Init objek
+     * Init object.
      * 
      * @param Session $session
      * @return void
@@ -40,7 +40,7 @@ class Respond
     }
 
     /**
-     * Alihkan halaman
+     * Alihkan halaman.
      * 
      * @param string $prm
      * @return Respond
@@ -52,7 +52,7 @@ class Respond
     }
 
     /**
-     * Isi dengan pesan
+     * Isi dengan pesan.
      * 
      * @param string $key
      * @param mixed $value
@@ -65,7 +65,7 @@ class Respond
     }
 
     /**
-     * Kembali ke halaman yang dulu
+     * Kembali ke halaman yang dulu.
      * 
      * @return Respond
      */
@@ -75,7 +75,7 @@ class Respond
     }
 
     /**
-     * Alihkan halaman sesuai url
+     * Alihkan halaman sesuai url.
      * 
      * @param string $uri
      * @return void
@@ -94,14 +94,14 @@ class Respond
     }
 
     /**
-     * Tampilkan responnya
+     * Tampilkan responnya.
      * 
      * @param mixed $respond
      * @return void
      */
     public function send(mixed $respond): void
     {
-        if (is_string($respond) || $respond instanceof Render || $respond instanceof View) {
+        if (is_string($respond) || is_numeric($respond) || $respond instanceof Render || $respond instanceof View) {
             if ($respond instanceof Render || $respond instanceof View) {
                 $this->session->set('_oldroute', App::get()->singleton(Request::class)->server('REQUEST_URI'));
                 $this->session->unset('old');
@@ -131,7 +131,7 @@ class Respond
     }
 
     /**
-     * Stop responnya
+     * Stop responnya.
      * 
      * @param mixed $prm
      * @return void

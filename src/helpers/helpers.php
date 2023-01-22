@@ -12,7 +12,7 @@ use Core\View\View;
 
 if (!function_exists('session')) {
     /**
-     * Helper method untuk membuat objek session
+     * Helper method untuk membuat objek session.
      * 
      * @return Session
      */
@@ -24,7 +24,7 @@ if (!function_exists('session')) {
 
 if (!function_exists('respond')) {
     /**
-     * Helper method untuk membuat objek respond
+     * Helper method untuk membuat objek respond.
      * 
      * @return Respond
      */
@@ -36,7 +36,7 @@ if (!function_exists('respond')) {
 
 if (!function_exists('auth')) {
     /**
-     * Helper method untuk membuat objek AuthManager
+     * Helper method untuk membuat objek AuthManager.
      * 
      * @return AuthManager
      */
@@ -48,7 +48,7 @@ if (!function_exists('auth')) {
 
 if (!function_exists('render')) {
     /**
-     * Baca dari view serta masih bentuk object
+     * Baca dari html serta masih bentuk object.
      * 
      * @param string $path
      * @param array $data
@@ -66,7 +66,7 @@ if (!function_exists('render')) {
 
 if (!function_exists('clear_ob')) {
     /**
-     * Hapus cache ob
+     * Hapus cache ob.
      * 
      * @return void
      */
@@ -80,7 +80,7 @@ if (!function_exists('clear_ob')) {
 
 if (!function_exists('json')) {
     /**
-     * Ubah ke json
+     * Ubah ke json.
      *
      * @param mixed $data
      * @param int $statusCode
@@ -96,7 +96,7 @@ if (!function_exists('json')) {
 
 if (!function_exists('e')) {
     /**
-     * Tampikan hasil secara aman
+     * Tampikan hasil secara aman.
      * 
      * @param mixed $var
      * @return string
@@ -110,7 +110,7 @@ if (!function_exists('e')) {
 
 if (!function_exists('basepath')) {
     /**
-     * Lokasi dari aplikasi
+     * Lokasi dari aplikasi.
      * 
      * @return string
      */
@@ -122,7 +122,7 @@ if (!function_exists('basepath')) {
 
 if (!function_exists('trace')) {
     /**
-     * Lacak erornya
+     * Lacak erornya.
      * 
      * @param mixed $error
      * @return void
@@ -139,7 +139,7 @@ if (!function_exists('trace')) {
 
 if (!function_exists('dd')) {
     /**
-     * Tampikan hasil debugging
+     * Tampikan hasil debugging.
      * 
      * @param mixed $param
      * @return void
@@ -155,7 +155,7 @@ if (!function_exists('dd')) {
 
 if (!function_exists('abort')) {
     /**
-     * Tampikan hasil error 403
+     * Tampikan hasil error 403.
      * 
      * @return void
      */
@@ -171,7 +171,7 @@ if (!function_exists('abort')) {
 
 if (!function_exists('notFound')) {
     /**
-     * Tampikan hasil error 404
+     * Tampikan hasil error 404.
      * 
      * @return void
      */
@@ -187,7 +187,7 @@ if (!function_exists('notFound')) {
 
 if (!function_exists('notAllowed')) {
     /**
-     * Tampikan hasil error 405
+     * Tampikan hasil error 405.
      * 
      * @return void
      */
@@ -203,7 +203,7 @@ if (!function_exists('notAllowed')) {
 
 if (!function_exists('pageExpired')) {
     /**
-     * Tampikan hasil error 400
+     * Tampikan hasil error 400.
      * 
      * @return void
      */
@@ -219,7 +219,7 @@ if (!function_exists('pageExpired')) {
 
 if (!function_exists('unavailable')) {
     /**
-     * Tampikan hasil error 503
+     * Tampikan hasil error 503.
      * 
      * @return void
      */
@@ -235,7 +235,7 @@ if (!function_exists('unavailable')) {
 
 if (!function_exists('csrf_token')) {
     /**
-     * Ambil csrf token dari session
+     * Ambil csrf token dari session.
      * 
      * @return string
      */
@@ -247,7 +247,7 @@ if (!function_exists('csrf_token')) {
 
 if (!function_exists('csrf')) {
     /**
-     * Jadikan html form input
+     * Jadikan html form input.
      * 
      * @return string
      */
@@ -259,7 +259,7 @@ if (!function_exists('csrf')) {
 
 if (!function_exists('method')) {
     /**
-     * Method untuk html
+     * Method untuk html.
      * 
      * @return string
      */
@@ -271,7 +271,7 @@ if (!function_exists('method')) {
 
 if (!function_exists('flash')) {
     /**
-     * Ambil pesan dari session
+     * Ambil pesan dari session.
      * 
      * @param string $key
      * @return mixed
@@ -286,7 +286,7 @@ if (!function_exists('flash')) {
 
 if (!function_exists('env')) {
     /**
-     * Dapatkan nilai dari env
+     * Dapatkan nilai dari env.
      * 
      * @param string $key
      * @param mixed $optional
@@ -306,43 +306,43 @@ if (!function_exists('env')) {
 
 if (!function_exists('baseurl')) {
     /**
-     * URL dari aplikasi
+     * URL dari aplikasi.
      * 
      * @return string
      */
     function baseurl(): string
     {
-        return env('__BASEURL');
+        return env('_BASEURL');
     }
 }
 
 if (!function_exists('https')) {
     /**
-     * Apakah https?
+     * Apakah https?.
      * 
      * @return bool
      */
     function https(): bool
     {
-        return env('__HTTPS', false);
+        return env('_HTTPS', false);
     }
 }
 
 if (!function_exists('debug')) {
     /**
-     * Apakah debug?
+     * Apakah debug?.
      * 
      * @return bool
      */
     function debug(): bool
     {
-        return env('__DEBUG', true);
+        return env('_DEBUG', true);
     }
 }
 
 if (!function_exists('asset')) {
     /**
-     * Gabungkan dengan base url
+     * Gabungkan dengan baseurl.
      * 
      * @param string $param
      * @return string
@@ -359,7 +359,7 @@ if (!function_exists('asset')) {
 
 if (!function_exists('getPathFromRoute')) {
     /**
-     * Ambil url dalam route dengan nama
+     * Ambil url dalam route dengan nama.
      *
      * @param string $name
      * @return string
@@ -369,7 +369,7 @@ if (!function_exists('getPathFromRoute')) {
     function getPathFromRoute(string $name): string
     {
         foreach (Route::router()->routes() as $route) {
-            if ($route['name'] === $name) {
+            if ($route['name'] == $name) {
                 return $route['path'];
             }
         }
@@ -380,7 +380,7 @@ if (!function_exists('getPathFromRoute')) {
 
 if (!function_exists('route')) {
     /**
-     * Dapatkan url dari route name dan masukan value
+     * Dapatkan url dari route name dan masukan value.
      * 
      * @param string $param
      * @param mixed $keys
@@ -409,12 +409,12 @@ if (!function_exists('route')) {
 
 if (!function_exists('old')) {
     /**
-     * Dapatkan nilai yang lama dari sebuah request
+     * Dapatkan nilai yang lama dari sebuah request.
      * 
      * @param string $param
-     * @return mixed
+     * @return string
      */
-    function old(string $param): mixed
+    function old(string $param): string
     {
         $old = session()->get('old');
         return e(@$old[$param]);
@@ -423,7 +423,7 @@ if (!function_exists('old')) {
 
 if (!function_exists('error')) {
     /**
-     * Dapatkan pesan error dari request yang salah
+     * Dapatkan pesan error dari request yang salah.
      * 
      * @param mixed $key
      * @param mixed $optional
@@ -449,7 +449,7 @@ if (!function_exists('error')) {
 
 if (!function_exists('routeIs')) {
     /**
-     * Cek apakah routenya sudah sesuai
+     * Cek apakah routenya sudah sesuai.
      * 
      * @param string $param
      * @param mixed $optional
@@ -471,7 +471,7 @@ if (!function_exists('routeIs')) {
 
 if (!function_exists('now')) {
     /**
-     * Dapatkan waktu sekarang Y-m-d H:i:s
+     * Dapatkan waktu sekarang Y-m-d H:i:s.
      * 
      * @param string $format
      * @return string
@@ -484,7 +484,7 @@ if (!function_exists('now')) {
 
 if (!function_exists('parents')) {
     /**
-     * Set parent html
+     * Set parent html.
      * 
      * @param string $name
      * @param array $variables
@@ -498,7 +498,7 @@ if (!function_exists('parents')) {
 
 if (!function_exists('section')) {
     /**
-     * Bagian awal dari html
+     * Bagian awal dari html.
      * 
      * @param string $name
      * @return void
@@ -511,7 +511,7 @@ if (!function_exists('section')) {
 
 if (!function_exists('content')) {
     /**
-     * Tampilkan bagian dari html
+     * Tampilkan bagian dari html.
      * 
      * @param string $name
      * @return string|null
@@ -524,7 +524,7 @@ if (!function_exists('content')) {
 
 if (!function_exists('endsection')) {
     /**
-     * Bagian akhir dari html
+     * Bagian akhir dari html.
      * 
      * @param string $name
      * @return void
@@ -537,7 +537,7 @@ if (!function_exists('endsection')) {
 
 if (!function_exists('including')) {
     /**
-     * Masukan html opsional
+     * Masukan html opsional.
      * 
      * @param string $name
      * @return Render
@@ -550,7 +550,7 @@ if (!function_exists('including')) {
 
 if (!function_exists('formatBytes')) {
     /**
-     * Dapatkan format ukuran bytes yang mudah dibaca
+     * Dapatkan format ukuran bytes yang mudah dibaca.
      * 
      * @param int $size
      * @param int $precision
@@ -567,7 +567,7 @@ if (!function_exists('formatBytes')) {
 
 if (!function_exists('diffTime')) {
     /**
-     * Dapatkan selisih waktu dalam ms
+     * Dapatkan selisih waktu dalam ms.
      * 
      * @param float $start
      * @param float $end
@@ -581,7 +581,7 @@ if (!function_exists('diffTime')) {
 
 if (!function_exists('getPageTime')) {
     /**
-     * Dapatkan waktu yang dibutuhkan untuk merender halaman dalam (ms)
+     * Dapatkan waktu yang dibutuhkan untuk merender halaman dalam (ms).
      * 
      * @return int
      */

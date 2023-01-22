@@ -3,7 +3,7 @@
 namespace Core\Facades;
 
 /**
- * Registrasi apa saja sebelum aplikasi berjalan
+ * Registrasi apa saja sebelum aplikasi berjalan.
  *
  * @class Provider
  * @package \Core\Facades
@@ -11,14 +11,14 @@ namespace Core\Facades;
 abstract class Provider
 {
     /**
-     * Object application
+     * Object application.
      *
      * @var Application $app
      */
     protected $app;
 
     /**
-     * Buat object Provider baru
+     * Buat object Provider baru.
      *
      * @return void
      */
@@ -28,7 +28,7 @@ abstract class Provider
     }
 
     /**
-     * Registrasi apa aja disini
+     * Registrasi apa aja disini.
      *
      * @return void
      */
@@ -38,7 +38,7 @@ abstract class Provider
     }
 
     /**
-     * Jalankan sewaktu aplikasi dinyalakan
+     * Jalankan sewaktu aplikasi dinyalakan.
      *
      * @return void
      */

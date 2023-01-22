@@ -5,7 +5,7 @@ namespace Core\Routing;
 use Closure;
 
 /**
- * Class untuk routing dan mengelompokan url
+ * Class untuk routing dan mengelompokan url.
  *
  * @class Router
  * @package \Core\Routing
@@ -13,35 +13,35 @@ use Closure;
 class Router
 {
     /**
-     * Simpan semua routenya disini
+     * Simpan semua routenya disini.
      * 
      * @var array $routes
      */
     private $routes;
 
     /**
-     * Jika ada controller group
+     * Jika ada controller group.
      * 
      * @var string|null $controller
      */
     private $controller;
 
     /**
-     * Jika ada prefix group
+     * Jika ada prefix group.
      * 
      * @var string|null $prefix
      */
     private $prefix;
 
     /**
-     * Untuk middleware group
+     * Untuk middleware group.
      * 
      * @var array $middleware
      */
     private $middleware;
 
     /**
-     * Init object
+     * Init object.
      * 
      * @return void
      */
@@ -52,7 +52,7 @@ class Router
     }
 
     /**
-     * Simpan urlnya
+     * Simpan urlnya.
      *
      * @param string $method
      * @param string $path
@@ -84,7 +84,7 @@ class Router
     }
 
     /**
-     * Simpan url route get
+     * Simpan url route get.
      *
      * @param string $path
      * @param array|string $action
@@ -96,7 +96,7 @@ class Router
     }
 
     /**
-     * Simpan url route post
+     * Simpan url route post.
      *
      * @param string $path
      * @param array|string $action
@@ -108,7 +108,7 @@ class Router
     }
 
     /**
-     * Simpan url route put
+     * Simpan url route put.
      *
      * @param string $path
      * @param array|string $action
@@ -120,7 +120,7 @@ class Router
     }
 
     /**
-     * Simpan url route delete
+     * Simpan url route delete.
      *
      * @param string $path
      * @param array|string $action
@@ -132,7 +132,7 @@ class Router
     }
 
     /**
-     * Tambahkan middleware dalam url route
+     * Tambahkan middleware dalam url route.
      *
      * @param array|string $middlewares
      * @return Router
@@ -148,7 +148,7 @@ class Router
     }
 
     /**
-     * Tambahkan url lagi dalam route
+     * Tambahkan url lagi dalam route.
      *
      * @param string $prefix
      * @return Router
@@ -160,7 +160,7 @@ class Router
     }
 
     /**
-     * Tambahkan controller dalam route
+     * Tambahkan controller dalam route.
      *
      * @param string $name
      * @return Router
@@ -172,7 +172,7 @@ class Router
     }
 
     /**
-     * Tambahkan nama url
+     * Tambahkan nama url.
      *
      * @param string $name
      * @return void
@@ -184,7 +184,7 @@ class Router
     }
 
     /**
-     * Ambil url yang ada
+     * Ambil url yang ada.
      *
      * @return array
      */
@@ -194,7 +194,7 @@ class Router
     }
 
     /**
-     * Isi semua url yang ada
+     * Isi semua url yang ada.
      *
      * @param array $route
      * @return void
@@ -205,7 +205,7 @@ class Router
     }
 
     /**
-     * Kelompokan routenya
+     * Kelompokan routenya.
      *
      * @param Closure $group
      * @return void
@@ -240,9 +240,8 @@ class Router
                 }
 
                 if (!empty($tempMiddleware)) {
-                    $old = $this->routes[$id]['middleware'];
                     $result = empty($this->middleware) ? $tempMiddleware : $this->middleware;
-                    $this->routes[$id]['middleware'] = array_merge($result, $old);
+                    $this->routes[$id]['middleware'] = array_merge($result, $this->routes[$id]['middleware']);
                 }
             }
         }

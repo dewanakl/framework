@@ -5,14 +5,14 @@ namespace Core\Database;
 interface Migration
 {
     /**
-     * Jalankan migrasi
+     * Jalankan migrasi.
      *
      * @return void
      */
     public function up();
 
     /**
-     * Kembalikan seperti semula
+     * Kembalikan seperti semula.
      *
      * @return void
      */

@@ -6,7 +6,7 @@ use Closure;
 use Core\Facades\App;
 
 /**
- * Membuat tabel dengan mudah
+ * Membuat tabel dengan mudah.
  * 
  * @class Table
  * @package \Core\Database
@@ -14,42 +14,42 @@ use Core\Facades\App;
 class Table
 {
     /**
-     * Param query
+     * Param query.
      * 
      * @var array $query
      */
     private $query;
 
     /**
-     * Tipe dbms
+     * Tipe dbms.
      * 
      * @var string $type
      */
     private $type;
 
     /**
-     * Nama tabelnya
+     * Nama tabelnya.
      * 
      * @var string $table
      */
     private $table;
 
     /**
-     * Alter tabelnya
+     * Alter tabelnya.
      * 
      * @var string $alter
      */
     private $alter;
 
     /**
-     * Colums di tabel ini
+     * Colums di tabel ini.
      * 
      * @var array $columns
      */
     private $columns;
 
     /**
-     * Init objek
+     * Init objek.
      *
      * @return void
      */
@@ -62,18 +62,19 @@ class Table
     }
 
     /**
-     * Set nama table di database
+     * Set nama table di database.
      *
      * @param string $name
-     * @return void
+     * @return Table
      */
-    public function table(string $name): void
+    public function table(string $name): Table
     {
         $this->table = $name;
+        return $this;
     }
 
     /**
-     * Create table sql
+     * Create table sql.
      * 
      * @return string
      */
@@ -87,7 +88,7 @@ class Table
     }
 
     /**
-     * Export hasilnya ke string sql
+     * Export hasilnya ke string sql.
      * 
      * @return string|null
      */
@@ -137,7 +138,7 @@ class Table
     }
 
     /**
-     * Get index paling akhir
+     * Get index paling akhir.
      * 
      * @return int
      */
@@ -147,7 +148,7 @@ class Table
     }
 
     /**
-     * Id, unique, primary key
+     * Id, unique, primary key.
      * 
      * @param string $name
      * @return void
@@ -163,7 +164,7 @@ class Table
     }
 
     /**
-     * Tipe string atau varchar
+     * Tipe string atau varchar.
      * 
      * @param string $name
      * @param int $len
@@ -177,7 +178,7 @@ class Table
     }
 
     /**
-     * Tipe integer
+     * Tipe integer.
      * 
      * @param string $name
      * @return Table
@@ -194,7 +195,7 @@ class Table
     }
 
     /**
-     * Tipe text
+     * Tipe text.
      * 
      * @param string $name
      * @return Table
@@ -207,7 +208,7 @@ class Table
     }
 
     /**
-     * Tipe boolean
+     * Tipe boolean.
      * 
      * @param string $name
      * @return Table
@@ -220,7 +221,7 @@ class Table
     }
 
     /**
-     * Tipe timestamp / datetime
+     * Tipe timestamp / datetime.
      * 
      * @param string $name
      * @return Table
@@ -237,7 +238,7 @@ class Table
     }
 
     /**
-     * created_at and updated_at
+     * created_at and updated_at.
      * 
      * @return void
      */
@@ -255,7 +256,7 @@ class Table
     }
 
     /**
-     * Boleh kosong
+     * Boleh kosong.
      * 
      * @return Table
      */
@@ -266,20 +267,20 @@ class Table
     }
 
     /**
-     * Default value pada dbms
+     * Default value pada dbms.
      * 
      * @param string|int|bool $name
      * @return void
      */
     public function default(string|int|bool $name): void
     {
-        $constraint = is_string($name) ? " DEFAULT '$name'" : " DEFAULT " . (is_bool($name) ? ($name ? 'true' : 'false') : $name);
+        $constraint = is_string($name) ? " DEFAULT '$name'" : ' DEFAULT ' . (is_bool($name) ? ($name ? 'true' : 'false') : $name);
 
         $this->query[$this->getLastArray()] = end($this->query) . $constraint;
     }
 
     /**
-     * Harus berbeda
+     * Harus berbeda.
      * 
      * @return void
      */
@@ -289,7 +290,7 @@ class Table
     }
 
     /**
-     * Bikin relasi antara nama attribute
+     * Bikin relasi antara nama attribute.
      * 
      * @param string $name
      * @return Table
@@ -301,7 +302,7 @@ class Table
     }
 
     /**
-     * Dengan nama attribute tabel targetnya
+     * Dengan nama attribute tabel targetnya.
      * 
      * @param string $name
      * @return Table
@@ -313,7 +314,7 @@ class Table
     }
 
     /**
-     * Nama tabel targetnya
+     * Nama tabel targetnya.
      * 
      * @param string $name
      * @return Table
@@ -325,7 +326,7 @@ class Table
     }
 
     /**
-     * Hapus nilai pada foreign key juga jika menghapus
+     * Hapus nilai pada foreign key juga jika menghapus.
      * 
      * @return void
      */
@@ -335,7 +336,7 @@ class Table
     }
 
     /**
-     * Tambahkan kolom baru
+     * Tambahkan kolom baru.
      * 
      * @param Closure $fn
      * @return void
@@ -347,7 +348,7 @@ class Table
     }
 
     /**
-     * Hapus kolom
+     * Hapus kolom.
      * 
      * @param string $name
      * @return void
@@ -359,7 +360,7 @@ class Table
     }
 
     /**
-     * Rename kolom
+     * Rename kolom.
      * 
      * @param string $from
      * @param string $to
@@ -373,7 +374,7 @@ class Table
     }
 
     /**
-     * Edit kolomnya
+     * Edit kolomnya.
      * 
      * @param Closure $fn
      * @return void

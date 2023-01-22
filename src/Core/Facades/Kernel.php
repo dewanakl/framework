@@ -7,7 +7,7 @@ use Core\Support\Console;
 use Exception;
 
 /**
- * Nyalakan aplikasi ini melalui kernel ini
+ * Nyalakan aplikasi ini melalui kernel.
  * 
  * @class Kernel
  * @package \Core\Facades
@@ -15,45 +15,33 @@ use Exception;
 final class Kernel
 {
     /**
-     * Object application
+     * Build aplikasi ini.
      * 
-     * @var Application $app
-     */
-    private $app;
-
-    /**
-     * Path application
+     * @return Application
      * 
-     * @var string $path
-     */
-    private $path;
-
-    /**
-     * Init object
-     * 
-     * @return void
      * @throws Exception
      */
-    function __construct()
+    private static function build(): Application
     {
         $_ENV['_STARTTIME'] = microtime(true);
-        $this->app = App::new(new Application());
-        $this->path = $this->app->singleton(AppKernel::class)->getPath();
-        $this->setEnv();
+        App::new(new Application());
+        static::setEnv();
 
         if (!date_default_timezone_set(@$_ENV['TIMEZONE'] ?? 'Asia/Jakarta')) {
             throw new Exception('Date time invalid !');
         }
+
+        return App::get();
     }
 
     /**
-     * Set env from .env file
+     * Set env from .env file.
      * 
      * @return void
      */
-    private function setEnv(): void
+    private static function setEnv(): void
     {
-        $file = $this->path . '/.env';
+        $file = App::get()->singleton(AppKernel::class)->getPath() . '/.env';
         $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
 
         foreach ($lines as $line) {
@@ -66,27 +54,23 @@ final class Kernel
         }
     }
 
-    public function get(): Application
-    {
-        return $this->app;
-    }
-
     /**
-     * Kernel for web
+     * Kernel for web.
      * 
      * @return Service
+     * 
      * @throws Exception
      */
     public static function web(): Service
     {
-        $app = new self();
+        $app = static::build();
 
         $https = (!empty(@$_SERVER['HTTPS']) && @$_SERVER['HTTPS'] != 'off') || @$_SERVER['SERVER_PORT'] == '443' || @$_ENV['HTTPS'] == 'true';
         $debug = @$_ENV['DEBUG'] == 'true';
 
-        $_ENV['__BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : ($https ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
-        $_ENV['__HTTPS'] = $https;
-        $_ENV['__DEBUG'] = $debug;
+        $_ENV['_BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : ($https ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
+        $_ENV['_HTTPS'] = $https;
+        $_ENV['_DEBUG'] = $debug;
 
         error_reporting($debug ? E_ALL : 0);
         set_exception_handler(function (mixed $error) use ($debug) {
@@ -97,7 +81,7 @@ final class Kernel
             unavailable();
         });
 
-        $service = $app->get()->make(Service::class);
+        $service = $app->make(Service::class);
 
         if (!env('APP_KEY')) {
             throw new Exception('App Key gk ada !');
@@ -107,12 +91,12 @@ final class Kernel
     }
 
     /**
-     * Kernel for console
+     * Kernel for console.
      * 
      * @return Console
      */
     public static function console(): Console
     {
-        return (new self())->get()->make(Console::class, array($_SERVER['argv']));
+        return static::build()->make(Console::class, array($_SERVER['argv']));
     }
 }

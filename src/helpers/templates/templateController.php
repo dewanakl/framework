@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Template untuk membuat file controller dengan saya console
+ * Template untuk membuat file controller dengan saya console.
  * 
  * @return string
  */

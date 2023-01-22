@@ -8,7 +8,7 @@ use PDOException;
 use Throwable;
 
 /**
- * Hubungkan ke database yang ada dengan pdo
+ * Hubungkan ke database yang ada dengan pdo.
  *
  * @class DataBase
  * @package \Core\Database
@@ -16,21 +16,21 @@ use Throwable;
 class DataBase
 {
     /**
-     * Object PDO
+     * Object PDO.
      * 
      * @var object $pdo
      */
     private $pdo;
 
     /**
-     * Statement dari query 
+     * Statement dari query.
      * 
-     * @var \PDOStatement|false $stmt
+     * @var object|false $stmt
      */
     private $stmt;
 
     /**
-     * Buat objek database
+     * Buat objek database.
      *
      * @return void
      * 
@@ -39,7 +39,7 @@ class DataBase
     function __construct()
     {
         $dsn = sprintf(
-            "%s:host=%s;dbname=%s;port=%s;",
+            '%s:host=%s;dbname=%s;port=%s;',
             env('DB_DRIV'),
             env('DB_HOST'),
             env('DB_NAME'),
@@ -61,36 +61,25 @@ class DataBase
     }
 
     /**
-     * Tampilkan error
+     * Tangkap dan tampilkan errornya.
      *
-     * @param mixed $e
+     * @param Throwable $e
      * @return void
      * 
      * @throws Exception
      */
-    private function queryException(mixed $e): void
-    {
-        $sql = (@$this->stmt->queryString) ? PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"' : null;
-        throw new Exception($e->getMessage() . $sql, 0, $e);
-    }
-
-    /**
-     * Tangkap errornya
-     *
-     * @param mixed $e
-     * @return void
-     */
-    public function catchException(mixed $e): void
+    public function catchException(Throwable $e): void
     {
         if (debug()) {
-            $this->queryException($e);
+            $sql = is_null($this->stmt->queryString) ? '' : PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"';
+            throw new Exception($e->getMessage() . $sql);
         }
 
         unavailable();
     }
 
     /**
-     * Mulai transaksinya
+     * Mulai transaksinya.
      *
      * @return bool
      */
@@ -100,7 +89,7 @@ class DataBase
     }
 
     /**
-     * Commit transaksinya
+     * Commit transaksinya.
      *
      * @return bool
      */
@@ -110,7 +99,7 @@ class DataBase
     }
 
     /**
-     * Kembalikan transaksinya
+     * Kembalikan transaksinya.
      *
      * @return bool
      */
@@ -120,14 +109,14 @@ class DataBase
     }
 
     /**
-     * Eksekusi raw sql
+     * Eksekusi raw sql.
      *
      * @param string $command
-     * @return mixed
+     * @return int|bool
      * 
      * @throws Throwable
      */
-    public function exec(string $command): mixed
+    public function exec(string $command): int|bool
     {
         $result = null;
 
@@ -141,7 +130,7 @@ class DataBase
     }
 
     /**
-     * Siapkan querynya
+     * Siapkan querynya.
      *
      * @param string $query
      * @return void
@@ -152,7 +141,7 @@ class DataBase
     }
 
     /**
-     * Siapkan juga valuenya
+     * Siapkan juga valuenya.
      *
      * @param int|string $param
      * @param mixed $value
@@ -182,15 +171,15 @@ class DataBase
     }
 
     /**
-     * Eksekusi juga
+     * Eksekusi juga.
      *
-     * @return mixed
+     * @return bool
      * 
      * @throws Exception
      */
-    public function execute(): mixed
+    public function execute(): bool
     {
-        $result = null;
+        $result = false;
 
         try {
             $result = $this->stmt->execute();
@@ -202,11 +191,11 @@ class DataBase
     }
 
     /**
-     * Tampilkan semua
+     * Tampilkan semua.
      *
-     * @return mixed
+     * @return array|bool
      */
-    public function all(): mixed
+    public function all(): array|bool
     {
         if (!$this->execute()) {
             return false;
@@ -216,11 +205,11 @@ class DataBase
     }
 
     /**
-     * Tampilkan satu aja
+     * Tampilkan satu aja.
      *
-     * @return mixed
+     * @return array|bool
      */
-    public function first(): mixed
+    public function first(): array|bool
     {
         if (!$this->execute()) {
             return false;
@@ -230,7 +219,7 @@ class DataBase
     }
 
     /**
-     * Hitung jumlah rownya
+     * Hitung jumlah rownya.
      *
      * @return int
      */
@@ -240,7 +229,7 @@ class DataBase
     }
 
     /**
-     * Dapatkan idnya
+     * Dapatkan idnya.
      * 
      * @param mixed $name
      * @return string|bool

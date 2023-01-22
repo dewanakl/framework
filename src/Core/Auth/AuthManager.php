@@ -107,8 +107,8 @@ class AuthManager
         }
 
         $this->logout();
-        $this->user = $user->only([$user->getPrimaryKey()]);
-        $this->session->set('_user', serialize($this->user));
+        $this->user = $user;
+        $this->session->set('_user', serialize($user->only([$user->getPrimaryKey()])));
     }
 
     /**
@@ -120,21 +120,20 @@ class AuthManager
      */
     public function attempt(array $credential, string $model = 'App\Models\User'): bool
     {
-        list($first, $last) = array_keys($credential);
+        list($email, $password) = array_keys($credential);
 
-        $user = App::get()->singleton($model)->find($credential[$first], $first);
-        $this->logout();
+        $user = App::get()->singleton($model)->find($credential[$email], $email);
 
         if ($user->fail(fn () => false)) {
-            if (Hash::check($credential[$last], $user->$last)) {
-                $this->user = $user->only([$user->getPrimaryKey()]);
-                $this->session->set('_user', serialize($this->user));
+            if (Hash::check($credential[$password], $user->{$password})) {
+                $this->login($user);
                 return true;
             }
         }
 
-        $this->session->set('old', [$first => $credential[$first]]);
-        $this->session->set('error', [$first => $first . ' atau ' . $last . ' salah !']);
+        $this->logout();
+        $this->session->set('old', [$email => $credential[$email]]);
+        $this->session->set('error', [$email => $email . ' atau ' . $password . ' salah !']);
         return false;
     }
 }

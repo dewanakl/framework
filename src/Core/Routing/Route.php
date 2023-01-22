@@ -5,7 +5,7 @@ namespace Core\Routing;
 use Core\Facades\App;
 
 /**
- * Helper class untuk routing url
+ * Helper class untuk routing url.
  *
  * @class Route
  * @package \Core\Routing
@@ -13,7 +13,7 @@ use Core\Facades\App;
 final class Route
 {
     /**
-     * Simpan url route get
+     * Simpan url route get.
      *
      * @param string $path
      * @param array|string $action
@@ -25,7 +25,7 @@ final class Route
     }
 
     /**
-     * Simpan url route post
+     * Simpan url route post.
      *
      * @param string $path
      * @param array|string $action
@@ -37,7 +37,7 @@ final class Route
     }
 
     /**
-     * Simpan url route put
+     * Simpan url route put.
      *
      * @param string $path
      * @param array|string $action
@@ -49,7 +49,7 @@ final class Route
     }
 
     /**
-     * Simpan url route delete
+     * Simpan url route delete.
      *
      * @param string $path
      * @param array|string $action
@@ -61,7 +61,7 @@ final class Route
     }
 
     /**
-     * Tambahkan middleware dalam url route
+     * Tambahkan middleware dalam url route.
      *
      * @param array|string $middlewares
      * @return Router
@@ -72,7 +72,7 @@ final class Route
     }
 
     /**
-     * Tambahkan url lagi dalam route
+     * Tambahkan url lagi dalam route.
      *
      * @param string $prefix
      * @return Router
@@ -83,7 +83,7 @@ final class Route
     }
 
     /**
-     * Tambahkan controller dalam route
+     * Tambahkan controller dalam route.
      *
      * @param string $name
      * @return Router
@@ -94,7 +94,7 @@ final class Route
     }
 
     /**
-     * Isi url file route
+     * Isi url file route.
      *
      * @return void
      */
@@ -104,7 +104,7 @@ final class Route
     }
 
     /**
-     * Isi url dari cache atau route
+     * Isi url dari cache atau route.
      *
      * @return void
      */
@@ -120,7 +120,7 @@ final class Route
     }
 
     /**
-     * Ambil objek router
+     * Ambil objek router.
      *
      * @return Router
      */

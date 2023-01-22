@@ -3,7 +3,7 @@
 namespace Core\Support;
 
 /**
- * Kirim email dengan SMTP
+ * Kirim email dengan SMTP.
  *
  * @class Mail
  * @package \Core\Support
@@ -12,105 +12,105 @@ namespace Core\Support;
 class Mail
 {
     /**
-     * Carriage Return Line Feed
+     * Carriage Return Line Feed.
      * 
      * @var string CRLF
      */
     private const CRLF = "\r\n";
 
     /** 
-     * Nama servernya
+     * Nama servernya.
      * 
      * @var string $server
      */
     private $server;
 
     /**
-     * Hostnamenya
+     * Hostnamenya.
      * 
      * @var string $hostname
      */
     private $hostname;
 
     /**
-     * Email port
+     * Email port.
      * 
      * @var int $port 
      */
     private $port;
 
     /**
-     * Email socket
+     * Email socket.
      * 
      * @var resource $socket
      */
     private $socket;
 
     /**
-     * Email username
+     * Email username.
      * 
      * @var string $username 
      */
     private $username;
 
     /**
-     * Email password
+     * Email password.
      * 
      * @var string $password
      */
     private $password;
 
     /**
-     * Email subject
+     * Email subject.
      * 
      * @var string $subject
      */
     private $subject;
 
     /**
-     * Kepada siapa
+     * Kepada siapa.
      * 
      * @var array $to
      */
     private $to;
 
     /**
-     * Dari siapa
+     * Dari siapa.
      * 
      * @var array $from
      */
     private $from;
 
     /**
-     * Protokolnya
+     * Protokolnya.
      * 
      * @var string|null $protocol
      */
     private $protocol;
 
     /**
-     * Pesannya
+     * Pesannya.
      * 
      * @var string|null $htmlMessage
      */
     private $htmlMessage;
 
     /**
-     * Apakah tls ?
+     * Apakah tls?.
      * 
      * @var bool $isTLS
      */
     private $isTLS;
 
     /**
-     * Email headers
+     * Email headers.
      * 
      * @var array $headers
      */
     private $headers;
 
     /**
-     * Init semua config dari env
+     * Init semua config dari env.
      * 
      * @return void
      */
@@ -130,7 +130,7 @@ class Mail
     }
 
     /**
-     * Tambahkan header
+     * Tambahkan header.
      * 
      * @param string $key
      * @param mixed $value
@@ -142,7 +142,7 @@ class Mail
     }
 
     /**
-     * Server url
+     * Server url.
      *
      * @return string
      */
@@ -152,7 +152,7 @@ class Mail
     }
 
     /**
-     * Dapatkan balasannya
+     * Dapatkan balasannya.
      * 
      * @return string
      */
@@ -170,7 +170,7 @@ class Mail
     }
 
     /**
-     * Kirim perintah ke server email
+     * Kirim perintah ke server email.
      *
      * @param string $command
      * @return string
@@ -183,7 +183,7 @@ class Mail
     }
 
     /**
-     * Format alamat email dengan nama
+     * Format alamat email dengan nama.
      *
      * @param array $address
      * @return string
@@ -194,7 +194,7 @@ class Mail
     }
 
     /**
-     * Format alamat email
+     * Format alamat email.
      *
      * @param array $addresses
      * @return string
@@ -210,7 +210,7 @@ class Mail
     }
 
     /**
-     * Tambhakan alamat penerima
+     * Tambhakan alamat penerima.
      *
      * @param string $address
      * @param mixed $name
@@ -224,7 +224,7 @@ class Mail
     }
 
     /**
-     * Set subjek email
+     * Set subjek email.
      *
      * @param string $subject
      * @return Mail
@@ -237,7 +237,7 @@ class Mail
     }
 
     /**
-     * Kirim html
+     * Kirim html.
      *
      * @param mixed $message
      * @return Mail
@@ -250,7 +250,7 @@ class Mail
     }
 
     /**
-     * Kirim email via mail server
+     * Kirim email via mail server.
      *
      * @return bool
      */

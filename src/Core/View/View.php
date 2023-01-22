@@ -43,15 +43,15 @@ class View
      * 
      * @return string
      */
-    function __toString()
+    public function __toString()
     {
-        $content = strval($this->content);
+        $content = $this->content->__toString();
         clear_ob();
 
-        unset($this->parent);
-        unset($this->section);
-        unset($this->content);
-        unset($this->variables);
+        $this->parent = null;
+        $this->content = null;
+        $this->section = [];
+        $this->variables = [];
 
         return $content;
     }
@@ -68,7 +68,7 @@ class View
         $this->content = $this->including($name);
 
         if (!is_null($this->parent)) {
-            unset($this->content);
+            $this->content = null;
             $this->show($this->parent);
         }
     }
@@ -130,6 +130,7 @@ class View
     {
         $content = @$this->section[$name] ?? null;
         $this->section[$name] = null;
+        unset($this->section[$name]);
 
         return $content;
     }

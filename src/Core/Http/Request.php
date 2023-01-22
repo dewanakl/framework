@@ -7,7 +7,7 @@ use Core\Valid\Validator;
 use Exception;
 
 /**
- * Request yang masuk
+ * Request yang masuk.
  *
  * @class Request
  * @package \Core\Http
@@ -15,45 +15,47 @@ use Exception;
 class Request
 {
     /**
-     * Data dari global request
+     * Data dari global request.
      * 
      * @var array $requestData
      */
     private $requestData;
 
     /**
-     * Data dari global var server
+     * Data dari global server.
      * 
      * @var array $serverData
      */
     private $serverData;
 
     /**
-     * Object validator
+     * Object validator.
      * 
      * @var Validator $validator
      */
     private $validator;
 
     /**
-     * Init objek
+     * Init objek.
      * 
      * @return void
      */
     function __construct()
     {
-        $inputRaw = json_decode(file_get_contents('php://input'), true);
-        $this->requestData = array_merge($_REQUEST, $_FILES, $inputRaw ?? []);
-        $this->serverData = $_SERVER;
-        unset($GLOBALS['_GET']);
-        unset($GLOBALS['_POST']);
-        unset($GLOBALS['_FILES']);
-        unset($GLOBALS['_SERVER']);
-        unset($GLOBALS['_REQUEST']);
+        $input = @json_decode(file_get_contents('php://input'), true);
+        $this->requestData = array_merge(@$_REQUEST ?? [], @$_FILES ?? [], $input ?? []);
+        $this->serverData = @$_SERVER ?? [];
+
+        $GLOBALS['_GET'] = [];
+        $GLOBALS['_POST'] = [];
+        $GLOBALS['_FILES'] = [];
+        $GLOBALS['_SERVER'] = [];
+        $GLOBALS['_REQUEST'] = [];
+        unset($GLOBALS['_GET'], $GLOBALS['_POST'], $GLOBALS['_FILES'], $GLOBALS['_SERVER'], $GLOBALS['_REQUEST']);
     }
 
     /**
-     * Cek apakah ada error
+     * Cek apakah ada error.
      * 
      * @return void
      */
@@ -67,7 +69,7 @@ class Request
     }
 
     /**
-     * Ambil nilai dari request ini
+     * Ambil nilai dari request ini.
      *
      * @param mixed $name
      * @param mixed $defaultValue
@@ -83,7 +85,7 @@ class Request
     }
 
     /**
-     * Ambil nilai dari request server ini
+     * Ambil nilai dari request server ini.
      *
      * @param mixed $name
      * @return mixed
@@ -98,7 +100,7 @@ class Request
     }
 
     /**
-     * Http method
+     * Http method.
      *
      * @return string
      */
@@ -108,7 +110,7 @@ class Request
     }
 
     /**
-     * Dapatkan ipnya
+     * Dapatkan ipnya.
      *
      * @return string|null
      */
@@ -151,7 +153,7 @@ class Request
     }
 
     /**
-     * Cek apakah ajax ?
+     * Cek apakah ajax?.
      *
      * @return string|false
      */
@@ -165,7 +167,7 @@ class Request
     }
 
     /**
-     * Tampilkan error secara manual
+     * Tampilkan error secara manual.
      *
      * @param array|Validator $error
      * @return void
@@ -188,7 +190,7 @@ class Request
     }
 
     /**
-     * Validasi request yang masuk
+     * Validasi request yang masuk.
      *
      * @param array $params
      * @return array
@@ -208,7 +210,7 @@ class Request
     }
 
     /**
-     * Ambil file yang masuk
+     * Ambil file yang masuk.
      *
      * @param string $name
      * @return File
@@ -221,7 +223,7 @@ class Request
     }
 
     /**
-     * Ambil semua nilai dari request ini
+     * Ambil semua nilai dari request ini.
      *
      * @return array
      */
@@ -231,7 +233,7 @@ class Request
     }
 
     /**
-     * Ambil sebagian dari request
+     * Ambil sebagian dari request.
      * 
      * @param array $only
      * @return array
@@ -247,7 +249,7 @@ class Request
     }
 
     /**
-     * Ambil kecuali dari request
+     * Ambil kecuali dari request.
      * 
      * @param array $except
      * @return array
@@ -265,7 +267,7 @@ class Request
     }
 
     /**
-     * Ambil nilai dari request ini
+     * Ambil nilai dari request ini.
      *
      * @param string $name
      * @return mixed
@@ -276,7 +278,7 @@ class Request
     }
 
     /**
-     * Isi nilai ke request ini
+     * Isi nilai ke request ini.
      *
      * @param string $name
      * @param mixed $value
@@ -288,7 +290,7 @@ class Request
     }
 
     /**
-     * Cek nilai dari request ini
+     * Cek nilai dari request ini.
      *
      * @param string $name
      * @return bool

@@ -5,12 +5,11 @@ namespace Core\Facades;
 use Closure;
 use Exception;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionFunction;
 
 /**
  * Aplikasi untuk menampung kumpulan objek yang bisa digunakan kembali serta
- * inject sebuah object kedalam fungsi
+ * inject sebuah object kedalam fungsi.
  *
  * @class Application
  * @package \Core\Facades
@@ -18,14 +17,14 @@ use ReflectionFunction;
 class Application
 {
     /**
-     * Kumpulan objek ada disini gaes
+     * Kumpulan objek ada disini.
      * 
      * @var array $objectPool
      */
     private $objectPool;
 
     /**
-     * Buat objek application
+     * Buat objek application.
      *
      * @return void
      */
@@ -37,54 +36,48 @@ class Application
     }
 
     /**
-     * Inject pada constructor yang akan di buat objek
+     * Inject pada constructor yang akan di buat objek.
      *
      * @param string $name
-     * @param array $param
-     * @return object|null
+     * @param array $default
+     * @return object
      * 
      * @throws Exception
      */
-    private function getConstructor(string $name, array $param = []): object|null
+    private function build(string $name, array $default = []): object
     {
-        $result = null;
-
         try {
             $reflector = new ReflectionClass($name);
 
             $constructor = $reflector->getConstructor();
-            $args = is_null($constructor) ? null : $constructor->getParameters();
+            $args = is_null($constructor) ? [] : $constructor->getParameters();
 
-            $result = new $name(...$this->getDependencies($args, $param));
+            $reflector = null;
             unset($reflector);
-        } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage(), 0, $e);
-        }
 
-        return $result;
+            return new $name(...$this->getDependencies($args, $default));
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**
-     * Cek apa aja yang dibutuhkan untuk injek objek atau parameter
+     * Cek apa aja yang dibutuhkan untuk injek objek atau parameter.
      *
-     * @param mixed $parameters
-     * @param array $value
+     * @param array $parameters
+     * @param array $default
      * @return array
      */
-    private function getDependencies(mixed $parameters = null, array $value = []): array
+    private function getDependencies(array $parameters, array $default = []): array
     {
         $args = [];
         $id = 0;
-
-        if (!$parameters) {
-            return $args;
-        }
 
         foreach ($parameters as $parameter) {
             if ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
                 $args[] = $this->singleton($parameter->getType()->getName());
             } else {
-                $args[] = $value[$id] ?? $parameter->getDefaultValue();
+                $args[] = $default[$id] ?? $parameter->getDefaultValue();
                 $id++;
             }
         }
@@ -93,116 +86,116 @@ class Application
     }
 
     /**
-     * Bikin objek dari sebuah class lalu menyimpannya
+     * Bikin objek dari sebuah class lalu menyimpannya agar bisa dipake lagi.
      *
      * @param string $name
-     * @param array $param
+     * @param array $default
      * @return object
      */
-    public function singleton(string $name, array $param = []): object
+    public function singleton(string $name, array $default = []): object
     {
         if (empty($this->objectPool[$name])) {
-            $this->objectPool[$name] = $this->getConstructor($name, $param);
+            $this->objectPool[$name] = $this->build($name, $default);
         }
 
         if (!is_object($this->objectPool[$name])) {
-            $this->objectPool[$name] = $this->getConstructor($this->objectPool[$name]);
+            $this->objectPool[$name] = $this->build($this->objectPool[$name]);
         }
 
         return $this->objectPool[$name];
     }
 
     /**
-     * Bikin objek dari sebuah class lalu gantikan dengan yang lama
+     * Bikin objek dari sebuah class lalu gantikan dengan yang baru.
      *
      * @param string $name
-     * @param array $param
+     * @param array $default
      * @return object
      */
-    public function make(string $name, array $param = []): object
+    public function make(string $name, array $default = []): object
     {
-        $this->objectPool[$name] = $this->getConstructor($name, $param);
+        $this->objectPool[$name] = $this->build($name, $default);
 
         return $this->objectPool[$name];
     }
 
     /**
-     * Inject objek pada suatu fungsi yang akan di eksekusi
+     * Inject objek pada suatu fungsi yang akan di eksekusi.
      *
      * @param string|object $name
      * @param string $method
-     * @param array $value
+     * @param array $default
      * @return mixed
      * 
      * @throws Exception
      */
-    public function invoke(string|object $name, string $method, array $value = []): mixed
+    public function invoke(string|object $name, string $method, array $default = []): mixed
     {
         if (!is_object($name)) {
             $name = $this->singleton($name);
         }
 
-        $result = null;
-
         try {
             $reflector = new ReflectionClass($name);
-            $params = $this->getDependencies($reflector->getMethod($method)->getParameters(), $value);
-            $result = $name->{$method}(...$params);
-            unset($reflector);
-        } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage(), 0, $e);
-        }
+            $params = $this->getDependencies($reflector->getMethod($method)->getParameters(), $default);
 
-        return $result;
+            $reflector = null;
+            unset($reflector);
+
+            return $name->{$method}(...$params);
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**
-     * Hapus dan dapatkan object itu terlebih dahulu
+     * Hapus dan dapatkan object itu terlebih dahulu.
      * 
      * @param string $name
-     * @return mixed
+     * @return object|null
      */
-    public function clean(string $name): mixed
+    public function clean(string $name): object|null
     {
         $object = $this->objectPool[$name] ?? null;
+        $this->objectPool[$name] = null;
         unset($this->objectPool[$name]);
         return $object;
     }
 
     /**
-     * Inject objek pada suatu closure fungsi
+     * Inject objek pada suatu closure fungsi.
      *
      * @param Closure $name
-     * @param array $param
+     * @param array $default
      * @return mixed
      * 
      * @throws Exception
      */
-    public function resolve(Closure $name, array $param = []): mixed
+    public function resolve(Closure $name, array $default = []): mixed
     {
-        $result = null;
-
         try {
             $reflector = new ReflectionFunction($name);
-            $result = $name(...$this->getDependencies($reflector->getParameters(), $param));
-            unset($reflector);
-        } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage(), 0, $e);
-        }
+            $arg = $reflector->getParameters();
 
-        return $result;
+            $reflector = null;
+            unset($reflector);
+
+            return $name(...$this->getDependencies($arg, $default));
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
     }
 
     /**
-     * Binding interface dengan class object
+     * Binding class/interface dengan class object.
      *
-     * @param string $interface
+     * @param string $abstract
      * @param Closure|string $class
      * @return void
      * 
      * @throws Exception
      */
-    public function bind(string $interface, Closure|string $class): void
+    public function bind(string $abstract, Closure|string $class): void
     {
         if ($class instanceof Closure) {
             $result = $this->resolve($class, array($this));
@@ -214,6 +207,6 @@ class Application
             $class = $result;
         }
 
-        $this->objectPool[$interface] = $class;
+        $this->objectPool[$abstract] = $class;
     }
 }

@@ -8,7 +8,7 @@ use Core\Facades\App;
  * Helper class Autentikasi.
  * 
  * @method static bool check()
- * @method static int|null id()
+ * @method static int|string|null id()
  * @method static \Core\Model\BaseModel|null user()
  * @method static void logout()
  * @method static void login(object $user)

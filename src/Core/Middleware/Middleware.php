@@ -6,7 +6,7 @@ use Closure;
 use Core\Http\Request;
 
 /**
- * Middleware - cek dahulu sebelum ke controller
+ * Middleware - cek dahulu sebelum ke controller.
  *
  * @class Middleware
  * @package \Core\Middleware
@@ -15,14 +15,14 @@ use Core\Http\Request;
 class Middleware
 {
     /**
-     * Kumpulan objek middleware ada disini
+     * Kumpulan objek middleware ada disini.
      * 
      * @var array $layers
      */
     private $layers;
 
     /**
-     * Buat objek middleware
+     * Buat objek middleware.
      *
      * @param array $layers
      * @return void
@@ -33,7 +33,7 @@ class Middleware
     }
 
     /**
-     * Handle semua dari layer middleware
+     * Handle semua dari layer middleware.
      *
      * @param Request $request
      * @return void
@@ -50,7 +50,7 @@ class Middleware
     }
 
     /**
-     * Buat lapisan perlayer untuk eksekusi
+     * Buat lapisan perlayer untuk eksekusi.
      *
      * @param mixed $nextLayer
      * @param mixed $layer

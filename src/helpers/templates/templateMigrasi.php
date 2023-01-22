@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Template untuk membuat file migrasi dengan saya console
+ * Template untuk membuat file migrasi dengan saya console.
  * 
  * @return array
  */
@@ -15,7 +15,7 @@ use Core\Database\Table;
 return new class implements Migration
 {
     /**
-     * Jalankan migrasi
+     * Jalankan migrasi.
      *
      * @return void
      */
@@ -31,7 +31,7 @@ return new class implements Migration
     }
 
     /**
-     * Kembalikan seperti semula
+     * Kembalikan seperti semula.
      *
      * @return void
      */
@@ -51,7 +51,7 @@ use Core\Database\Table;
 return new class implements Migration
 {
     /**
-     * Jalankan migrasi
+     * Jalankan migrasi.
      *
      * @return void
      */
@@ -67,7 +67,7 @@ return new class implements Migration
     }
 
     /**
-     * Kembalikan seperti semula
+     * Kembalikan seperti semula.
      *
      * @return void
      */

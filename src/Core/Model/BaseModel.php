@@ -13,7 +13,7 @@ use ReturnTypeWillChange;
 use Traversable;
 
 /**
- * Simple query builder
+ * Simple query builder.
  *
  * @class BaseModel
  * @package \Core\Model
@@ -21,56 +21,56 @@ use Traversable;
 class BaseModel implements IteratorAggregate, JsonSerializable
 {
     /**
-     * String query sql
+     * String query sql.
      * 
      * @var string|null $query
      */
     private $query;
 
     /**
-     * Nilai yang akan dimasukan
+     * Nilai yang akan dimasukan.
      * 
      * @var array $param
      */
     private $param;
 
     /**
-     * Nama tabelnya
+     * Nama tabelnya.
      * 
      * @var string $table
      */
     private $table;
 
     /**
-     * Waktu bikin dan update
+     * Waktu bikin dan update.
      * 
      * @var array $dates
      */
     private $dates;
 
     /**
-     * Primary key tabelnya
+     * Primary key tabelnya.
      * 
      * @var string $primaryKey
      */
     private $primaryKey;
 
     /**
-     * Attributes hasil query
+     * Attributes hasil query.
      * 
      * @var mixed $attributes
      */
     private $attributes;
 
     /**
-     * Object database
+     * Object database.
      * 
      * @var DataBase $db
      */
     private $db;
 
     /**
-     * Buat objek basemodel
+     * Buat objek basemodel.
      *
      * @return void
      */
@@ -80,7 +80,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Koneksi ke DataBase
+     * Koneksi ke DataBase.
      *
      * @return void
      */
@@ -92,7 +92,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil attribute
+     * Ambil attribute.
      *
      * @return array
      */
@@ -106,7 +106,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Bind antara query dengan param
+     * Bind antara query dengan param.
      * 
      * @param string $query
      * @param array $data
@@ -125,7 +125,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Cek select syntax query
+     * Cek select syntax query.
      * 
      * @return void
      */
@@ -137,7 +137,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ubah objek agar bisa iterasi
+     * Ubah objek agar bisa iterasi.
      *
      * @return Traversable
      */
@@ -147,7 +147,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ubah objek ke json secara langsung
+     * Ubah objek ke json secara langsung.
      *
      * @return array
      */
@@ -158,7 +158,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ubah objek ke array
+     * Ubah objek ke array.
      *
      * @return array
      */
@@ -168,7 +168,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Kebalikan dari serialize
+     * Kebalikan dari serialize.
      *
      * @param array $data
      * @return void
@@ -188,7 +188,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Eksport to json
+     * Eksport to json.
      *
      * @return string|false
      */
@@ -198,7 +198,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Eksport to array
+     * Eksport to array.
      *
      * @return array
      */
@@ -208,7 +208,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Set nama tabelnya
+     * Set nama tabelnya.
      *
      * @param string $name
      * @return void
@@ -219,7 +219,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Set tanggal updatenya
+     * Set tanggal updatenya.
      *
      * @param array $date
      * @return void
@@ -230,7 +230,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Set primaryKey
+     * Set primaryKey.
      *
      * @param string $primaryKey
      * @return void
@@ -241,7 +241,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Get primaryKey
+     * Get primaryKey.
      *
      * @return string
      */
@@ -251,7 +251,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Debug querynya
+     * Debug querynya.
      *
      * @return void
      */
@@ -262,7 +262,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Refresh attributnya
+     * Refresh attributnya.
      *
      * @return BaseModel
      */
@@ -272,7 +272,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Where syntax sql
+     * Where syntax sql.
      *
      * @param string $colomn
      * @param mixed $value
@@ -299,7 +299,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Join syntax sql
+     * Join syntax sql.
      *
      * @param string $table
      * @param string $column
@@ -315,7 +315,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Left join syntax sql
+     * Left join syntax sql.
      *
      * @param string $table
      * @param string $column
@@ -329,7 +329,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Right join syntax sql
+     * Right join syntax sql.
      *
      * @param string $table
      * @param string $column
@@ -343,7 +343,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Full join syntax sql
+     * Full join syntax sql.
      *
      * @param string $table
      * @param string $column
@@ -357,7 +357,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Order By syntax sql
+     * Order By syntax sql.
      *
      * @param string $name
      * @param string $order
@@ -372,7 +372,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Group By syntax sql
+     * Group By syntax sql.
      *
      * @param string|array $param
      * @return BaseModel
@@ -388,7 +388,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Having syntax sql
+     * Having syntax sql.
      *
      * @param string $param
      * @return BaseModel
@@ -400,19 +400,19 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Limit syntax sql
+     * Limit syntax sql.
      *
      * @param int $param
      * @return BaseModel
      */
     public function limit(int $param): BaseModel
     {
-        $this->query = $this->query . ' LIMIT ' . $param;
+        $this->query = $this->query . ' LIMIT ' . strval($param);
         return $this;
     }
 
     /**
-     * Offset syntax sql
+     * Offset syntax sql.
      *
      * @param int $param
      * @return BaseModel
@@ -424,7 +424,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Select raw syntax sql
+     * Select raw syntax sql.
      *
      * @param string|array $param
      * @return BaseModel
@@ -445,7 +445,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Count sql aggregate
+     * Count sql aggregate.
      *
      * @param string $name
      * @return BaseModel
@@ -456,7 +456,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Max sql aggregate
+     * Max sql aggregate.
      *
      * @param string $name
      * @return BaseModel
@@ -467,7 +467,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Min sql aggregate
+     * Min sql aggregate.
      *
      * @param string $name
      * @return BaseModel
@@ -478,7 +478,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Avg sql aggregate
+     * Avg sql aggregate.
      *
      * @param string $name
      * @return BaseModel
@@ -489,7 +489,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Sum sql aggregate
+     * Sum sql aggregate.
      *
      * @param string $name
      * @return BaseModel
@@ -500,7 +500,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Hitung jumlah rownya
+     * Hitung jumlah rownya.
      *
      * @return int
      */
@@ -510,7 +510,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil semua data
+     * Ambil semua data.
      *
      * @return BaseModel
      */
@@ -525,7 +525,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil satu data aja paling atas
+     * Ambil satu data aja paling atas.
      *
      * @return BaseModel
      */
@@ -540,7 +540,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil atau error "tidak ada"
+     * Ambil atau error "tidak ada".
      *
      * @return mixed
      */
@@ -554,7 +554,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Error dengan fungsi
+     * Error dengan fungsi.
      *
      * @param Closure $fn
      * @return mixed
@@ -569,7 +569,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Cari model id
+     * Cari model id.
      *
      * @param mixed $id
      * @param mixed $where
@@ -587,7 +587,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Cari berdasarkan id
+     * Cari berdasarkan id.
      *
      * @param mixed $id
      * @param mixed $where
@@ -599,7 +599,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Cari berdasarkan id atau error "tidak ada"
+     * Cari berdasarkan id atau error "tidak ada".
      *
      * @param mixed $id
      * @param mixed $where
@@ -611,7 +611,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Save perubahan pada attribute dengan primarykey
+     * Save perubahan pada attribute dengan primarykey.
      *
      * @return bool
      * 
@@ -627,7 +627,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Delete by id primary key
+     * Delete by id primary key.
      *
      * @param int $id
      * @return bool
@@ -638,7 +638,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Isi datanya
+     * Isi datanya.
      * 
      * @param array $data
      * @return BaseModel
@@ -679,7 +679,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Update datanya
+     * Update datanya.
      * 
      * @param array $data
      * @return bool
@@ -700,7 +700,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Hapus datanya
+     * Hapus datanya.
      * 
      * @return bool
      */
@@ -715,7 +715,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil sebagian dari attribute
+     * Ambil sebagian dari attribute.
      * 
      * @param array $only
      * @return BaseModel
@@ -733,7 +733,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil kecuali dari attribute
+     * Ambil kecuali dari attribute.
      * 
      * @param array $except
      * @return BaseModel
@@ -753,7 +753,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil nilai dari attribute
+     * Ambil nilai dari attribute.
      * 
      * @param string $name
      * @return mixed
@@ -768,7 +768,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Isi nilai ke model ini
+     * Isi nilai ke model ini.
      *
      * @param string $name
      * @param mixed $value
@@ -786,7 +786,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Cek nilai dari attribute
+     * Cek nilai dari attribute.
      * 
      * @param string $name
      * @return bool

@@ -5,7 +5,7 @@ namespace Core\Http;
 use Core\Valid\Hash;
 
 /**
- * Handle session
+ * Handle session.
  *
  * @class Session
  * @package \Core\Http
@@ -13,28 +13,28 @@ use Core\Valid\Hash;
 class Session
 {
     /**
-     * Data session
+     * Data session.
      * 
      * @var array $data
      */
     private $data;
 
     /**
-     * Name session
+     * Name session.
      * 
      * @var string $name
      */
     private $name;
 
     /**
-     * Expires session
+     * Expires session.
      * 
      * @var int $expires
      */
     private $expires;
 
     /**
-     * Buat objek session
+     * Buat objek session.
      *
      * @return void
      */
@@ -52,11 +52,12 @@ class Session
             $this->set('_token', Hash::rand(20));
         }
 
+        $GLOBALS['_COOKIE'] = [];
         unset($GLOBALS['_COOKIE']);
     }
 
     /**
-     * Send cookie header
+     * Send cookie header.
      *
      * @return void
      */
@@ -80,7 +81,7 @@ class Session
     }
 
     /**
-     * Ambil nilai dari sesi ini
+     * Ambil nilai dari sesi ini.
      *
      * @param mixed $name
      * @param mixed $defaultValue
@@ -96,7 +97,7 @@ class Session
     }
 
     /**
-     * Isi nilai ke sesi ini
+     * Isi nilai ke sesi ini.
      *
      * @param string $name
      * @param mixed $value
@@ -108,18 +109,19 @@ class Session
     }
 
     /**
-     * Hapus nilai dari sesi ini
+     * Hapus nilai dari sesi ini.
      *
      * @param string $name
      * @return void
      */
     public function unset(string $name): void
     {
+        $this->data[$name] = null;
         unset($this->data[$name]);
     }
 
     /**
-     * Ambil nilai dari sesi ini
+     * Ambil nilai dari sesi ini.
      *
      * @param string $name
      * @return mixed
@@ -130,7 +132,7 @@ class Session
     }
 
     /**
-     * Cek nilai dari sesi ini
+     * Cek nilai dari sesi ini.
      *
      * @param string $name
      * @return bool

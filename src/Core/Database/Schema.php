@@ -6,7 +6,7 @@ use Closure;
 use Core\Facades\App;
 
 /**
- * Helper class untuk skema tabel
+ * Helper class untuk skema tabel.
  *
  * @class Schema
  * @package \Core\Database
@@ -14,7 +14,7 @@ use Core\Facades\App;
 final class Schema
 {
     /**
-     * Bikin tabel baru
+     * Bikin tabel baru.
      *
      * @param string $name
      * @param Closure $attribute
@@ -22,15 +22,13 @@ final class Schema
      */
     public static function create(string $name, Closure $attribute): void
     {
-        $table = App::get()->singleton(Table::class);
-        $table->table($name);
+        $table = App::get()->singleton(Table::class)->table($name);
         App::get()->resolve($attribute);
-
         App::get()->singleton(DataBase::class)->exec($table->create());
     }
 
     /**
-     * Ubah attribute tabelnya
+     * Ubah attribute tabelnya.
      *
      * @param string $name
      * @param Closure $attribute
@@ -38,8 +36,7 @@ final class Schema
      */
     public static function table(string $name, Closure $attribute): void
     {
-        $table = App::get()->singleton(Table::class);
-        $table->table($name);
+        $table = App::get()->singleton(Table::class)->table($name);
         App::get()->resolve($attribute);
 
         $export = $table->export();
@@ -49,7 +46,7 @@ final class Schema
     }
 
     /**
-     * Hapus tabel
+     * Hapus tabel.
      *
      * @param string $name
      * @return void
@@ -60,7 +57,7 @@ final class Schema
     }
 
     /**
-     * Rename tabelnya
+     * Rename tabelnya.
      *
      * @param string $from
      * @param string $to

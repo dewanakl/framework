@@ -3,14 +3,13 @@
 namespace Core\Facades;
 
 use App\Kernel;
-use Closure;
 use Core\Http\Request;
 use Core\Http\Respond;
 use Core\Middleware\Middleware;
 use Core\Routing\Route;
 
 /**
- * Class untuk menjalankan middleware dan controller
+ * Class untuk menjalankan middleware dan controller.
  *
  * @class Service
  * @package \Core\Facades
@@ -18,21 +17,21 @@ use Core\Routing\Route;
 class Service
 {
     /**
-     * Objek request disini
+     * Objek request disini.
      * 
      * @var Request $request
      */
     private $request;
 
     /**
-     * Objek respond disini
+     * Objek respond disini.
      * 
      * @var Respond $respond
      */
     private $respond;
 
     /**
-     * Buat objek service
+     * Buat objek service.
      *
      * @param Request $request
      * @param Respond $respond
@@ -46,46 +45,35 @@ class Service
     }
 
     /**
-     * Eksekusi provider
-     * 
-     * @param Closure $fn
-     * @return void
-     */
-    private function providers(Closure $fn): void
-    {
-        $services = App::get()->singleton(Kernel::class)->services();
-
-        foreach ($services as $service) {
-            $fn($service);
-        }
-    }
-
-    /**
-     * Eksekusi booting provider
+     * Eksekusi booting provider.
      *
      * @return void
      */
     private function bootingProviders(): void
     {
-        $this->providers(function ($service) {
+        $services = App::get()->singleton(Kernel::class)->services();
+
+        foreach ($services as $service) {
             App::get()->make($service)->booting();
-        });
+        }
     }
 
     /**
-     * Eksekusi register provider
+     * Eksekusi register provider.
      *
      * @return void
      */
     private function registerProvider(): void
     {
-        $this->providers(function ($service) {
+        $services = App::get()->singleton(Kernel::class)->services();
+
+        foreach ($services as $service) {
             App::get()->clean($service)->registrasi();
-        });
+        }
     }
 
     /**
-     * Eksekusi middlewarenya
+     * Eksekusi middlewarenya.
      *
      * @param array $route
      * @return void
@@ -93,7 +81,7 @@ class Service
     private function invokeMiddleware(array $route): void
     {
         $middlewares = App::get()->singleton(Kernel::class)->middlewares();
-        $middlewarePool = array_map(fn ($middleware) => new $middleware(), array_merge($middlewares, $route['middleware']));
+        $middlewarePool = array_map(fn ($middleware) => new $middleware, array_merge($middlewares, $route['middleware']));
 
         $middleware = new Middleware($middlewarePool);
         $middleware->handle($this->request);
@@ -103,7 +91,7 @@ class Service
     }
 
     /**
-     * Eksekusi controllernya
+     * Eksekusi controllernya.
      *
      * @param array $route
      * @param array $variables
@@ -124,35 +112,7 @@ class Service
     }
 
     /**
-     * Routenya salah atau methodnya
-     *
-     * @param bool $route
-     * @param bool $method
-     * @return void
-     */
-    private function outOfRoute(bool $route, bool $method): void
-    {
-        if ($route && !$method) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Method Not Allowed 405'
-                ], 405));
-            }
-
-            notAllowed();
-        } else if (!$route) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Not Found 404'
-                ], 404));
-            }
-
-            notFound();
-        }
-    }
-
-    /**
-     * Jalankan servicenya
+     * Jalankan servicenya.
      *
      * @return int
      */
@@ -166,8 +126,7 @@ class Service
         $routeMatch = false;
         $methodMatch = false;
 
-        $routes = Route::router()->routes();
-        foreach ($routes as $route) {
+        foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
             $variables = [];
 
@@ -184,7 +143,23 @@ class Service
             }
         }
 
-        $this->outOfRoute($routeMatch, $methodMatch);
+        if ($routeMatch && !$methodMatch) {
+            if ($this->request->ajax()) {
+                $this->respond->send(json([
+                    'error' => 'Method Not Allowed 405'
+                ], 405));
+            }
+
+            notAllowed();
+        } else if (!$routeMatch) {
+            if ($this->request->ajax()) {
+                $this->respond->send(json([
+                    'error' => 'Not Found 404'
+                ], 404));
+            }
+
+            notFound();
+        }
 
         return 0;
     }

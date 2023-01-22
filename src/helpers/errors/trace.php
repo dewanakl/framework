@@ -52,10 +52,10 @@
                     <th>Line</th>
                     <th>Action</th>
                 </tr>
-                <?php foreach ($error->getTrace() as $key => $value) : ?>
+                <?php foreach ($error->getTrace() as $id => $value) : ?>
                     <tr>
-                        <td><?= $key + 1 ?></td>
-                        <td><?= e($value['file'] ?? '-') ?></td>
+                        <td><?= $id + 1 ?></td>
+                        <td><?= e(str_replace(basepath(), '', $value['file'] ?? '-')) ?></td>
                         <td><?= e($value['line'] ?? '-') ?></td>
                         <td><?= e(@$value['class'] ? $value['class'] . $value['type'] . $value['function'] : $value['function']) ?></td>
                     </tr>

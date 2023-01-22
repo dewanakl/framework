@@ -9,7 +9,7 @@ use Core\Valid\Validator;
 use Core\View\View;
 
 /**
- * Base controller untuk mempermudah memanggil fungsi
+ * Base controller untuk mempermudah memanggil fungsi.
  *
  * @class Controller
  * @package \Core\Routing
@@ -17,7 +17,7 @@ use Core\View\View;
 abstract class Controller
 {
     /**
-     * View template html
+     * View template html.
      *
      * @param string $path
      * @param array $data
@@ -33,18 +33,18 @@ abstract class Controller
     }
 
     /**
-     * Alihkan ke url
+     * Alihkan ke url.
      *
-     * @param string $prm
+     * @param string $url
      * @return Respond
      */
-    protected function redirect(string $prm): Respond
+    protected function redirect(string $url): Respond
     {
-        return App::get()->singleton(Respond::class)->to($prm);
+        return App::get()->singleton(Respond::class)->to($url);
     }
 
     /**
-     * Kembali seperti semula
+     * Kembali seperti semula.
      *
      * @return Respond
      */
@@ -54,7 +54,7 @@ abstract class Controller
     }
 
     /**
-     * Buat validasinya
+     * Buat validasinya.
      * 
      * @param Request $request
      * @param array $rules

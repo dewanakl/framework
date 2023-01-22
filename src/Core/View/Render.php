@@ -47,13 +47,13 @@ class Render
      * 
      * @return string
      */
-    function __toString()
+    public function __toString()
     {
         $content = $this->content;
 
-        unset($this->path);
-        unset($this->content);
-        unset($this->variables);
+        $this->path = null;
+        $this->content = null;
+        $this->variables = [];
 
         return $content;
     }

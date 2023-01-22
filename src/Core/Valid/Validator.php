@@ -5,7 +5,7 @@ namespace Core\Valid;
 use Core\Facades\App;
 
 /**
- * Validasi sebuah nilai
+ * Validasi sebuah nilai.
  * 
  * @class Validator
  * @package \Core\Valid
@@ -13,21 +13,21 @@ use Core\Facades\App;
 class Validator
 {
     /**
-     * Data yang akan di validasi
+     * Data yang akan di validasi.
      * 
      * @var array $data
      */
     private $data;
 
     /**
-     * Error tampung disini
+     * Error tampung disini.
      * 
      * @var array $errors
      */
     private $errors;
 
     /**
-     * Init object
+     * Init object.
      * 
      * @param array $data
      * @param array $rule
@@ -40,7 +40,7 @@ class Validator
     }
 
     /**
-     * Validasi rule yang masuk
+     * Validasi rule yang masuk.
      * 
      * @param string $param
      * @param array $rules
@@ -64,7 +64,7 @@ class Validator
     }
 
     /**
-     * Validasi rule request yang masuk
+     * Validasi rule request yang masuk.
      * 
      * @param string $param
      * @param mixed $value
@@ -173,7 +173,7 @@ class Validator
                 $column = $command[2] ?? $param;
 
                 $user = App::get()->singleton($model)->find($value, $column);
-                if ($user->$column) {
+                if ($user->{$column}) {
                     $this->setError($param, 'sudah ada !');
                 }
                 break;
@@ -181,7 +181,7 @@ class Validator
     }
 
     /**
-     * Validasi rule file yang masuk
+     * Validasi rule file yang masuk.
      * 
      * @param string $param
      * @param mixed $value
@@ -250,7 +250,7 @@ class Validator
     }
 
     /**
-     * Set error to array errors
+     * Set error to array errors.
      *
      * @param string $param
      * @param string $alert
@@ -260,12 +260,12 @@ class Validator
     private function setError(string $param, string $alert, mixed $optional = null): void
     {
         if (empty($this->errors[$param])) {
-            $this->errors[$param] = "$param $alert" . ($optional ? ' ' . strval($optional) : null);
+            $this->errors[$param] = "$param $alert" . ($optional ? ' ' . strval($optional) : '');
         }
     }
 
     /**
-     * Buat validasinya
+     * Buat validasinya.
      * 
      * @param array $data
      * @param array $rules
@@ -277,7 +277,7 @@ class Validator
     }
 
     /**
-     * Tambahkan validasi lagi jika perlu
+     * Tambahkan validasi lagi jika perlu.
      * 
      * @param array $rules
      * @return void
@@ -290,7 +290,7 @@ class Validator
     }
 
     /**
-     * Cek apakah gagal ?
+     * Cek apakah gagal?.
      * 
      * @return bool
      */
@@ -300,7 +300,7 @@ class Validator
     }
 
     /**
-     * Ambil data gagal validasi
+     * Ambil data gagal validasi.
      * 
      * @return array
      */
@@ -310,7 +310,7 @@ class Validator
     }
 
     /**
-     * Ambil data gagal validasi hanya nilainya
+     * Ambil data gagal validasi hanya nilainya.
      * 
      * @return array
      */
@@ -320,7 +320,7 @@ class Validator
     }
 
     /**
-     * Set error manual
+     * Set error manual.
      * 
      * @param array $error
      * @return void
@@ -331,7 +331,7 @@ class Validator
     }
 
     /**
-     * Ambil sebagian dari validasi
+     * Ambil sebagian dari validasi.
      * 
      * @param array $only
      * @return array
@@ -347,7 +347,7 @@ class Validator
     }
 
     /**
-     * Ambil kecuali dari validasi
+     * Ambil kecuali dari validasi.
      * 
      * @param array $except
      * @return array
@@ -365,7 +365,7 @@ class Validator
     }
 
     /**
-     * Ambil nilai dari data ini
+     * Ambil nilai dari data ini.
      *
      * @param mixed $name
      * @param mixed $defaultValue
@@ -381,7 +381,7 @@ class Validator
     }
 
     /**
-     * Ambil nilai dari data
+     * Ambil nilai dari data.
      *
      * @param string $name
      * @return mixed
@@ -392,7 +392,7 @@ class Validator
     }
 
     /**
-     * Isi nilai data
+     * Isi nilai data.
      *
      * @param string $name
      * @param mixed $value
@@ -404,7 +404,7 @@ class Validator
     }
 
     /**
-     * Cek nilai dari data
+     * Cek nilai dari data.
      *
      * @param string $name
      * @return bool

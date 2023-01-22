@@ -8,7 +8,7 @@ use Core\Http\Request;
 interface MiddlewareInterface
 {
     /**
-     * Handle request yang masuk
+     * Handle request yang masuk.
      *
      * @param Request $request
      * @param Closure $next

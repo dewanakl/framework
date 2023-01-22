@@ -6,7 +6,7 @@ use Core\Routing\Route;
 use Core\Valid\Hash;
 
 /**
- * Saya console untuk mempermudah develop app
+ * Saya console untuk mempermudah develop app.
  *
  * @class Console
  * @package \Core\Support
@@ -14,58 +14,54 @@ use Core\Valid\Hash;
 class Console
 {
     /**
-     * Perintah untuk eksekusi
+     * Perintah untuk eksekusi.
      * 
      * @var string|null $command
      */
     private $command;
 
     /**
-     * Optional perintah untuk eksekusi
+     * Optional perintah untuk eksekusi.
      * 
      * @var string $command
      */
     private $options;
 
     /**
-     * Waktu yang dibutuhkan
+     * Waktu yang dibutuhkan.
      * 
      * @var float $timenow
      */
     private $timenow;
 
     /**
-     * Apakah versi cmd dibawah 10 ?
+     * Apakah versi cmd dibawah 10?.
      * 
      * @var bool $version
      */
     private $version;
 
     /**
-     * Buat objek console
+     * Buat objek console.
      *
      * @param array $argv
      * @return void
      */
-    function __construct(array $argv)
+    function __construct(array $argv = [])
     {
         $this->timenow = env('_STARTTIME');
         $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
-
-        if (PHP_MAJOR_VERSION < 8) {
-            $this->exception('Minimal PHP 8 !');
-        }
 
         array_shift($argv);
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
 
-        print($this->createColor('green', "Kamu PHP Framework v1.0.0\n"));
-        print($this->createColor('yellow', "Saya Console v1.0.0\n\n"));
+        print($this->createColor('green', "Kamu PHP Framework v1.1.6\n"));
+        print($this->createColor('yellow', "Saya Console\n\n"));
     }
 
     /**
-     * Print spasi ketika selesai
+     * Print spasi ketika selesai.
      *
      * @return void
      */
@@ -75,7 +71,7 @@ class Console
     }
 
     /**
-     * Buat warna untuk string
+     * Buat warna untuk string.
      *
      * @param string $name
      * @param string $value
@@ -104,7 +100,7 @@ class Console
     }
 
     /**
-     * Tampilkan pesan khusus error
+     * Tampilkan pesan khusus error.
      *
      * @param string $message
      * @param bool $fail
@@ -124,7 +120,7 @@ class Console
     }
 
     /**
-     * Kalkulasi waktu yang dibutuhkan
+     * Kalkulasi waktu yang dibutuhkan.
      *
      * @return string
      */
@@ -138,7 +134,7 @@ class Console
     }
 
     /**
-     * Migrasi ke database
+     * Migrasi ke database.
      *
      * @param bool $up
      * @return void
@@ -159,19 +155,19 @@ class Console
     }
 
     /**
-     * Isi nilai ke database
+     * Isi nilai ke database.
      *
      * @return void
      */
     private function generator(): void
     {
-        $arg = require_once basepath() . '/database/generator.php';
+        $arg = require basepath() . '/database/generator.php';
         $arg->run();
         print("\nGenerator" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
 
     /**
-     * Load template file
+     * Load template file.
      *
      * @param mixed $name
      * @param int $tipe
@@ -200,7 +196,7 @@ class Console
     }
 
     /**
-     * Save template file
+     * Save template file.
      *
      * @param string $name
      * @param mixed $data
@@ -232,7 +228,7 @@ class Console
     }
 
     /**
-     * Buat file migrasi
+     * Buat file migrasi.
      *
      * @param mixed $name
      * @return void
@@ -246,7 +242,7 @@ class Console
     }
 
     /**
-     * Buat file middleware
+     * Buat file middleware.
      *
      * @param mixed $name
      * @return void
@@ -259,7 +255,7 @@ class Console
     }
 
     /**
-     * Buat file controller
+     * Buat file controller.
      *
      * @param mixed $name
      * @return void
@@ -272,7 +268,7 @@ class Console
     }
 
     /**
-     * Buat file model
+     * Buat file model.
      *
      * @param mixed $name
      * @return void
@@ -286,7 +282,7 @@ class Console
     }
 
     /**
-     * Buat file mail
+     * Buat file mail.
      *
      * @param mixed $name
      * @return void
@@ -304,7 +300,7 @@ class Console
     }
 
     /**
-     * Create key to env file
+     * Create key to env file.
      *
      * @return void
      */
@@ -318,7 +314,7 @@ class Console
         $lines = file($env, FILE_IGNORE_NEW_LINES);
         foreach ($lines as $id => $line) {
             if (str_contains($line, 'APP_KEY=')) {
-                $lines[$id] = 'APP_KEY=' . Hash::rand(8) . ':' . Hash::rand(8);
+                $lines[$id] = 'APP_KEY=' . Hash::rand(10) . ':' . Hash::rand(10);
                 break;
             }
         }
@@ -331,7 +327,7 @@ class Console
     }
 
     /**
-     * Create cache route file
+     * Create cache route file.
      *
      * @return void
      */
@@ -352,7 +348,7 @@ class Console
     }
 
     /**
-     * Delete cache route file
+     * Delete cache route file.
      *
      * @return void
      */
@@ -367,7 +363,7 @@ class Console
     }
 
     /**
-     * Tampilkan list menu yang ada
+     * Tampilkan list menu yang ada.
      *
      * @return void
      */
@@ -437,7 +433,7 @@ class Console
     }
 
     /**
-     * Jalankan console
+     * Jalankan console.
      *
      * @return int
      */

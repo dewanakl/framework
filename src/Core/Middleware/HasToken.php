@@ -5,7 +5,7 @@ namespace Core\Middleware;
 trait HasToken
 {
     /**
-     * Cek token dan ajax yang masuk
+     * Cek token dan ajax yang masuk.
      *
      * @param string $token
      * @param bool $ajax

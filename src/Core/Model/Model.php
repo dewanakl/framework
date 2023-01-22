@@ -5,7 +5,7 @@ namespace Core\Model;
 use Core\Facades\App;
 
 /**
- * Representasi model Model
+ * Representasi table database.
  * 
  * @method static \Core\Model\BaseModel where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\BaseModel join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER')
@@ -39,17 +39,32 @@ use Core\Facades\App;
  */
 abstract class Model
 {
+    /**
+     * Nama tabelnya.
+     * 
+     * @var string $table
+     */
     protected $table;
 
-    protected string $primaryKey = 'id';
+    /**
+     * Nama dari primaryKey.
+     * 
+     * @var string $primaryKey
+     */
+    protected $primaryKey = 'id';
 
-    protected array $dates = [
+    /**
+     * Tipe dari dates.
+     * 
+     * @var array $dates
+     */
+    protected $dates = [
         'created_at',
         'updated_at',
     ];
 
     /**
-     * Panggil method secara static
+     * Panggil method secara static.
      *
      * @param string $method
      * @param array $parameters
@@ -61,7 +76,7 @@ abstract class Model
     }
 
     /**
-     * Panggil method secara object
+     * Panggil method secara object.
      *
      * @param string $method
      * @param array $parameters
