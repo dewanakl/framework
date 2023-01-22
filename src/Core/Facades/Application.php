@@ -5,6 +5,7 @@ namespace Core\Facades;
 use Closure;
 use Exception;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionFunction;
 
 /**
@@ -56,7 +57,7 @@ class Application
             unset($reflector);
 
             return new $name(...$this->getDependencies($args, $default));
-        } catch (Exception $e) {
+        } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
     }
@@ -143,7 +144,7 @@ class Application
             unset($reflector);
 
             return $name->{$method}(...$params);
-        } catch (Exception $e) {
+        } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
     }
@@ -181,7 +182,7 @@ class Application
             unset($reflector);
 
             return $name(...$this->getDependencies($arg, $default));
-        } catch (Exception $e) {
+        } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
     }
