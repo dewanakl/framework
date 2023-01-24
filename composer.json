@@ -32,6 +32,12 @@
             "Core\\": "src/Core/"
         }
     },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true
+        }
+    },
     "minimum-stability": "stable",
     "prefer-stable": true
 }
