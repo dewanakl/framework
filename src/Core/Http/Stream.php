@@ -86,16 +86,22 @@ class Stream
         $timeFile = @filemtime($file);
         $hashFile = @md5($file);
 
-        if (@strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
+        if (
+            @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile
+            || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
+        ) {
             http_response_code(304);
             header('HTTP/1.1 304 Not Modified', true, 304);
             exit;
         }
 
-        header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
+        header('Last-Modified: ' . @gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
         header('Etag: ' . $hashFile);
 
-        $this->file = @fopen($file, 'r');
+        @set_time_limit(0);
+        @clear_ob();
+
+        $this->file = @fopen($file, 'rb');
         $this->name = @basename($file);
         $this->boundary = $hashFile;
         $this->size = @filesize($file);
@@ -111,15 +117,13 @@ class Stream
      */
     private function pushSingle(string $range): void
     {
-        $start = $end = 0;
         list($start, $end) = $this->getRange($range);
 
         header('Content-Length: ' . strval($end - $start + 1));
-        header(sprintf('Content-Range: bytes %d-%d/%d', $start, $end, $this->size));
+        header(sprintf('Content-Range: bytes %s-%s/%s', $start, $end, $this->size));
 
         fseek($this->file, $start);
         $this->readBuffer($end - $start + 1);
-        $this->readFile();
     }
 
     /**
@@ -130,9 +134,9 @@ class Stream
      */
     private function pushMulti(array $ranges): void
     {
-        $length = $start = $end = 0;
+        $length = 0;
         $tl = 'Content-Type: ' . $this->type . "\r\n";
-        $formatRange = "Content-Range: bytes %d-%d/%d\r\n\r\n";
+        $formatRange = "Content-Range: bytes %s-%s/%s\r\n\r\n";
 
         foreach ($ranges as $range) {
             list($start, $end) = $this->getRange($range);
@@ -168,28 +172,18 @@ class Stream
     private function getRange(string $range): array
     {
         list($start, $end) = explode('-', $range);
-        $fileSize = $this->size;
 
-        if ($start === '') {
-            $tmp = intval($end);
-            $end = $fileSize - 1;
-            $start = $fileSize - $tmp;
-            if ($start < 0) {
-                $start = 0;
-            }
-        } else {
-            if (strval($end) === '' || intval($end) > ($fileSize - 1)) {
-                $end = $fileSize - 1;
-            }
-        }
-
-        $start = intval($start);
-        $end = intval($end);
+        $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
+        $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
 
         if ($start > $end) {
             header('Status: 416 Requested Range Not Satisfiable');
-            header('Content-Range: */' . strval($fileSize));
+            header('Content-Range: */' . strval($this->size));
             exit;
+        }
+
+        if (($start > 0) || ($end < ($this->size - 1))) {
+            header('HTTP/1.1 206 Partial Content', true, 206);
         }
 
         return [$start, $end];
@@ -204,7 +198,8 @@ class Stream
     {
         while (!feof($this->file)) {
             echo fgets($this->file);
-            flush();
+            @ob_flush();
+            @flush();
         }
     }
 
@@ -215,14 +210,15 @@ class Stream
      * @param int $size
      * @return void
      */
-    private function readBuffer(int $bytes, int $size = 8192): void
+    private function readBuffer(int $bytes, int $size = 10240): void
     {
         $bytesLeft = $bytes;
         while ($bytesLeft > 0 && !feof($this->file)) {
             $bytesRead = ($bytesLeft > $size) ? $size : $bytesLeft;
-            $bytesLeft -= $bytesRead;
             echo fread($this->file, $bytesRead);
-            flush();
+            $bytesLeft -= $bytesRead;
+            @ob_flush();
+            @flush();
         }
     }
 
@@ -275,6 +271,7 @@ class Stream
      */
     public function process(): void
     {
+        $range = '';
         $ranges = [];
         $t = 0;
 
@@ -286,24 +283,29 @@ class Stream
 
         header('Accept-Ranges: bytes');
         header('Content-Type: ' . $this->type);
+        header('Content-Transfer-Encoding: binary');
 
         if ($this->type == 'application/octet-stream') {
             header(sprintf('Content-Disposition: attachment; filename="%s"', $this->name));
-            header('Content-Transfer-Encoding: binary');
         } else {
-            header('Cache-Control: max-age=86400');
+            header('Cache-Control: max-age=604800');
+            header('Content-Disposition: inline');
         }
 
         if ($t > 0) {
-            header('HTTP/1.1 206 Partial Content', true, 206);
-            ($t === 1) ? $this->pushSingle($range) : $this->pushMulti($ranges);
+            if ($t === 1) {
+                $this->pushSingle($range);
+            } else {
+                $this->pushMulti($ranges);
+            }
         } else {
             header('Content-Length: ' . strval($this->size));
             $this->readFile();
         }
 
-        flush();
-        fclose($this->file);
+        @ob_flush();
+        @flush();
+        @fclose($this->file);
     }
 
     /**
