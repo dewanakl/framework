@@ -283,7 +283,7 @@ class Mail
         $boundary = md5(uniqid(microtime(true), true));
 
         $this->setHeader('MIME-Version', '1.0');
-        $this->setHeader('Message-ID', "<{$boundary}@{$this->hostname}>");
+        $this->setHeader('Message-ID', '<' . $boundary . '@' . $this->hostname . '>');
         $this->setHeader('Date', date('r') . ' GMT');
         $this->setHeader('Subject', $this->subject);
         $this->setHeader('From', $this->formatAddress($this->from));

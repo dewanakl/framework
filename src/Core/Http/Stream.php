@@ -79,7 +79,7 @@ class Stream
      */
     private function init(string $file): void
     {
-        if (!is_readable($file)) {
+        if (!is_file($file)) {
             notFound();
         }
 

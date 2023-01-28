@@ -290,9 +290,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
             $agr = 'WHERE';
         }
 
-        $replaceColumn = str_replace('.', '_', $column);
+        $replaceColumn = str_replace(['.', '-'], '_', $column);
 
-        $this->query = $this->query . " $agr $column $statment :" .  $replaceColumn;
+        $this->query = $this->query . sprintf(' %s %s %s :', $agr, $column, $statment) . $replaceColumn;
         $this->param[$replaceColumn] = $value;
 
         return $this;
@@ -310,7 +310,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      */
     public function join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER'): BaseModel
     {
-        $this->query = $this->query . " $type JOIN $table ON $column $param $refers";
+        $this->query = $this->query . sprintf(' %s JOIN %s ON %s %s %s', $type, $table, $column, $param, $refers);
         return $this;
     }
 
@@ -691,7 +691,7 @@ class BaseModel implements IteratorAggregate, JsonSerializable
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
-        $setQuery = 'SET ' . implode(', ',  array_map(fn ($data) => $data . ' = :' . $data, array_keys($data))) . ($this->query ? ' WHERE' : '');
+        $setQuery = 'SET ' . implode(', ', array_map(fn ($data) => $data . ' = :' . $data, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
         $result = $this->db->execute();

@@ -42,6 +42,6 @@ final class Auth
      */
     public function __call(string $method, array $parameters): mixed
     {
-        return App::get()->invoke(AuthManager::class, $method, $parameters);
+        return App::get()->singleton(AuthManager::class)->{$method}(...$parameters);
     }
 }

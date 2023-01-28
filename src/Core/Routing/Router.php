@@ -228,15 +228,13 @@ class Router
 
                 if (!is_null($tempController)) {
                     $old = $this->routes[$id]['controller'];
-                    $result = is_null($old) ? $tempController : $old;
-                    $this->routes[$id]['controller'] = $result;
+                    $this->routes[$id]['controller'] = is_null($old) ? $tempController : $old;
                 }
 
                 if (!is_null($tempPrefix)) {
                     $old = $this->routes[$id]['path'];
                     $prefix = preg_replace('/{(\w+)}/', '([\w-]*)', $tempPrefix);
-                    $result = ($old != '/') ? $prefix . $old : $prefix;
-                    $this->routes[$id]['path'] = $result;
+                    $this->routes[$id]['path'] = ($old != '/') ? $prefix . $old : $prefix;
                 }
 
                 if (!empty($tempMiddleware)) {

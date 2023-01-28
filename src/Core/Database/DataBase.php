@@ -232,9 +232,9 @@ class DataBase
      * Dapatkan idnya.
      * 
      * @param mixed $name
-     * @return string|bool
+     * @return mixed
      */
-    public function lastInsertId(mixed $name = null): string|bool
+    public function lastInsertId(mixed $name = null): mixed
     {
         return $this->pdo->lastInsertId($name);
     }

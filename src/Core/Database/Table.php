@@ -99,16 +99,16 @@ class Table
 
             foreach ($this->columns as $value) {
                 if ($this->type == 'pgsql') {
-                    $query = "SELECT column_name FROM information_schema.columns WHERE table_name='{$this->table}' and column_name='{$value}';";
+                    $query = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'' . $this->table . '\' and column_name=\'' . $value . '\';';
                 } else {
-                    $query = "SHOW COLUMNS FROM {$this->table} WHERE Field = '{$value}';";
+                    $query = 'SHOW COLUMNS FROM ' . $this->table . ' WHERE Field = \'' . $value . '\';';
                 }
 
                 $db->query($query);
                 $db->execute();
-                $jumlahColumn = $db->rowCount();
+                $column = $db->rowCount();
 
-                if ($jumlahColumn != 0) {
+                if ($column != 0) {
                     $this->query = [];
                     $this->alter = null;
                     $this->columns = [];
@@ -127,9 +127,7 @@ class Table
             }
         }
 
-        $query = 'ALTER TABLE ' . $this->table . ' ';
-        $query .= join(', ', array_map(fn ($data) => $this->alter . ' ' . $data, $this->query));
-        $query .= ';';
+        $query = 'ALTER TABLE ' . $this->table . ' ' . join(', ', array_map(fn ($data) => $this->alter . ' ' . $data, $this->query)) . ';';
         $this->query = [];
         $this->alter = null;
         $this->columns = [];
@@ -156,9 +154,9 @@ class Table
     public function id(string $name = 'id'): void
     {
         if ($this->type == 'pgsql') {
-            $this->query[] = "$name SERIAL NOT NULL PRIMARY KEY";
+            $this->query[] = $name . ' BIGSERIAL NOT NULL PRIMARY KEY';
         } else {
-            $this->query[] = "$name INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT";
+            $this->query[] = $name . ' BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT';
         }
         $this->columns[] = $name;
     }
@@ -172,7 +170,7 @@ class Table
      */
     public function string(string $name, int $len = 255): Table
     {
-        $this->query[] = "$name VARCHAR($len) NOT NULL";
+        $this->query[] = $name . ' VARCHAR(' . strval($len) . ') NOT NULL';
         $this->columns[] = $name;
         return $this;
     }
@@ -185,11 +183,7 @@ class Table
      */
     public function integer(string $name): Table
     {
-        if ($this->type == 'pgsql') {
-            $this->query[] = "$name BIGINT NOT NULL";
-        } else {
-            $this->query[] = "$name INTEGER(11) NOT NULL";
-        }
+        $this->query[] = $name . ' BIGINT NOT NULL';
         $this->columns[] = $name;
         return $this;
     }
@@ -202,7 +196,7 @@ class Table
      */
     public function text(string $name): Table
     {
-        $this->query[] = "$name TEXT NOT NULL";
+        $this->query[] = $name . ' TEXT NOT NULL';
         $this->columns[] = $name;
         return $this;
     }
@@ -215,7 +209,7 @@ class Table
      */
     public function boolean(string $name): Table
     {
-        $this->query[] = "$name BOOLEAN NOT NULL";
+        $this->query[] = $name . ' BOOLEAN NOT NULL';
         $this->columns[] = $name;
         return $this;
     }
@@ -229,9 +223,9 @@ class Table
     public function dateTime(string $name): Table
     {
         if ($this->type == 'pgsql') {
-            $this->query[] = "$name TIMESTAMP WITHOUT TIME ZONE NOT NULL";
+            $this->query[] = $name . ' TIMESTAMP WITHOUT TIME ZONE NOT NULL';
         } else {
-            $this->query[] = "$name DATETIME NOT NULL";
+            $this->query[] = $name . ' DATETIME NOT NULL';
         }
         $this->columns[] = $name;
         return $this;
@@ -245,11 +239,11 @@ class Table
     public function timeStamp(): void
     {
         if ($this->type == 'pgsql') {
-            $this->query[] = "created_at TIMESTAMP WITHOUT TIME ZONE NULL";
-            $this->query[] = "updated_at TIMESTAMP WITHOUT TIME ZONE NULL";
+            $this->query[] = 'created_at TIMESTAMP WITHOUT TIME ZONE';
+            $this->query[] = 'updated_at TIMESTAMP WITHOUT TIME ZONE';
         } else {
-            $this->query[] = "created_at DATETIME NULL";
-            $this->query[] = "updated_at DATETIME NULL";
+            $this->query[] = 'created_at DATETIME';
+            $this->query[] = 'updated_at DATETIME';
         }
         $this->columns[] = 'created_at';
         $this->columns[] = 'updated_at';
@@ -274,9 +268,8 @@ class Table
      */
     public function default(string|int|bool $name): void
     {
-        $constraint = is_string($name) ? " DEFAULT '$name'" : ' DEFAULT ' . (is_bool($name) ? ($name ? 'true' : 'false') : $name);
-
-        $this->query[$this->getLastArray()] = end($this->query) . $constraint;
+        $data = is_string($name) ? ' DEFAULT \'' . $name . '\'' : ' DEFAULT ' . (is_bool($name) ? ($name ? 'true' : 'false') : $name);
+        $this->query[$this->getLastArray()] = end($this->query) . $data;
     }
 
     /**
@@ -297,7 +290,7 @@ class Table
      */
     public function foreign(string $name): Table
     {
-        $this->query[] = 'CONSTRAINT FK_' . $this->table . "_$name FOREIGN KEY($name)";
+        $this->query[] = 'CONSTRAINT FK_' . $this->table . '_' . $name . ' FOREIGN KEY(' . $name . ')';
         return $this;
     }
 
@@ -309,7 +302,7 @@ class Table
      */
     public function references(string $name): Table
     {
-        $this->query[$this->getLastArray()] = end($this->query) . " REFERENCES TABLE-TARGET($name)";
+        $this->query[$this->getLastArray()] = end($this->query) . ' REFERENCES TABLE-TARGET(' . $name . ')';
         return $this;
     }
 

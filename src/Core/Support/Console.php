@@ -115,7 +115,7 @@ class Console
         }
 
         if ($options) {
-            print($this->createColor('green', "\n$options\n"));
+            print($this->createColor('green', "\n" . strval($options) . "\n"));
         }
     }
 
@@ -442,7 +442,7 @@ class Console
         switch ($this->command) {
             case 'coba':
                 $location = ($this->options) ? $this->options : 'localhost:8000';
-                shell_exec("php -S $location -t public");
+                shell_exec('php -S ' .  $location .  ' -t public');
                 break;
             case 'key':
                 $this->createKey();

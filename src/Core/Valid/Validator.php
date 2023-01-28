@@ -260,7 +260,7 @@ class Validator
     private function setError(string $param, string $alert, mixed $optional = null): void
     {
         if (empty($this->errors[$param])) {
-            $this->errors[$param] = "$param $alert" . ($optional ? ' ' . strval($optional) : '');
+            $this->errors[$param] = $param . ' ' . $alert . ($optional ? ' ' . strval($optional) : '');
         }
     }
 

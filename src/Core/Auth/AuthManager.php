@@ -63,7 +63,7 @@ class AuthManager
      */
     public function id(): int|string|null
     {
-        return empty($this->user) ? null : $this->user->{$this->user->getPrimaryKey()};
+        return empty($this->user()) ? null : $this->user->{$this->user->getPrimaryKey()};
     }
 
     /**

@@ -80,8 +80,8 @@ class Service
      */
     private function invokeMiddleware(array $route): void
     {
-        $middlewares = App::get()->singleton(Kernel::class)->middlewares();
-        $middlewarePool = array_map(fn ($middleware) => new $middleware, array_merge($middlewares, $route['middleware']));
+        $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
+        $middlewarePool = array_map(fn ($middleware) => new $middleware, $middlewares);
 
         $middleware = new Middleware($middlewarePool);
         $middleware->handle($this->request);
