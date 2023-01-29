@@ -172,10 +172,13 @@ class Validator
                 $model = 'App\Models\\' . (empty($command[1]) ? 'User' : ucfirst($command[1]));
                 $column = $command[2] ?? $param;
 
-                $user = App::get()->singleton($model)->find($value, $column);
-                if ($user->{$column}) {
+                $data = App::get()->singleton($model)->find($value, $column);
+                if ($data->{$column}) {
                     $this->setError($param, 'sudah ada !');
                 }
+
+                $data = null;
+                unset($data);
                 break;
         }
     }

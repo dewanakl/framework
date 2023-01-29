@@ -108,7 +108,7 @@ class AuthManager
 
         $this->logout();
         $this->user = $user;
-        $this->session->set('_user', serialize($user->only([$user->getPrimaryKey()])));
+        $this->session->set('_user', serialize((clone $user)->only([$user->getPrimaryKey()])));
     }
 
     /**

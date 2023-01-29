@@ -63,21 +63,23 @@ class Session
      */
     public function send(): void
     {
-        $header = 'Set-Cookie: ' . $this->name . '=' . rawurlencode(Hash::encrypt(serialize($this->data)));
+        if (env('COOKIE', 'true') === 'true') {
+            $header = 'Set-Cookie: ' . $this->name . '=' . rawurlencode(Hash::encrypt(serialize($this->data)));
 
-        $header .= '; Expires=' . date('D, d-M-Y H:i:s', $this->expires) . ' GMT';
-        $header .= '; Max-Age=' . strval($this->expires - time());
-        $header .= '; Path=/';
-        $header .= '; Domain=' . parse_url(baseurl(), PHP_URL_HOST);
+            $header .= '; Expires=' . date('D, d-M-Y H:i:s', $this->expires) . ' GMT';
+            $header .= '; Max-Age=' . strval($this->expires - time());
+            $header .= '; Path=/';
+            $header .= '; Domain=' . parse_url(baseurl(), PHP_URL_HOST);
 
-        if (https()) {
-            $header .= '; Secure';
+            if (https()) {
+                $header .= '; Secure';
+            }
+
+            $header .= '; HttpOnly';
+            $header .= '; SameSite=Lax';
+
+            header($header);
         }
-
-        $header .= '; HttpOnly';
-        $header .= '; SameSite=Lax';
-
-        header($header);
     }
 
     /**
