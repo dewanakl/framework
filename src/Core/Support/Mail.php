@@ -123,10 +123,7 @@ class Mail
         $this->password = env('MAIL_PASSWORD');
         $this->from = array(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
         $this->protocol = env('MAIL_ENCRYPTION');
-
-        if ($this->protocol === 'tcp') {
-            $this->isTLS = true;
-        }
+        $this->isTLS = $this->protocol === 'tcp';
     }
 
     /**

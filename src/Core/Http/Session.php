@@ -44,12 +44,14 @@ class Session
         $this->expires = intval(env('COOKIE_LIFETIME', 86400)) + time();
         $this->data = [];
 
-        if (@$_COOKIE[$this->name]) {
-            $this->data = @unserialize(Hash::decrypt(rawurldecode($_COOKIE[$this->name])));
-        }
+        if (env('COOKIE', 'true') === 'true') {
+            if (@$_COOKIE[$this->name]) {
+                $this->data = @unserialize(Hash::decrypt(rawurldecode($_COOKIE[$this->name])));
+            }
 
-        if (is_null($this->get('_token'))) {
-            $this->set('_token', Hash::rand(20));
+            if (is_null($this->get('_token'))) {
+                $this->set('_token', Hash::rand(20));
+            }
         }
 
         $GLOBALS['_COOKIE'] = [];
@@ -79,6 +81,8 @@ class Session
             $header .= '; SameSite=Lax';
 
             header($header);
+        } else {
+            $this->data = [];
         }
     }
 

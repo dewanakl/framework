@@ -119,7 +119,7 @@ class Service
     public function run(): int
     {
         $path = parse_url($this->request->server('REQUEST_URI'), PHP_URL_PATH);
-        $method = strtoupper($this->request->method() === 'POST'
+        $method = strtoupper($this->request->method() == 'POST'
             ? $this->request->get('_method', 'POST')
             : $this->request->method());
 
