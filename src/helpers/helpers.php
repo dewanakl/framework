@@ -10,6 +10,18 @@ use Core\Routing\Route;
 use Core\Http\Session;
 use Core\View\View;
 
+if (!function_exists('context')) {
+    /**
+     * Simple context dengan stdClass
+     * 
+     * @return stdClass
+     */
+    function context(): stdClass
+    {
+        return App::get()->singleton(stdClass::class);
+    }
+}
+
 if (!function_exists('session')) {
     /**
      * Helper method untuk membuat objek session.
