@@ -139,10 +139,10 @@ class Respond
     public function terminate(mixed $prm = null): void
     {
         if ($prm) {
-            clear_ob();
+            @clear_ob();
             echo $prm;
-            ob_flush();
-            flush();
+            @ob_flush();
+            @flush();
         }
 
         exit;

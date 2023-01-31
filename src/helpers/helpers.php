@@ -141,7 +141,7 @@ if (!function_exists('trace')) {
      */
     function trace(mixed $error): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 500 Internal Server Error', true, 500);
         $path = str_replace(basepath(), '', __DIR__);
@@ -158,7 +158,7 @@ if (!function_exists('dd')) {
      */
     function dd(mixed ...$param): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         $path = str_replace(basepath(), '', __DIR__);
         respond()->terminate(render($path . '/errors/dd', ['param' => $param]));
@@ -173,7 +173,7 @@ if (!function_exists('abort')) {
      */
     function abort(): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 403 Forbidden', true, 403);
         $path = str_replace(basepath(), '', __DIR__);
@@ -189,7 +189,7 @@ if (!function_exists('notFound')) {
      */
     function notFound(): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 404 Not Found', true, 404);
         $path = str_replace(basepath(), '', __DIR__);
@@ -205,7 +205,7 @@ if (!function_exists('notAllowed')) {
      */
     function notAllowed(): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 405 Method Not Allowed', true, 405);
         $path = str_replace(basepath(), '', __DIR__);
@@ -221,7 +221,7 @@ if (!function_exists('pageExpired')) {
      */
     function pageExpired(): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 400 Bad Request', true, 400);
         $path = str_replace(basepath(), '', __DIR__);
@@ -237,7 +237,7 @@ if (!function_exists('unavailable')) {
      */
     function unavailable(): void
     {
-        clear_ob();
+        @clear_ob();
         header('Content-Type: text/html');
         header('HTTP/1.1 503 Service Unavailable', true, 503);
         $path = str_replace(basepath(), '', __DIR__);

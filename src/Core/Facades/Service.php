@@ -75,12 +75,11 @@ class Service
     /**
      * Eksekusi middlewarenya.
      *
-     * @param array $route
+     * @param array $middlewares
      * @return void
      */
-    private function invokeMiddleware(array $route): void
+    private function invokeMiddleware(array $middlewares): void
     {
-        $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
         $middlewarePool = array_map(fn ($middleware) => new $middleware, $middlewares);
 
         $middleware = new Middleware($middlewarePool);
@@ -126,6 +125,8 @@ class Service
         $routeMatch = false;
         $methodMatch = false;
 
+        $this->invokeMiddleware(App::get()->singleton(Kernel::class)->middlewares());
+
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
             $variables = [];
@@ -135,7 +136,7 @@ class Service
                 if ($method === $route['method']) {
                     $methodMatch = true;
 
-                    $this->invokeMiddleware($route);
+                    $this->invokeMiddleware($route['middleware']);
                     $this->registerProvider();
                     $this->invokeController($route, $variables);
                     break;

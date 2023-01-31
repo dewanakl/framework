@@ -46,7 +46,7 @@ class View
     public function __toString()
     {
         $content = $this->content->__toString();
-        clear_ob();
+        @clear_ob();
 
         $this->parent = null;
         $this->content = null;
