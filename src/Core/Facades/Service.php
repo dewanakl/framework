@@ -127,6 +127,12 @@ class Service
 
         $this->invokeMiddleware(App::get()->singleton(Kernel::class)->middlewares());
 
+        if ($method === 'OPTIONS') {
+            http_response_code(200);
+            header('HTTP/1.1 200 OK', true, 200);
+            return 0;
+        }
+
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
             $variables = [];
@@ -139,7 +145,8 @@ class Service
                     $this->invokeMiddleware($route['middleware']);
                     $this->registerProvider();
                     $this->invokeController($route, $variables);
-                    break;
+
+                    return 0;
                 }
             }
         }
