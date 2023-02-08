@@ -90,7 +90,7 @@ class Respond
         http_response_code(302);
         header('HTTP/1.1 302 Found', true, 302);
         header('Location: ' . $uri, true, 302);
-        $this->terminate();
+        exit(0);
     }
 
     /**
@@ -109,7 +109,12 @@ class Respond
             }
 
             $this->session->send();
-            $this->terminate($respond);
+            $this->echo($respond);
+        }
+
+        if (is_array($respond)) {
+            $this->session->send();
+            $this->echo(json($respond));
         }
 
         if ($respond instanceof Respond) {
@@ -120,23 +125,16 @@ class Respond
 
         if ($respond instanceof Stream) {
             $respond->process();
-            $this->terminate();
         }
-
-        if (!is_null($respond)) {
-            dd($respond);
-        }
-
-        $this->terminate();
     }
 
     /**
-     * Stop responnya.
+     * Echo responnya.
      * 
      * @param mixed $prm
      * @return void
      */
-    public function terminate(mixed $prm = null): void
+    public function echo(mixed $prm): void
     {
         if ($prm) {
             @clear_ob();
@@ -144,7 +142,5 @@ class Respond
             @ob_flush();
             @flush();
         }
-
-        exit;
     }
 }

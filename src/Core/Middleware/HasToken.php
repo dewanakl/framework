@@ -21,6 +21,7 @@ trait HasToken
             }
 
             respond()->send(json(['token' => false], 400));
+            exit(0);
         }
 
         if (!$ajax) {

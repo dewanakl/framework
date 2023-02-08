@@ -33,33 +33,36 @@ class Middleware
     }
 
     /**
-     * Handle semua dari layer middleware.
+     * Buat lapisan perlayer untuk eksekusi.
      *
-     * @param Request $request
-     * @return void
+     * @param Closure $nextLayer
+     * @param MiddlewareInterface $layer
+     * @return Closure
      */
-    public function handle(Request $request): void
+    private function createLayer(Closure $nextLayer, MiddlewareInterface $layer): Closure
     {
-        $completeOnion = array_reduce(
-            $this->layers,
-            fn ($nextLayer, $layer) => $this->createLayer($nextLayer, $layer),
-            fn ($next) => $next
-        );
-
-        $completeOnion($request);
+        return function (Request $request) use ($nextLayer, $layer) {
+            return $layer->handle($request, $nextLayer);
+        };
     }
 
     /**
-     * Buat lapisan perlayer untuk eksekusi.
+     * Handle semua dari layer middleware.
      *
-     * @param mixed $nextLayer
-     * @param mixed $layer
-     * @return Closure
+     * @param Request $request
+     * @param Closure $core
+     * @return mixed
      */
-    private function createLayer(mixed $nextLayer, mixed $layer): Closure
+    public function handle(Request $request, Closure $core): mixed
     {
-        return function ($request) use ($nextLayer, $layer) {
-            return $layer->handle($request, $nextLayer);
-        };
+        $next = array_reduce(
+            $this->layers,
+            function (Closure $nextLayer, MiddlewareInterface $layer) {
+                return $this->createLayer($nextLayer, $layer);
+            },
+            $core
+        );
+
+        return $next($request);
     }
 }

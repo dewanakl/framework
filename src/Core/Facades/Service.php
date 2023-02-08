@@ -3,6 +3,7 @@
 namespace Core\Facades;
 
 use App\Kernel;
+use Closure;
 use Core\Http\Request;
 use Core\Http\Respond;
 use Core\Middleware\Middleware;
@@ -73,20 +74,34 @@ class Service
     }
 
     /**
-     * Eksekusi middlewarenya.
+     * Eksekusi core middleware.
      *
-     * @param array $middlewares
+     * @param array $route
+     * @param array $variables
+     * @return Closure
+     */
+    private function middleware(array $route, array $variables): Closure
+    {
+        return function () use ($route, $variables) {
+            $this->registerProvider();
+            return $this->invokeController($route, $variables);
+        };
+    }
+
+    /**
+     * Process middleware, provider, and controller.
+     *
+     * @param array $route
+     * @param array $variables
      * @return void
      */
-    private function invokeMiddleware(array $middlewares): void
+    private function process(array $route, array $variables): void
     {
+        $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
         $middlewarePool = array_map(fn ($middleware) => new $middleware, $middlewares);
 
         $middleware = new Middleware($middlewarePool);
-        $middleware->handle($this->request);
-
-        unset($middleware);
-        unset($middlewarePool);
+        $this->respond->send($middleware->handle($this->request, $this->middleware($route, $variables)));
     }
 
     /**
@@ -94,9 +109,9 @@ class Service
      *
      * @param array $route
      * @param array $variables
-     * @return void
+     * @return mixed
      */
-    private function invokeController(array $route, array $variables): void
+    private function invokeController(array $route, array $variables): mixed
     {
         $controller = $route['controller'];
         $method = $route['function'];
@@ -107,7 +122,7 @@ class Service
             $method = '__invoke';
         }
 
-        $this->respond->send(App::get()->invoke($controller, $method, $variables));
+        return App::get()->invoke($controller, $method, $variables);
     }
 
     /**
@@ -125,27 +140,17 @@ class Service
         $routeMatch = false;
         $methodMatch = false;
 
-        $this->invokeMiddleware(App::get()->singleton(Kernel::class)->middlewares());
-
-        if ($method === 'OPTIONS') {
-            http_response_code(200);
-            header('HTTP/1.1 200 OK', true, 200);
-            return 0;
-        }
-
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
             $variables = [];
 
             if (preg_match($pattern, $path, $variables)) {
                 $routeMatch = true;
-                if ($method === $route['method']) {
+
+                if ($route['method'] === $method) {
                     $methodMatch = true;
 
-                    $this->invokeMiddleware($route['middleware']);
-                    $this->registerProvider();
-                    $this->invokeController($route, $variables);
-
+                    $this->process($route, $variables);
                     return 0;
                 }
             }

@@ -145,7 +145,8 @@ if (!function_exists('trace')) {
         header('Content-Type: text/html');
         header('HTTP/1.1 500 Internal Server Error', true, 500);
         $path = str_replace(basepath(), '', __DIR__);
-        respond()->terminate(render($path . '/errors/trace', ['error' => $error]));
+        echo render($path . '/errors/trace', ['error' => $error]);
+        exit(0);
     }
 }
 
@@ -161,7 +162,8 @@ if (!function_exists('dd')) {
         @clear_ob();
         header('Content-Type: text/html');
         $path = str_replace(basepath(), '', __DIR__);
-        respond()->terminate(render($path . '/errors/dd', ['param' => $param]));
+        echo render($path . '/errors/dd', ['param' => $param]);
+        exit(0);
     }
 }
 
@@ -178,6 +180,7 @@ if (!function_exists('abort')) {
         header('HTTP/1.1 403 Forbidden', true, 403);
         $path = str_replace(basepath(), '', __DIR__);
         respond()->send(render($path . '/errors/error', ['pesan' => 'Forbidden 403']));
+        exit(0);
     }
 }
 
@@ -194,6 +197,7 @@ if (!function_exists('notFound')) {
         header('HTTP/1.1 404 Not Found', true, 404);
         $path = str_replace(basepath(), '', __DIR__);
         respond()->send(render($path . '/errors/error', ['pesan' => 'Not Found 404']));
+        exit(0);
     }
 }
 
@@ -210,6 +214,7 @@ if (!function_exists('notAllowed')) {
         header('HTTP/1.1 405 Method Not Allowed', true, 405);
         $path = str_replace(basepath(), '', __DIR__);
         respond()->send(render($path . '/errors/error', ['pesan' => 'Method Not Allowed 405']));
+        exit(0);
     }
 }
 
@@ -226,6 +231,7 @@ if (!function_exists('pageExpired')) {
         header('HTTP/1.1 400 Bad Request', true, 400);
         $path = str_replace(basepath(), '', __DIR__);
         respond()->send(render($path . '/errors/error', ['pesan' => 'Page Expired !']));
+        exit(0);
     }
 }
 
@@ -242,6 +248,7 @@ if (!function_exists('unavailable')) {
         header('HTTP/1.1 503 Service Unavailable', true, 503);
         $path = str_replace(basepath(), '', __DIR__);
         respond()->send(render($path . '/errors/error', ['pesan' => 'Service Unavailable !']));
+        exit(0);
     }
 }
 
