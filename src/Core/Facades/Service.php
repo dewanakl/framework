@@ -83,8 +83,22 @@ class Service
     private function middleware(array $route, array $variables): Closure
     {
         return function () use ($route, $variables) {
-            $this->registerProvider();
-            return $this->invokeController($route, $variables);
+            $method = strtoupper($this->request->method() == 'POST'
+                ? $this->request->get('_method', 'POST')
+                : $this->request->method());
+
+            if ($route['method'] === $method) {
+                $this->registerProvider();
+                return $this->invokeController($route, $variables);
+            }
+
+            if (!$this->request->ajax()) {
+                notAllowed();
+            }
+
+            return json([
+                'error' => 'Method Not Allowed 405'
+            ], 405);
         };
     }
 
@@ -133,46 +147,24 @@ class Service
     public function run(): int
     {
         $path = parse_url($this->request->server('REQUEST_URI'), PHP_URL_PATH);
-        $method = strtoupper($this->request->method() == 'POST'
-            ? $this->request->get('_method', 'POST')
-            : $this->request->method());
-
-        $routeMatch = false;
-        $methodMatch = false;
 
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
             $variables = [];
 
             if (preg_match($pattern, $path, $variables)) {
-                $routeMatch = true;
-
-                if ($route['method'] === $method) {
-                    $methodMatch = true;
-
-                    $this->process($route, $variables);
-                    return 0;
-                }
+                $this->process($route, $variables);
+                return 0;
             }
         }
 
-        if ($routeMatch && !$methodMatch) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Method Not Allowed 405'
-                ], 405));
-            }
-
-            notAllowed();
-        } else if (!$routeMatch) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Not Found 404'
-                ], 404));
-            }
-
+        if (!$this->request->ajax()) {
             notFound();
         }
+
+        $this->respond->send(json([
+            'error' => 'Not Found 404'
+        ], 404));
 
         return 0;
     }
