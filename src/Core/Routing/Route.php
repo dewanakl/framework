@@ -16,48 +16,65 @@ final class Route
      * Simpan url route get.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public static function get(string $path, array|string $action): Router
+    public static function get(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return static::router()->get($path, $action);
+        return static::router()->get($path, $action, $middleware);
     }
 
     /**
      * Simpan url route post.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public static function post(string $path, array|string $action): Router
+    public static function post(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return static::router()->post($path, $action);
+        return static::router()->post($path, $action, $middleware);
     }
 
     /**
      * Simpan url route put.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public static function put(string $path, array|string $action): Router
+    public static function put(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return static::router()->put($path, $action);
+        return static::router()->put($path, $action, $middleware);
     }
 
     /**
      * Simpan url route delete.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public static function delete(string $path, array|string $action): Router
+    public static function delete(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return static::router()->delete($path, $action);
+        return static::router()->delete($path, $action, $middleware);
+    }
+
+    /**
+     * Simpan url route options.
+     *
+     * @param string $path
+     * @param array|string|null $action
+     * @param array|string|null $middleware
+     * @return Router
+     */
+    public static function options(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
+    {
+        return static::router()->options($path, $action, $middleware);
     }
 
     /**

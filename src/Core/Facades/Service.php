@@ -80,7 +80,7 @@ class Service
      * @param array $variables
      * @return Closure
      */
-    private function middleware(array $route, array $variables): Closure
+    private function coreMiddleware(array $route, array $variables): Closure
     {
         return function () use ($route, $variables) {
             $this->registerProvider();
@@ -98,10 +98,10 @@ class Service
     private function process(array $route, array $variables): void
     {
         $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
-        $middlewarePool = array_map(fn ($middleware) => new $middleware, $middlewares);
+        $middleware = new Middleware($middlewares);
 
-        $middleware = new Middleware($middlewarePool);
-        $this->respond->send($middleware->handle($this->request, $this->middleware($route, $variables)));
+        $response = $middleware->handle($this->request, $this->coreMiddleware($route, $variables));
+        $this->respond->send($response);
     }
 
     /**
@@ -122,6 +122,10 @@ class Service
             $method = '__invoke';
         }
 
+        if (is_null($method)) {
+            return null;
+        }
+
         return App::get()->invoke($controller, $method, $variables);
     }
 
@@ -133,12 +137,11 @@ class Service
     public function run(): int
     {
         $path = parse_url($this->request->server('REQUEST_URI'), PHP_URL_PATH);
-        $method = strtoupper($this->request->method() == 'POST'
-            ? $this->request->get('_method', 'POST')
-            : $this->request->method());
+        $method = $this->request->method() == 'POST'
+            ? strtoupper($this->request->get('_method', 'POST'))
+            : $this->request->method();
 
         $routeMatch = false;
-        $methodMatch = false;
 
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
@@ -148,31 +151,31 @@ class Service
                 $routeMatch = true;
 
                 if ($route['method'] === $method) {
-                    $methodMatch = true;
-
                     $this->process($route, $variables);
                     return 0;
                 }
             }
         }
 
-        if ($routeMatch && !$methodMatch) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Method Not Allowed 405'
-                ], 405));
+        if ($routeMatch) {
+            if (!$this->request->ajax()) {
+                notAllowed();
             }
 
-            notAllowed();
-        } else if (!$routeMatch) {
-            if ($this->request->ajax()) {
-                $this->respond->send(json([
-                    'error' => 'Not Found 404'
-                ], 404));
-            }
+            $this->respond->send(json([
+                'error' => 'Method Not Allowed 405'
+            ], 405));
 
+            return 0;
+        }
+
+        if (!$this->request->ajax()) {
             notFound();
         }
+
+        $this->respond->send(json([
+            'error' => 'Not Found 404'
+        ], 404));
 
         return 0;
     }

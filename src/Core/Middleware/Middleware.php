@@ -29,7 +29,9 @@ class Middleware
      */
     function __construct(array $layers = [])
     {
-        $this->layers = array_reverse($layers);
+        for ($i = (count($layers) - 1); $i >= 0; $i--) {
+            $this->layers = new $layers[$i];
+        }
     }
 
     /**

@@ -56,10 +56,11 @@ class Router
      *
      * @param string $method
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    private function add(string $method, string $path, array|string $action): Router
+    private function add(string $method, string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
         if (is_array($action)) {
             $controller = $action[0];
@@ -70,13 +71,14 @@ class Router
         }
 
         $path = preg_replace('/{(\w+)}/', '([\w-]*)', $path);
+        $middleware = is_null($middleware) ? [] : (is_string($middleware) ? array($middleware) : $middleware);
 
         $this->routes[] = [
             'method' => $method,
             'path' => $path,
             'controller' => $controller,
             'function' => $function,
-            'middleware' => [],
+            'middleware' => $middleware,
             'name' => null
         ];
 
@@ -87,48 +89,65 @@ class Router
      * Simpan url route get.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public function get(string $path, array|string $action): Router
+    public function get(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('GET', $path, $action);
+        return $this->add('GET', $path, $action, $middleware);
     }
 
     /**
      * Simpan url route post.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public function post(string $path, array|string $action): Router
+    public function post(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('POST', $path, $action);
+        return $this->add('POST', $path, $action, $middleware);
     }
 
     /**
      * Simpan url route put.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public function put(string $path, array|string $action): Router
+    public function put(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('PUT', $path, $action);
+        return $this->add('PUT', $path, $action, $middleware);
     }
 
     /**
      * Simpan url route delete.
      *
      * @param string $path
-     * @param array|string $action
+     * @param array|string|null $action
+     * @param array|string|null $middleware
      * @return Router
      */
-    public function delete(string $path, array|string $action): Router
+    public function delete(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('DELETE', $path, $action);
+        return $this->add('DELETE', $path, $action, $middleware);
+    }
+
+    /**
+     * Simpan url route options.
+     *
+     * @param string $path
+     * @param array|string|null $action
+     * @param array|string|null $middleware
+     * @return Router
+     */
+    public function options(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
+    {
+        return $this->add('OPTIONS', $path, $action, $middleware);
     }
 
     /**
