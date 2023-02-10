@@ -30,7 +30,7 @@ class Middleware
     function __construct(array $layers = [])
     {
         for ($i = (count($layers) - 1); $i >= 0; $i--) {
-            $this->layers = new $layers[$i];
+            $this->layers[] = new $layers[$i];
         }
     }
 
