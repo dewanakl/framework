@@ -111,12 +111,15 @@ if (!function_exists('e')) {
      * Tampikan hasil secara aman.
      * 
      * @param mixed $var
-     * @return string
+     * @return string|null
      */
-    function e(mixed $var): string
+    function e(mixed $var): string|null
     {
-        $var = is_null($var) ? '' : strval($var);
-        return htmlspecialchars($var);
+        if (is_null($var)) {
+            return null;
+        }
+
+        return htmlspecialchars(strval($var));
     }
 }
 
@@ -431,9 +434,9 @@ if (!function_exists('old')) {
      * Dapatkan nilai yang lama dari sebuah request.
      * 
      * @param string $param
-     * @return string
+     * @return string|null
      */
-    function old(string $param): string
+    function old(string $param): string|null
     {
         $old = session()->get('old');
         return e(@$old[$param]);

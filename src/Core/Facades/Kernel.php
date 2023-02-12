@@ -28,7 +28,7 @@ final class Kernel
         static::setEnv();
 
         if (!date_default_timezone_set(@$_ENV['TIMEZONE'] ?? 'Asia/Jakarta')) {
-            throw new Exception('Date time invalid !');
+            throw new Exception('Timezone invalid !');
         }
 
         return App::get();

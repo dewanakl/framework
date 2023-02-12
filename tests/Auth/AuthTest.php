@@ -1,5 +1,7 @@
 <?php
 
+namespace Test\Auth;
+
 use Core\Auth\Auth;
 use Core\Facades\App;
 use Core\Facades\Application;

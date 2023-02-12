@@ -99,9 +99,7 @@ class Service
     {
         $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
         $middleware = new Middleware($middlewares);
-
-        $response = $middleware->handle($this->request, $this->coreMiddleware($route, $variables));
-        $this->respond->send($response);
+        $this->respond->send($middleware->handle($this->request, $this->coreMiddleware($route, $variables)));
     }
 
     /**

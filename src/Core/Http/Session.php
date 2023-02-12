@@ -54,8 +54,8 @@ class Session
             }
         }
 
-        $GLOBALS['_COOKIE'] = [];
         unset($GLOBALS['_COOKIE']);
+        $GLOBALS['_COOKIE'] = [];
     }
 
     /**

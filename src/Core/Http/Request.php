@@ -46,12 +46,12 @@ class Request
         $this->requestData = array_merge(@$_REQUEST ?? [], @$_FILES ?? [], $input ?? []);
         $this->serverData = @$_SERVER ?? [];
 
+        unset($GLOBALS['_GET'], $GLOBALS['_POST'], $GLOBALS['_FILES'], $GLOBALS['_SERVER'], $GLOBALS['_REQUEST']);
         $GLOBALS['_GET'] = [];
         $GLOBALS['_POST'] = [];
         $GLOBALS['_FILES'] = [];
         $GLOBALS['_SERVER'] = [];
         $GLOBALS['_REQUEST'] = [];
-        unset($GLOBALS['_GET'], $GLOBALS['_POST'], $GLOBALS['_FILES'], $GLOBALS['_SERVER'], $GLOBALS['_REQUEST']);
     }
 
     /**

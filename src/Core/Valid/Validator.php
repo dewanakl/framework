@@ -131,6 +131,10 @@ class Validator
                 $this->__set($param, preg_replace('/[^\w-]/', '', $value));
                 break;
 
+            case $rule == 'html':
+                $this->__set($param, e($value));
+                break;
+
             case $rule == 'safe':
                 $bad = array_merge(array_map('chr', range(0, 31)), ['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
                 $filename = str_replace($bad, '', $value);

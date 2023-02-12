@@ -1,5 +1,7 @@
 <?php
 
+namespace Test\Facades;
+
 use Core\Facades\Application;
 use PHPUnit\Framework\TestCase;
 

@@ -3,6 +3,7 @@
 namespace Core\Http;
 
 use Core\Facades\App;
+use Core\Model\BaseModel;
 use Core\View\Render;
 use Core\View\View;
 
@@ -112,7 +113,7 @@ class Respond
             $this->echo($respond);
         }
 
-        if (is_array($respond)) {
+        if (is_array($respond) || $respond instanceof BaseModel) {
             $this->session->send();
             $this->echo(json($respond));
         }

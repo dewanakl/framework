@@ -204,7 +204,11 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      */
     public function toArray(): array
     {
-        return json_decode($this->toJson(), true);
+        foreach ($this->attribute() as $key => $value) {
+            $this->attributes[$key] = is_object($value) ? get_object_vars($value) : $value;
+        }
+
+        return $this->attribute();
     }
 
     /**
