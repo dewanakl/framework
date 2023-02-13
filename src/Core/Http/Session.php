@@ -59,6 +59,16 @@ class Session
     }
 
     /**
+     * Get name cookie.
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
      * Send cookie header.
      *
      * @return void
