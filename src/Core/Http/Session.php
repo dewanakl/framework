@@ -53,9 +53,6 @@ class Session
                 $this->set('_token', Hash::rand(20));
             }
         }
-
-        unset($GLOBALS['_COOKIE']);
-        $GLOBALS['_COOKIE'] = [];
     }
 
     /**

@@ -42,16 +42,10 @@ class Request
      */
     function __construct()
     {
-        $input = @json_decode(file_get_contents('php://input'), true);
-        $this->requestData = array_merge(@$_REQUEST ?? [], @$_FILES ?? [], $input ?? []);
+        $request = array_merge(@$_REQUEST ?? [], @json_decode(file_get_contents('php://input'), true) ?? []);
+        @$_REQUEST = $request;
+        $this->requestData = array_merge($request, @$_FILES ?? []);
         $this->serverData = @$_SERVER ?? [];
-
-        unset($GLOBALS['_GET'], $GLOBALS['_POST'], $GLOBALS['_FILES'], $GLOBALS['_SERVER'], $GLOBALS['_REQUEST']);
-        $GLOBALS['_GET'] = [];
-        $GLOBALS['_POST'] = [];
-        $GLOBALS['_FILES'] = [];
-        $GLOBALS['_SERVER'] = [];
-        $GLOBALS['_REQUEST'] = [];
     }
 
     /**

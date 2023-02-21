@@ -303,6 +303,50 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
+     * Where NULL syntax sql.
+     *
+     * @param string $colomn
+     * @param string $agr
+     * @return BaseModel
+     */
+    public function whereNull(string $column, string $agr = 'AND'): BaseModel
+    {
+        if (!$this->query && !$this->param) {
+            $this->query = 'SELECT * FROM ' . $this->table;
+        }
+
+        if (!str_contains($this->query ?? '', 'WHERE')) {
+            $agr = 'WHERE';
+        }
+
+        $this->query = $this->query . sprintf(' %s %s IS NULL', $agr, $column);
+
+        return $this;
+    }
+
+    /**
+     * Where Not NULL syntax sql.
+     *
+     * @param string $colomn
+     * @param string $agr
+     * @return BaseModel
+     */
+    public function whereNotNull(string $column, string $agr = 'AND'): BaseModel
+    {
+        if (!$this->query && !$this->param) {
+            $this->query = 'SELECT * FROM ' . $this->table;
+        }
+
+        if (!str_contains($this->query ?? '', 'WHERE')) {
+            $agr = 'WHERE';
+        }
+
+        $this->query = $this->query . sprintf(' %s %s IS NOT NULL', $agr, $column);
+
+        return $this;
+    }
+
+    /**
      * Join syntax sql.
      *
      * @param string $table
