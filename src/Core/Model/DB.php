@@ -12,19 +12,19 @@ use Exception;
  * @class DB
  * @package \Core\Model
  */
-final class DB
+final class DB extends Model
 {
     /**
      * Nama tabelnya apah?.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Model
      */
-    public static function table(string $name): BaseModel
+    public static function table(string $name): Model
     {
-        $base = new BaseModel();
-        $base->table($name);
-        return $base;
+        $model = new self;
+        $model->setTable($name);
+        return $model;
     }
 
     /**

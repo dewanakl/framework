@@ -2,23 +2,11 @@
 
 namespace Core\Model;
 
-use ArrayIterator;
-use Closure;
 use Core\Database\DataBase;
 use Core\Facades\App;
 use Exception;
-use IteratorAggregate;
-use JsonSerializable;
-use ReturnTypeWillChange;
-use Traversable;
 
-/**
- * Simple query builder.
- *
- * @class BaseModel
- * @package \Core\Model
- */
-class BaseModel implements IteratorAggregate, JsonSerializable
+final class Query
 {
     /**
      * String query sql.
@@ -56,11 +44,11 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     private $primaryKey;
 
     /**
-     * Attributes hasil query.
+     * Set Target Object.
      * 
-     * @var mixed $attributes
+     * @var string $targetObject
      */
-    private $attributes;
+    private $targetObject;
 
     /**
      * Object database.
@@ -89,20 +77,6 @@ class BaseModel implements IteratorAggregate, JsonSerializable
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
         }
-    }
-
-    /**
-     * Ambil attribute.
-     *
-     * @return array
-     */
-    private function attribute(): array
-    {
-        if (is_bool($this->attributes)) {
-            return [];
-        }
-
-        return $this->attributes ?? [];
     }
 
     /**
@@ -137,124 +111,6 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ubah objek agar bisa iterasi.
-     *
-     * @return Traversable
-     */
-    public function getIterator(): Traversable
-    {
-        return new ArrayIterator($this->attribute());
-    }
-
-    /**
-     * Ubah objek ke json secara langsung.
-     *
-     * @return array
-     */
-    #[ReturnTypeWillChange]
-    public function jsonSerialize(): array
-    {
-        return $this->attribute();
-    }
-
-    /**
-     * Ubah objek ke array.
-     *
-     * @return array
-     */
-    public function __serialize(): array
-    {
-        return [$this->attribute(), $this->table, $this->dates, $this->primaryKey];
-    }
-
-    /**
-     * Kebalikan dari serialize.
-     *
-     * @param array $data
-     * @return void
-     */
-    public function __unserialize(array $data): void
-    {
-        $this->connect();
-        $this->query = null;
-        $this->param = [];
-
-        list(
-            $this->attributes,
-            $this->table,
-            $this->dates,
-            $this->primaryKey
-        ) = $data;
-    }
-
-    /**
-     * Eksport to json.
-     *
-     * @return string|false
-     */
-    public function toJson(): string|false
-    {
-        return json_encode($this->attribute());
-    }
-
-    /**
-     * Eksport to array.
-     *
-     * @return array
-     */
-    public function toArray(): array
-    {
-        foreach ($this->attribute() as $key => $value) {
-            $this->attributes[$key] = is_object($value) ? get_object_vars($value) : $value;
-        }
-
-        return $this->attribute();
-    }
-
-    /**
-     * Set nama tabelnya.
-     *
-     * @param string $name
-     * @return void
-     */
-    public function table(string $name): void
-    {
-        $this->table = $name;
-    }
-
-    /**
-     * Set tanggal updatenya.
-     *
-     * @param array $date
-     * @return void
-     */
-    public function dates(array $date): void
-    {
-        $this->dates = $date;
-    }
-
-    /**
-     * Set primaryKey.
-     *
-     * @param string $primaryKey
-     * @return void
-     */
-    public function primaryKey(string $primaryKey): void
-    {
-        $this->primaryKey = $primaryKey;
-    }
-
-    /**
-     * Get primaryKey.
-     *
-     * @return string
-     */
-    public function getPrimaryKey(): string
-    {
-        return $this->primaryKey;
-    }
-
-    /**
      * Debug querynya.
      *
      * @return void
@@ -266,13 +122,47 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Refresh attributnya.
+     * Set nama tabelnya.
      *
-     * @return BaseModel
+     * @param string $name
+     * @return void
      */
-    public function refresh(): BaseModel
+    public function setTable(string $name): void
     {
-        return $this->find($this->__get($this->primaryKey));
+        $this->table = $name;
+    }
+
+    /**
+     * Set tanggal updatenya.
+     *
+     * @param array $date
+     * @return void
+     */
+    public function setDates(array $date): void
+    {
+        $this->dates = $date;
+    }
+
+    /**
+     * Set primaryKey.
+     *
+     * @param string $primaryKey
+     * @return void
+     */
+    public function setPrimaryKey(string $primaryKey): void
+    {
+        $this->primaryKey = $primaryKey;
+    }
+
+    /**
+     * Set targetObject.
+     *
+     * @param string $targetObject
+     * @return void
+     */
+    public function setObject(string $targetObject): void
+    {
+        $this->targetObject = $targetObject;
     }
 
     /**
@@ -282,9 +172,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * @param mixed $value
      * @param string $statment
      * @param string $agr
-     * @return BaseModel
+     * @return Query
      */
-    public function where(string $column, mixed $value, string $statment = '=', string $agr = 'AND'): BaseModel
+    public function where(string $column, mixed $value, string $statment = '=', string $agr = 'AND'): Query
     {
         if (!$this->query && !$this->param) {
             $this->query = 'SELECT * FROM ' . $this->table;
@@ -307,9 +197,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      *
      * @param string $colomn
      * @param string $agr
-     * @return BaseModel
+     * @return Query
      */
-    public function whereNull(string $column, string $agr = 'AND'): BaseModel
+    public function whereNull(string $column, string $agr = 'AND'): Query
     {
         if (!$this->query && !$this->param) {
             $this->query = 'SELECT * FROM ' . $this->table;
@@ -329,9 +219,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      *
      * @param string $colomn
      * @param string $agr
-     * @return BaseModel
+     * @return Query
      */
-    public function whereNotNull(string $column, string $agr = 'AND'): BaseModel
+    public function whereNotNull(string $column, string $agr = 'AND'): Query
     {
         if (!$this->query && !$this->param) {
             $this->query = 'SELECT * FROM ' . $this->table;
@@ -354,9 +244,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * @param string $refers
      * @param string $param
      * @param string $type
-     * @return BaseModel
+     * @return Query
      */
-    public function join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER'): BaseModel
+    public function join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER'): Query
     {
         $this->query = $this->query . sprintf(' %s JOIN %s ON %s %s %s', $type, $table, $column, $param, $refers);
         return $this;
@@ -369,9 +259,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * @param string $column
      * @param string $refers
      * @param string $param
-     * @return BaseModel
+     * @return Query
      */
-    public function leftJoin(string $table, string $column, string $refers, string $param = '='): BaseModel
+    public function leftJoin(string $table, string $column, string $refers, string $param = '='): Query
     {
         return $this->join($table, $column, $refers, $param, 'LEFT');
     }
@@ -383,9 +273,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * @param string $column
      * @param string $refers
      * @param string $param
-     * @return BaseModel
+     * @return Query
      */
-    public function rightJoin(string $table, string $column, string $refers, string $param = '='): BaseModel
+    public function rightJoin(string $table, string $column, string $refers, string $param = '='): Query
     {
         return $this->join($table, $column, $refers, $param, 'RIGHT');
     }
@@ -397,9 +287,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * @param string $column
      * @param string $refers
      * @param string $param
-     * @return BaseModel
+     * @return Query
      */
-    public function fullJoin(string $table, string $column, string $refers, string $param = '='): BaseModel
+    public function fullJoin(string $table, string $column, string $refers, string $param = '='): Query
     {
         return $this->join($table, $column, $refers, $param, 'FULL OUTER');
     }
@@ -409,9 +299,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      *
      * @param string $name
      * @param string $order
-     * @return BaseModel
+     * @return Query
      */
-    public function orderBy(string $name, string $order = 'ASC'): BaseModel
+    public function orderBy(string $name, string $order = 'ASC'): Query
     {
         $agr = str_contains($this->query, 'ORDER BY') ? ', ' : ' ORDER BY ';
         $this->query = $this->query . $agr . $name . ' ' . strtoupper($order);
@@ -423,9 +313,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Group By syntax sql.
      *
      * @param string|array $param
-     * @return BaseModel
+     * @return Query
      */
-    public function groupBy(string|array $param): BaseModel
+    public function groupBy(string|array $param): Query
     {
         if (is_array($param)) {
             $param = implode(', ', $param);
@@ -439,9 +329,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Having syntax sql.
      *
      * @param string $param
-     * @return BaseModel
+     * @return Query
      */
-    public function having(string $param): BaseModel
+    public function having(string $param): Query
     {
         $this->query = $this->query . ' HAVING ' . $param;
         return $this;
@@ -451,9 +341,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Limit syntax sql.
      *
      * @param int $param
-     * @return BaseModel
+     * @return Query
      */
-    public function limit(int $param): BaseModel
+    public function limit(int $param): Query
     {
         $this->query = $this->query . ' LIMIT ' . strval($param);
         return $this;
@@ -463,9 +353,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Offset syntax sql.
      *
      * @param int $param
-     * @return BaseModel
+     * @return Query
      */
-    public function offset(int $param): BaseModel
+    public function offset(int $param): Query
     {
         $this->query = $this->query . ' OFFSET ' . strval($param);
         return $this;
@@ -475,9 +365,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Select raw syntax sql.
      *
      * @param string|array $param
-     * @return BaseModel
+     * @return Query
      */
-    public function select(string|array $param): BaseModel
+    public function select(string|array $param): Query
     {
         if (is_array($param)) {
             $param = implode(', ', $param);
@@ -496,9 +386,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Count sql aggregate.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Query
      */
-    public function count(string $name = '*'): BaseModel
+    public function count(string $name = '*'): Query
     {
         return $this->select('COUNT(' . $name . ')' . ($name == '*' ? '' : ' AS ' . $name));
     }
@@ -507,9 +397,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Max sql aggregate.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Query
      */
-    public function max(string $name): BaseModel
+    public function max(string $name): Query
     {
         return $this->select('MAX(' . $name . ') AS ' . $name);
     }
@@ -518,9 +408,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Min sql aggregate.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Query
      */
-    public function min(string $name): BaseModel
+    public function min(string $name): Query
     {
         return $this->select('MIN(' . $name . ') AS ' . $name);
     }
@@ -529,9 +419,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Avg sql aggregate.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Query
      */
-    public function avg(string $name): BaseModel
+    public function avg(string $name): Query
     {
         return $this->select('AVG(' . $name . ') AS ' . $name);
     }
@@ -540,9 +430,9 @@ class BaseModel implements IteratorAggregate, JsonSerializable
      * Sum sql aggregate.
      *
      * @param string $name
-     * @return BaseModel
+     * @return Query
      */
-    public function sum(string $name): BaseModel
+    public function sum(string $name): Query
     {
         return $this->select('SUM(' . $name . ') AS ' . $name);
     }
@@ -558,120 +448,21 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Ambil semua data.
-     *
-     * @return BaseModel
-     */
-    public function get(): BaseModel
-    {
-        $this->checkSelect();
-
-        $this->bind($this->query, $this->param ?? []);
-        $this->attributes = $this->db->all();
-
-        return $this;
-    }
-
-    /**
-     * Ambil satu data aja paling atas.
-     *
-     * @return BaseModel
-     */
-    public function first(): BaseModel
-    {
-        $this->checkSelect();
-
-        $this->bind($this->query, $this->param ?? []);
-        $this->attributes = $this->db->first();
-
-        return $this;
-    }
-
-    /**
-     * Ambil atau error "tidak ada".
-     *
-     * @return mixed
-     */
-    public function firstOrFail(): mixed
-    {
-        return $this->first()->fail(
-            function () {
-                notFound();
-            }
-        );
-    }
-
-    /**
-     * Error dengan fungsi.
-     *
-     * @param Closure $fn
-     * @return mixed
-     */
-    public function fail(Closure $fn): mixed
-    {
-        if (!$this->attributes) {
-            return App::get()->resolve($fn);
-        }
-
-        return $this;
-    }
-
-    /**
      * Cari model id.
      *
      * @param mixed $id
      * @param mixed $where
-     * @return BaseModel
+     * @return Query
      * 
      * @throws Exception
      */
-    public function id(mixed $id, mixed $where = null): BaseModel
+    public function id(mixed $id, mixed $where = null): Query
     {
         if (empty($this->primaryKey)) {
             throw new Exception('Primary key tidak terdefinisi !');
         }
 
         return $this->where(is_null($where) ? $this->primaryKey : $where, $id);
-    }
-
-    /**
-     * Cari berdasarkan id.
-     *
-     * @param mixed $id
-     * @param mixed $where
-     * @return BaseModel
-     */
-    public function find(mixed $id, mixed $where = null): BaseModel
-    {
-        return $this->id($id, $where)->limit(1)->first();
-    }
-
-    /**
-     * Cari berdasarkan id atau error "tidak ada".
-     *
-     * @param mixed $id
-     * @param mixed $where
-     * @return mixed
-     */
-    public function findOrFail(mixed $id, mixed $where = null): mixed
-    {
-        return $this->id($id, $where)->limit(1)->firstOrFail();
-    }
-
-    /**
-     * Save perubahan pada attribute dengan primarykey.
-     *
-     * @return bool
-     * 
-     * @throws Exception
-     */
-    public function save(): bool
-    {
-        if (empty($this->primaryKey) || empty($this->__get($this->primaryKey))) {
-            throw new Exception('Nilai primary key tidak ada !');
-        }
-
-        return $this->id($this->__get($this->primaryKey))->update($this->except([$this->primaryKey])->attribute());
     }
 
     /**
@@ -686,14 +477,56 @@ class BaseModel implements IteratorAggregate, JsonSerializable
     }
 
     /**
+     * Cari berdasarkan id.
+     *
+     * @param mixed $id
+     * @param mixed $where
+     * @return Model
+     */
+    public function find(mixed $id, mixed $where = null): Model
+    {
+        return $this->id($id, $where)->limit(1)->first();
+    }
+
+    /**
+     * Ambil semua data.
+     *
+     * @return Model
+     */
+    public function get(): Model
+    {
+        $this->checkSelect();
+        $this->bind($this->query, $this->param ?? []);
+
+        $model = App::get()->make($this->targetObject);
+        $model->setAttribute($this->db->all());
+        return $model;
+    }
+
+    /**
+     * Ambil satu data aja paling atas.
+     *
+     * @return Model
+     */
+    public function first(): Model
+    {
+        $this->checkSelect();
+        $this->bind($this->query, $this->param ?? []);
+
+        $model = App::get()->make($this->targetObject);
+        $model->setAttribute($this->db->first());
+        return $model;
+    }
+
+    /**
      * Isi datanya.
      * 
      * @param array $data
-     * @return BaseModel
+     * @return Model
      * 
      * @throws Exception
      */
-    public function create(array $data): BaseModel
+    public function create(array $data): Model
     {
         if ($this->dates) {
             $now = now('Y-m-d H:i:s.u');
@@ -716,14 +549,14 @@ class BaseModel implements IteratorAggregate, JsonSerializable
             throw new Exception('Error insert new data [' . implode(', ', $keys) . ']');
         }
 
-        $this->attributes = $data;
-
         $id = $this->db->lastInsertId();
         if ($id) {
-            $this->attributes[$this->primaryKey] = $id;
+            $data[$this->primaryKey] = $id;
         }
 
-        return $this;
+        $model = App::get()->make($this->targetObject);
+        $model->setAttribute($data);
+        return $model;
     }
 
     /**
@@ -760,87 +593,5 @@ class BaseModel implements IteratorAggregate, JsonSerializable
         $result = $this->db->execute();
 
         return boolval($result);
-    }
-
-    /**
-     * Ambil sebagian dari attribute.
-     * 
-     * @param array $only
-     * @return BaseModel
-     */
-    public function only(array $only): BaseModel
-    {
-        $temp = [];
-        foreach ($only as $ol) {
-            $temp[$ol] = $this->__get($ol);
-        }
-
-        $this->attributes = $temp;
-
-        return $this;
-    }
-
-    /**
-     * Ambil kecuali dari attribute.
-     * 
-     * @param array $except
-     * @return BaseModel
-     */
-    public function except(array $except): BaseModel
-    {
-        $temp = [];
-        foreach ($this->attribute() as $key => $value) {
-            if (!in_array($key, $except)) {
-                $temp[$key] = $value;
-            }
-        }
-
-        $this->attributes = $temp;
-
-        return $this;
-    }
-
-    /**
-     * Ambil nilai dari attribute.
-     * 
-     * @param string $name
-     * @return mixed
-     */
-    public function __get(string $name): mixed
-    {
-        if ($this->__isset($name)) {
-            return $this->attributes[$name];
-        }
-
-        return null;
-    }
-
-    /**
-     * Isi nilai ke model ini.
-     *
-     * @param string $name
-     * @param mixed $value
-     * @return void
-     * 
-     * @throws Exception
-     */
-    public function __set(string $name, mixed $value): void
-    {
-        if ($this->primaryKey == $name) {
-            throw new Exception('Nilai primary key tidak bisa di ubah !');
-        }
-
-        $this->attributes[$name] = $value;
-    }
-
-    /**
-     * Cek nilai dari attribute.
-     * 
-     * @param string $name
-     * @return bool
-     */
-    public function __isset(string $name): bool
-    {
-        return isset($this->attributes[$name]);
     }
 }
