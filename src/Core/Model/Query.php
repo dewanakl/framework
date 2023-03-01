@@ -6,6 +6,12 @@ use Core\Database\DataBase;
 use Core\Facades\App;
 use Exception;
 
+/**
+ * Create raw query sql.
+ *
+ * @class Query
+ * @package \Core\Model
+ */
 final class Query
 {
     /**
