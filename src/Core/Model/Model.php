@@ -29,17 +29,16 @@ use Traversable;
  * @method static \Core\Model\Query min(string $name)
  * @method static \Core\Model\Query avg(string $name)
  * @method static \Core\Model\Query sum(string $name)
+ * @method static \Core\Model\Query id(mixed $id, mixed $where = null)
  * @method static \Core\Model\Model get()
  * @method static \Core\Model\Model first()
- * @method static \Core\Model\Model id(mixed $id, mixed $where = null)
  * @method static \Core\Model\Model find(mixed $id, mixed $where = null)
- * @method static mixed findOrFail(mixed $id, mixed $where = null)
- * @method static bool destroy(int $id)
  * @method static \Core\Model\Model create(array $data)
+ * @method static bool destroy(int $id)
  * @method static bool update(array $data)
  * @method static bool delete()
  * 
- * @see \Core\Model\BaseModel
+ * @see \Core\Model\Query
  *
  * @class Model
  * @package \Core\Model
@@ -234,9 +233,9 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * Ambil sebagian dari attribute.
      * 
      * @param array $only
-     * @return object
+     * @return Model
      */
-    public function only(array $only): object
+    public function only(array $only): Model
     {
         $temp = [];
         foreach ($only as $ol) {
@@ -252,9 +251,9 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * Ambil kecuali dari attribute.
      * 
      * @param array $except
-     * @return object
+     * @return Model
      */
-    public function except(array $except): object
+    public function except(array $except): Model
     {
         $temp = [];
         foreach ($this->attribute() as $key => $value) {
@@ -276,11 +275,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function __get(string $name): mixed
     {
-        if ($this->__isset($name)) {
-            return $this->attributes[$name];
-        }
-
-        return null;
+        return ($this->__isset($name)) ? $this->attributes[$name] : null;
     }
 
     /**
@@ -333,12 +328,12 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function __call(string $method, array $parameters): mixed
     {
-        $base = App::get()->singleton(Query::class);
-        $base->setTable($this->table);
-        $base->setDates($this->dates);
-        $base->setPrimaryKey($this->primaryKey);
-        $base->setObject(get_called_class());
+        $query = App::get()->singleton(Query::class);
+        $query->setTable($this->table);
+        $query->setDates($this->dates);
+        $query->setPrimaryKey($this->primaryKey);
+        $query->setObject(get_called_class());
 
-        return $base->{$method}(...$parameters);
+        return $query->{$method}(...$parameters);
     }
 }

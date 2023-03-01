@@ -2,14 +2,14 @@
 
 namespace Core\Auth;
 
-use Core\Model\BaseModel;
+use Core\Model\Model;
 use Core\Facades\App;
 use Core\Http\Session;
 use Core\Valid\Hash;
 use Exception;
 
 /**
- * Autentikasi user dengan basemodel.
+ * Autentikasi user dengan model.
  *
  * @class AuthManager
  * @package \Core\Auth
@@ -17,9 +17,9 @@ use Exception;
 class AuthManager
 {
     /**
-     * Object basemodel.
+     * Object model.
      * 
-     * @var BaseModel|null $user
+     * @var Model|null $user
      */
     private $user;
 
@@ -69,11 +69,11 @@ class AuthManager
     /**
      * Dapatkan obejek usernya.
      * 
-     * @return BaseModel|null
+     * @return Model|null
      */
-    public function user(): BaseModel|null
+    public function user(): Model|null
     {
-        if (!($this->user instanceof BaseModel)) {
+        if (!($this->user instanceof Model)) {
             $user = $this->session->get('_user');
             $this->user = empty($user) ? null : unserialize($user)->refresh();
         }
@@ -102,8 +102,8 @@ class AuthManager
      */
     public function login(object $user): void
     {
-        if (!($user instanceof BaseModel)) {
-            throw new Exception('Class ' . get_class($user) . ' bukan BaseModel !');
+        if (!($user instanceof Model)) {
+            throw new Exception('Class ' . get_class($user) . ' bukan Model !');
         }
 
         $this->logout();

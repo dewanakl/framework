@@ -58,7 +58,7 @@ final class Query
     private $db;
 
     /**
-     * Buat objek basemodel.
+     * Buat objek model.
      *
      * @return void
      */
@@ -108,6 +108,19 @@ final class Query
         if (!str_contains($this->query ?? '', 'SELECT')) {
             $this->query = 'SELECT * FROM ' . $this->table . $this->query;
         }
+    }
+
+    /**
+     * Build ke target object.
+     * 
+     * @param mixed $data
+     * @return Model
+     */
+    private function build(mixed $data): Model
+    {
+        $model = App::get()->make($this->targetObject);
+        $model->setAttribute($data);
+        return $model;
     }
 
     /**
@@ -497,10 +510,7 @@ final class Query
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
-
-        $model = App::get()->make($this->targetObject);
-        $model->setAttribute($this->db->all());
-        return $model;
+        return $this->build($this->db->all());
     }
 
     /**
@@ -512,10 +522,7 @@ final class Query
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
-
-        $model = App::get()->make($this->targetObject);
-        $model->setAttribute($this->db->first());
-        return $model;
+        return $this->build($this->db->first());
     }
 
     /**
@@ -554,9 +561,7 @@ final class Query
             $data[$this->primaryKey] = $id;
         }
 
-        $model = App::get()->make($this->targetObject);
-        $model->setAttribute($data);
-        return $model;
+        return $this->build($data);
     }
 
     /**

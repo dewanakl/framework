@@ -9,7 +9,7 @@ use Core\Facades\App;
  * 
  * @method static bool check()
  * @method static int|string|null id()
- * @method static \Core\Model\BaseModel|null user()
+ * @method static \Core\Model\Model|null user()
  * @method static void logout()
  * @method static void login(object $user)
  * @method static bool attempt(array $credential, string $model = 'App\Models\User')
