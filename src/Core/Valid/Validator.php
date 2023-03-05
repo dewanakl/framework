@@ -191,11 +191,11 @@ class Validator
      * Validasi rule file yang masuk.
      * 
      * @param string $param
-     * @param mixed $value
+     * @param array $value
      * @param string $rules
      * @return void
      */
-    private function validateFile(string $param, mixed $value, string $rule): void
+    private function validateFile(string $param, array $value, string $rule): void
     {
         $error = array(
             0 => false,
@@ -374,11 +374,11 @@ class Validator
     /**
      * Ambil nilai dari data ini.
      *
-     * @param mixed $name
+     * @param string|null $name
      * @param mixed $defaultValue
      * @return mixed
      */
-    public function get(mixed $name = null, mixed $defaultValue = null): mixed
+    public function get(string|null $name = null, mixed $defaultValue = null): mixed
     {
         if ($name === null) {
             return $this->data;

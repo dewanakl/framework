@@ -37,7 +37,7 @@ class Table
     /**
      * Alter tabelnya.
      * 
-     * @var string $alter
+     * @var string|null $alter
      */
     private $alter;
 
@@ -268,7 +268,7 @@ class Table
      */
     public function default(string|int|bool $name): void
     {
-        $data = is_string($name) ? ' DEFAULT \'' . $name . '\'' : ' DEFAULT ' . (is_bool($name) ? ($name ? 'true' : 'false') : $name);
+        $data = is_string($name) ? ' DEFAULT \'' . $name . '\'' : ' DEFAULT ' . (is_bool($name) ? ($name ? 'true' : 'false') : strval($name));
         $this->query[$this->getLastArray()] = end($this->query) . $data;
     }
 

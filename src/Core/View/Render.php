@@ -2,13 +2,15 @@
 
 namespace Core\View;
 
+use Stringable;
+
 /**
  * Tampilkan html dan juga injek variabel.
  *
  * @class Render
  * @package \Core\View
  */
-class Render
+class Render implements Stringable
 {
     /**
      * Path file html.
@@ -47,7 +49,7 @@ class Render
      * 
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $content = $this->content;
 

@@ -5,6 +5,7 @@ namespace Core\Model;
 use Closure;
 use Core\Facades\App;
 use Exception;
+use Throwable;
 
 /**
  * Helper class DB untuk customizable nama table.
@@ -22,7 +23,7 @@ final class DB extends Model
      */
     public static function table(string $name): Model
     {
-        $model = new self;
+        $model = new static;
         $model->setTable($name);
         return $model;
     }
@@ -60,10 +61,10 @@ final class DB extends Model
     /**
      * Tampilkan errornya.
      *
-     * @param mixed $e
+     * @param Throwable $e
      * @return void
      */
-    public static function exception(mixed $e): void
+    public static function exception(Throwable $e): void
     {
         App::get()->singleton(DataBase::class)->catchException($e);
     }

@@ -6,7 +6,6 @@ use Core\Model\Model;
 use Core\Facades\App;
 use Core\Http\Session;
 use Core\Valid\Hash;
-use Exception;
 
 /**
  * Autentikasi user dengan model.
@@ -48,7 +47,7 @@ class AuthManager
      */
     public function check(): bool
     {
-        $check = empty($this->user()) ? false : !empty($this->user->fail(fn () => false));
+        $check = empty($this->user()) ? false : !empty($this->user->fail());
         if (!$check) {
             $this->logout();
         }
@@ -71,7 +70,7 @@ class AuthManager
      * 
      * @return Model|null
      */
-    public function user(): Model|null
+    public function &user(): Model|null
     {
         if (!($this->user instanceof Model)) {
             $user = $this->session->get('_user');
@@ -93,22 +92,16 @@ class AuthManager
     }
 
     /**
-     * Loginkan usernya dengan object.
+     * Loginkan usernya dengan Model.
      * 
-     * @param object $user
+     * @param Model $user
      * @return void
-     * 
-     * @throws Exception
      */
-    public function login(object $user): void
+    public function login(Model $user): void
     {
-        if (!($user instanceof Model)) {
-            throw new Exception('Class ' . get_class($user) . ' bukan Model !');
-        }
-
         $this->logout();
-        $this->user = $user;
-        $this->session->set('_user', serialize((clone $user)->only([$user->getPrimaryKey()])));
+        $this->user = clone $user;
+        $this->session->set('_user', serialize($user->only([$user->getPrimaryKey()])));
     }
 
     /**
@@ -121,10 +114,9 @@ class AuthManager
     public function attempt(array $credential, string $model = 'App\Models\User'): bool
     {
         list($email, $password) = array_keys($credential);
-
         $user = App::get()->singleton($model)->find($credential[$email], $email);
 
-        if ($user->fail(fn () => false)) {
+        if ($user->fail()) {
             if (Hash::check($credential[$password], $user->{$password})) {
                 $this->login($user);
                 return true;

@@ -96,11 +96,11 @@ class Session
     /**
      * Ambil nilai dari sesi ini.
      *
-     * @param mixed $name
+     * @param string|null $name
      * @param mixed $defaultValue
      * @return mixed
      */
-    public function get(mixed $name = null, mixed $defaultValue = null): mixed
+    public function get(string|null $name = null, mixed $defaultValue = null): mixed
     {
         if ($name === null) {
             return $this->data;

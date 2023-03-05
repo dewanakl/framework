@@ -96,9 +96,9 @@ if (!function_exists('json')) {
      *
      * @param mixed $data
      * @param int $statusCode
-     * @return string|false
+     * @return string|bool
      */
-    function json(mixed $data, int $statusCode = 200): string|false
+    function json(mixed $data, int $statusCode = 200): string|bool
     {
         http_response_code($statusCode);
         header('Content-Type: application/json', true, $statusCode);
@@ -263,7 +263,7 @@ if (!function_exists('csrf_token')) {
      */
     function csrf_token(): string
     {
-        return session()->get('_token');
+        return session()->get('_token') ?? '';
     }
 }
 
@@ -316,13 +316,13 @@ if (!function_exists('env')) {
      */
     function env(string $key, mixed $optional = null): mixed
     {
-        $key = $_ENV[$key] ?? $optional;
+        $res = $_ENV[$key] ?? $optional;
 
-        if ($key === 'null') {
+        if ($res === 'null') {
             return $optional;
         }
 
-        return $key;
+        return $res;
     }
 }
 
@@ -447,15 +447,15 @@ if (!function_exists('error')) {
     /**
      * Dapatkan pesan error dari request yang salah.
      * 
-     * @param mixed $key
+     * @param string|null $key
      * @param mixed $optional
      * @return mixed
      */
-    function error(mixed $key = null, mixed $optional = null): mixed
+    function error(string|null $key = null, mixed $optional = null): mixed
     {
         $error = session()->get('error');
 
-        if (is_null($key)) {
+        if ($key === null) {
             return $error;
         }
 

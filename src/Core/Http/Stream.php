@@ -225,10 +225,10 @@ class Stream
     /**
      * Get type file.
      * 
-     * @param mixed $typeFile
+     * @param string|null $typeFile
      * @return string
      */
-    private function ftype(mixed $typeFile = null): string
+    private function ftype(string|null $typeFile = null): string
     {
         if ($this->download) {
             return 'application/octet-stream';

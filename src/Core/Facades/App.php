@@ -23,7 +23,7 @@ final class App
      * @param Application $app
      * @return Application
      */
-    public static function new(Application $app): Application
+    public static function &new(Application $app): Application
     {
         self::$app = $app;
         return static::get();
@@ -34,7 +34,7 @@ final class App
      *
      * @return Application
      */
-    public static function get(): Application
+    public static function &get(): Application
     {
         return self::$app;
     }

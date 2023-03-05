@@ -2,13 +2,15 @@
 
 namespace Core\View;
 
+use Stringable;
+
 /**
  * Template view dengan parent.
  *
  * @class View
  * @package \Core\View
  */
-class View
+class View implements Stringable
 {
     /**
      * Data dari setiap section.
@@ -43,7 +45,7 @@ class View
      * 
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         $content = $this->content->__toString();
         @clear_ob();
@@ -67,7 +69,7 @@ class View
         $this->parent = null;
         $this->content = $this->including($name);
 
-        if (!is_null($this->parent)) {
+        if ($this->parent !== null) {
             $this->content = null;
             $this->show($this->parent);
         }

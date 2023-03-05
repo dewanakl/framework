@@ -72,17 +72,17 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Attributes hasil query.
      * 
-     * @var mixed $attributes
+     * @var array|bool $attributes
      */
     protected $attributes;
 
     /**
      * Set attributenya.
      *
-     * @param mixed $data
+     * @param array|bool $data
      * @return void
      */
-    public function setAttribute(mixed $data): void
+    public function setAttribute(array|bool $data): void
     {
         $this->attributes = $data;
     }
@@ -157,9 +157,9 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Eksport to json.
      *
-     * @return string|false
+     * @return string|bool
      */
-    public function toJson(): string|false
+    public function toJson(): string|bool
     {
         return json_encode($this->attribute());
     }
@@ -191,16 +191,20 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Error dengan fungsi.
      *
-     * @param Closure $fn
+     * @param Closure|null $fn
      * @return mixed
      */
-    public function fail(Closure $fn): mixed
+    public function fail(Closure|null $fn = null): mixed
     {
-        if (!$this->attributes) {
-            return App::get()->resolve($fn);
+        if ($this->attributes) {
+            return $this;
         }
 
-        return $this;
+        if ($fn === null) {
+            return false;
+        }
+
+        return App::get()->resolve($fn);
     }
 
     /**
@@ -208,7 +212,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      *
      * @return Model
      */
-    public function refresh(): Model
+    public function &refresh(): Model
     {
         return $this->find($this->__get($this->primaryKey));
     }

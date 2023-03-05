@@ -12,7 +12,7 @@ use Exception;
  * @class Query
  * @package \Core\Model
  */
-final class Query
+class Query
 {
     /**
      * String query sql.
@@ -122,7 +122,7 @@ final class Query
      * @param mixed $data
      * @return Model
      */
-    private function build(mixed $data): Model
+    private function &build(mixed $data): Model
     {
         $model = App::get()->make($this->targetObject);
         $model->setAttribute($data);
@@ -470,18 +470,18 @@ final class Query
      * Cari model id.
      *
      * @param mixed $id
-     * @param mixed $where
+     * @param string|null $where
      * @return Query
      * 
      * @throws Exception
      */
-    public function id(mixed $id, mixed $where = null): Query
+    public function id(mixed $id, string|null $where = null): Query
     {
         if (empty($this->primaryKey)) {
             throw new Exception('Primary key tidak terdefinisi !');
         }
 
-        return $this->where(is_null($where) ? $this->primaryKey : $where, $id);
+        return $this->where($where ? $where : $this->primaryKey, $id);
     }
 
     /**
@@ -502,7 +502,7 @@ final class Query
      * @param mixed $where
      * @return Model
      */
-    public function find(mixed $id, mixed $where = null): Model
+    public function &find(mixed $id, mixed $where = null): Model
     {
         return $this->id($id, $where)->limit(1)->first();
     }
@@ -512,7 +512,7 @@ final class Query
      *
      * @return Model
      */
-    public function get(): Model
+    public function &get(): Model
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
@@ -524,7 +524,7 @@ final class Query
      *
      * @return Model
      */
-    public function first(): Model
+    public function &first(): Model
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
@@ -539,7 +539,7 @@ final class Query
      * 
      * @throws Exception
      */
-    public function create(array $data): Model
+    public function &create(array $data): Model
     {
         if ($this->dates) {
             $now = now('Y-m-d H:i:s.u');

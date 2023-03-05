@@ -52,7 +52,7 @@ class DataBase
         ];
 
         try {
-            if (is_null($this->pdo)) {
+            if ($this->pdo === null) {
                 $this->pdo = new PDO($dsn, env('DB_USER'), env('DB_PASS'), $option);
             }
         } catch (PDOException $e) {
@@ -71,7 +71,7 @@ class DataBase
     public function catchException(Throwable $e): void
     {
         if (debug()) {
-            $sql = is_null($this->stmt->queryString) ? '' : PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"';
+            $sql = empty($this->stmt->queryString) ? '' : PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"';
             throw new Exception($e->getMessage() . $sql);
         }
 
@@ -145,12 +145,12 @@ class DataBase
      *
      * @param int|string $param
      * @param mixed $value
-     * @param mixed $type
+     * @param int|null $type
      * @return void
      */
-    public function bind(int|string $param, mixed $value, mixed $type = null): void
+    public function bind(int|string $param, mixed $value, int|null $type = null): void
     {
-        if (is_null($type)) {
+        if ($type === null) {
             switch (true) {
                 case is_int($value):
                     $type = PDO::PARAM_INT;
@@ -231,10 +231,10 @@ class DataBase
     /**
      * Dapatkan idnya.
      * 
-     * @param mixed $name
-     * @return mixed
+     * @param string|null $name
+     * @return int|string|bool
      */
-    public function lastInsertId(mixed $name = null): mixed
+    public function lastInsertId(string|null $name = null): int|string|bool
     {
         return $this->pdo->lastInsertId($name);
     }

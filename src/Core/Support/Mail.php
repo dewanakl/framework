@@ -210,10 +210,10 @@ class Mail
      * Tambhakan alamat penerima.
      *
      * @param string $address
-     * @param mixed $name
+     * @param string|null $name
      * @return Mail
      */
-    public function addTo(string $address, mixed $name = null): Mail
+    public function addTo(string $address, string|null $name = null): Mail
     {
         $this->to[] = array($address, $name);
 

@@ -112,19 +112,19 @@ class Service
     private function invokeController(array $route, array $variables): mixed
     {
         $controller = $route['controller'];
-        $method = $route['function'];
+        $function = $route['function'];
         array_shift($variables);
 
-        if (is_null($controller)) {
-            $controller = $method;
-            $method = '__invoke';
-        }
-
-        if (is_null($method)) {
+        if ($function === null) {
             return null;
         }
 
-        return App::get()->invoke($controller, $method, $variables);
+        if ($controller === null) {
+            $controller = $function;
+            $function = '__invoke';
+        }
+
+        return App::get()->invoke($controller, $function, $variables);
     }
 
     /**

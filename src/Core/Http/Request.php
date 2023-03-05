@@ -65,11 +65,11 @@ class Request
     /**
      * Ambil nilai dari request ini.
      *
-     * @param mixed $name
+     * @param string|null $name
      * @param mixed $defaultValue
      * @return mixed
      */
-    public function get(mixed $name = null, mixed $defaultValue = null): mixed
+    public function get(string|null $name = null, mixed $defaultValue = null): mixed
     {
         if ($name === null) {
             return $this->requestData;
@@ -81,10 +81,10 @@ class Request
     /**
      * Ambil nilai dari request server ini.
      *
-     * @param mixed $name
+     * @param string|null $name
      * @return mixed
      */
-    public function server(mixed $name = null, mixed $defaultValue = null): mixed
+    public function server(string|null $name = null, mixed $defaultValue = null): mixed
     {
         if ($name === null) {
             return $this->serverData;
@@ -149,9 +149,9 @@ class Request
     /**
      * Cek apakah ajax?.
      *
-     * @return string|false
+     * @return string|bool
      */
-    public function ajax(): string|false
+    public function ajax(): string|bool
     {
         if ($this->server('CONTENT_TYPE') && $this->server('HTTP_COOKIE') && $this->server('HTTP_TOKEN')) {
             return $this->server('HTTP_TOKEN');

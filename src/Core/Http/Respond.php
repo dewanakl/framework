@@ -4,8 +4,7 @@ namespace Core\Http;
 
 use Core\Facades\App;
 use Core\Model\Model;
-use Core\View\Render;
-use Core\View\View;
+use Stringable;
 
 /**
  * Respond dari request yang masuk.
@@ -102,8 +101,8 @@ class Respond
      */
     public function send(mixed $respond): void
     {
-        if (is_string($respond) || is_numeric($respond) || $respond instanceof Render || $respond instanceof View) {
-            if ($respond instanceof Render || $respond instanceof View) {
+        if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
+            if ($respond instanceof Stringable) {
                 $this->session->set('_oldroute', App::get()->singleton(Request::class)->server('REQUEST_URI'));
                 $this->session->unset('old');
                 $this->session->unset('error');
@@ -119,7 +118,7 @@ class Respond
         }
 
         if ($respond instanceof Respond) {
-            if (!is_null($this->redirect)) {
+            if ($this->redirect !== null) {
                 $this->redirect($this->redirect);
             }
         }

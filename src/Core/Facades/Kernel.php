@@ -5,6 +5,7 @@ namespace Core\Facades;
 use App\Kernel as AppKernel;
 use Core\Support\Console;
 use Exception;
+use Throwable;
 
 /**
  * Nyalakan aplikasi ini melalui kernel.
@@ -21,7 +22,7 @@ final class Kernel
      * 
      * @throws Exception
      */
-    private static function build(): Application
+    private static function &build(): Application
     {
         $_ENV['_STARTTIME'] = microtime(true);
         App::new(new Application());
@@ -73,7 +74,7 @@ final class Kernel
         $_ENV['_DEBUG'] = $debug;
 
         error_reporting($debug ? E_ALL : 0);
-        set_exception_handler(function (mixed $error) use ($debug) {
+        set_exception_handler(function (Throwable $error) use ($debug) {
             if ($debug) {
                 trace($error);
             }

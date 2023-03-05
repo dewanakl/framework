@@ -11,7 +11,7 @@ use Core\Facades\App;
  * @method static int|string|null id()
  * @method static \Core\Model\Model|null user()
  * @method static void logout()
- * @method static void login(object $user)
+ * @method static void login(Model $user)
  * @method static bool attempt(array $credential, string $model = 'App\Models\User')
  * 
  * @see \Core\Auth\AuthManager
@@ -30,7 +30,7 @@ final class Auth
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        return App::get()->singleton(self::class)->__call($method, $parameters);
+        return App::get()->singleton(static::class)->__call($method, $parameters);
     }
 
     /**

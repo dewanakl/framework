@@ -31,7 +31,7 @@ class Application
      */
     function __construct()
     {
-        if (is_null($this->objectPool)) {
+        if ($this->objectPool === null) {
             $this->objectPool = [];
         }
     }
@@ -93,7 +93,7 @@ class Application
      * @param array $default
      * @return object
      */
-    public function singleton(string $name, array $default = []): object
+    public function &singleton(string $name, array $default = []): object
     {
         if (empty($this->objectPool[$name])) {
             $this->objectPool[$name] = $this->build($name, $default);
@@ -113,7 +113,7 @@ class Application
      * @param array $default
      * @return object
      */
-    public function make(string $name, array $default = []): object
+    public function &make(string $name, array $default = []): object
     {
         $this->objectPool[$name] = $this->build($name, $default);
 
