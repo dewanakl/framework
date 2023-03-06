@@ -70,7 +70,7 @@ class AuthManager
      * 
      * @return Model|null
      */
-    public function &user(): Model|null
+    public function user(): Model|null
     {
         if (!($this->user instanceof Model)) {
             $user = $this->session->get('_user');

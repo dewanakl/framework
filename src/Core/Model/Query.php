@@ -70,16 +70,6 @@ class Query
      */
     function __construct()
     {
-        $this->connect();
-    }
-
-    /**
-     * Koneksi ke DataBase.
-     *
-     * @return void
-     */
-    private function connect(): void
-    {
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
         }
@@ -122,11 +112,9 @@ class Query
      * @param mixed $data
      * @return Model
      */
-    private function &build(mixed $data): Model
+    private function build(mixed $data): Model
     {
-        $model = App::get()->make($this->targetObject);
-        $model->setAttribute($data);
-        return $model;
+        return App::get()->make($this->targetObject)->setAttribute($data);
     }
 
     /**
@@ -144,44 +132,48 @@ class Query
      * Set nama tabelnya.
      *
      * @param string $name
-     * @return void
+     * @return Query
      */
-    public function setTable(string $name): void
+    public function setTable(string $name): Query
     {
         $this->table = $name;
+        return $this;
     }
 
     /**
      * Set tanggal updatenya.
      *
      * @param array $date
-     * @return void
+     * @return Query
      */
-    public function setDates(array $date): void
+    public function setDates(array $date): Query
     {
         $this->dates = $date;
+        return $this;
     }
 
     /**
      * Set primaryKey.
      *
      * @param string $primaryKey
-     * @return void
+     * @return Query
      */
-    public function setPrimaryKey(string $primaryKey): void
+    public function setPrimaryKey(string $primaryKey): Query
     {
         $this->primaryKey = $primaryKey;
+        return $this;
     }
 
     /**
      * Set targetObject.
      *
      * @param string $targetObject
-     * @return void
+     * @return Query
      */
-    public function setObject(string $targetObject): void
+    public function setObject(string $targetObject): Query
     {
         $this->targetObject = $targetObject;
+        return $this;
     }
 
     /**
@@ -502,7 +494,7 @@ class Query
      * @param mixed $where
      * @return Model
      */
-    public function &find(mixed $id, mixed $where = null): Model
+    public function find(mixed $id, mixed $where = null): Model
     {
         return $this->id($id, $where)->limit(1)->first();
     }
@@ -512,7 +504,7 @@ class Query
      *
      * @return Model
      */
-    public function &get(): Model
+    public function get(): Model
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
@@ -524,7 +516,7 @@ class Query
      *
      * @return Model
      */
-    public function &first(): Model
+    public function first(): Model
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
@@ -539,7 +531,7 @@ class Query
      * 
      * @throws Exception
      */
-    public function &create(array $data): Model
+    public function create(array $data): Model
     {
         if ($this->dates) {
             $now = now('Y-m-d H:i:s.u');

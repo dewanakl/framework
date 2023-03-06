@@ -15,6 +15,8 @@ use Traversable;
  * Representasi table database.
  * 
  * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
+ * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
+ * @method static \Core\Model\Query whereNotNull(string $column, string $agr = 'AND')
  * @method static \Core\Model\Query join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER')
  * @method static \Core\Model\Query leftJoin(string $table, string $column, string $refers, string $param = '=')
  * @method static \Core\Model\Query rightJoin(string $table, string $column, string $refers, string $param = '=')
@@ -80,22 +82,24 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * Set attributenya.
      *
      * @param array|bool $data
-     * @return void
+     * @return Model
      */
-    public function setAttribute(array|bool $data): void
+    public function setAttribute(array|bool $data): Model
     {
         $this->attributes = $data;
+        return $this;
     }
 
     /**
      * Set nama tabelnya.
      *
      * @param string $name
-     * @return void
+     * @return Model
      */
-    public function setTable(string $name): void
+    public function setTable(string $name): Model
     {
         $this->table = $name;
+        return $this;
     }
 
     /**
@@ -212,7 +216,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      *
      * @return Model
      */
-    public function &refresh(): Model
+    public function refresh(): Model
     {
         return $this->find($this->__get($this->primaryKey));
     }
@@ -332,11 +336,11 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function __call(string $method, array $parameters): mixed
     {
-        $query = App::get()->singleton(Query::class);
-        $query->setTable($this->table);
-        $query->setDates($this->dates);
-        $query->setPrimaryKey($this->primaryKey);
-        $query->setObject(get_called_class());
+        $query = App::get()->singleton(Query::class)
+            ->setTable($this->table)
+            ->setDates($this->dates)
+            ->setPrimaryKey($this->primaryKey)
+            ->setObject(get_called_class());
 
         return $query->{$method}(...$parameters);
     }

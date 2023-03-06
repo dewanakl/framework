@@ -23,9 +23,7 @@ final class DB extends Model
      */
     public static function table(string $name): Model
     {
-        $model = new static;
-        $model->setTable($name);
-        return $model;
+        return (new static)->setTable($name);
     }
 
     /**
