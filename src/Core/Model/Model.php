@@ -324,7 +324,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        return App::get()->singleton(get_called_class())->__call($method, $parameters);
+        return App::get()->make(get_called_class())->__call($method, $parameters);
     }
 
     /**

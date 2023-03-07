@@ -11,7 +11,7 @@ use Core\Facades\App;
  * @method static int|string|null id()
  * @method static \Core\Model\Model|null user()
  * @method static void logout()
- * @method static void login(Model $user)
+ * @method static void login(\Core\Model\Model $user)
  * @method static bool attempt(array $credential, string $model = 'App\Models\User')
  * 
  * @see \Core\Auth\AuthManager

@@ -115,6 +115,7 @@ class Application
      */
     public function &make(string $name, array $default = []): object
     {
+        $this->clean($name);
         $this->objectPool[$name] = $this->build($name, $default);
 
         return $this->objectPool[$name];

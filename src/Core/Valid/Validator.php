@@ -33,9 +33,20 @@ class Validator
      * @param array $rule
      * @return void
      */
-    function __construct()
+    function __construct(array $data, array $rule)
     {
-        $this->data = [];
+        $this->setData($data);
+        $this->validate($rule);
+    }
+
+    /**
+     * Set datanya.
+     * 
+     * @return void
+     */
+    private function setData(array $data): void
+    {
+        $this->data = $data;
         $this->errors = [];
     }
 
@@ -280,21 +291,7 @@ class Validator
      */
     public static function make(array $data, array $rule): Validator
     {
-        $validator = App::get()->singleton(static::class);
-        $validator->setData($data);
-        $validator->validate($rule);
-        return $validator;
-    }
-
-    /**
-     * Set datanya.
-     * 
-     * @return void
-     */
-    public function setData(array $data): void
-    {
-        $this->data = $data;
-        $this->errors = [];
+        return new static($data, $rule);
     }
 
     /**

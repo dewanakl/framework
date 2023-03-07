@@ -22,7 +22,7 @@ final class Kernel
      * 
      * @throws Exception
      */
-    private static function &build(): Application
+    private static function build(): Application
     {
         $_ENV['_STARTTIME'] = microtime(true);
         App::new(new Application());
