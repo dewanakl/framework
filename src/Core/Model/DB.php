@@ -76,12 +76,12 @@ final class DB extends Model
     public static function transaction(Closure $fn): void
     {
         try {
-            self::beginTransaction();
-            $fn();
-            self::commit();
+            static::beginTransaction();
+            App::get()->resolve($fn);
+            static::commit();
         } catch (Exception $e) {
-            self::rollBack();
-            self::exception($e);
+            static::rollBack();
+            static::exception($e);
         }
     }
 }

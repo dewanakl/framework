@@ -2,6 +2,8 @@
 
 namespace Core\Middleware;
 
+use Core\Valid\Hash;
+
 trait HasToken
 {
     /**
@@ -13,7 +15,7 @@ trait HasToken
      */
     protected function checkToken(string $token, bool $ajax = false): void
     {
-        if (!hash_equals(session()->get('_token'), $token)) {
+        if (!hash_equals(session()->get('_token', Hash::rand(10)), $token)) {
             session()->unset('_token');
 
             if (!$ajax) {

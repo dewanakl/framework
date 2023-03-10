@@ -109,12 +109,12 @@ class Query
     /**
      * Build ke target object.
      * 
-     * @param mixed $data
+     * @param array|bool $data
      * @return Model
      */
-    private function build(mixed $data): Model
+    private function build(array|bool $data): Model
     {
-        return App::get()->make($this->targetObject)->setAttribute($data);
+        return (new $this->targetObject)->setAttribute($data);
     }
 
     /**

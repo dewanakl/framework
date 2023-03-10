@@ -251,7 +251,6 @@ abstract class Model implements IteratorAggregate, JsonSerializable
         }
 
         $this->attributes = $temp;
-
         return $this;
     }
 
@@ -271,7 +270,6 @@ abstract class Model implements IteratorAggregate, JsonSerializable
         }
 
         $this->attributes = $temp;
-
         return $this;
     }
 
@@ -297,7 +295,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function __set(string $name, mixed $value): void
     {
-        if ($this->primaryKey == $name) {
+        if ($this->primaryKey == $name && $this->__isset($name)) {
             throw new Exception('Nilai primary key tidak bisa di ubah !');
         }
 
@@ -324,7 +322,8 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        return App::get()->make(get_called_class())->__call($method, $parameters);
+        $class = get_called_class();
+        return (new $class)->__call($method, $parameters);
     }
 
     /**
@@ -336,12 +335,11 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function __call(string $method, array $parameters): mixed
     {
-        $query = App::get()->singleton(Query::class)
+        return App::get()->singleton(Query::class)
             ->setTable($this->table)
             ->setDates($this->dates)
             ->setPrimaryKey($this->primaryKey)
-            ->setObject(get_called_class());
-
-        return $query->{$method}(...$parameters);
+            ->setObject(get_called_class())
+            ->{$method}(...$parameters);
     }
 }

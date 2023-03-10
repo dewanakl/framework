@@ -28,7 +28,7 @@ final class Storage
      */
     public static function setFolderName(string $name): void
     {
-        self::$folderName = $name;
+        static::$folderName = $name;
     }
 
     /**
@@ -38,7 +38,7 @@ final class Storage
      */
     public static function getLocation(): string
     {
-        return basepath() . '/' . self::$folderName . '/';
+        return basepath() . '/' . static::$folderName . '/';
     }
 
     /**
@@ -49,7 +49,7 @@ final class Storage
      */
     public static function stream(string $filename): Stream
     {
-        return App::get()->singleton(Stream::class)->send(self::getLocation() . $filename);
+        return App::get()->singleton(Stream::class)->send(static::getLocation() . $filename);
     }
 
     /**
@@ -60,7 +60,7 @@ final class Storage
      */
     public static function download(string $filename): Stream
     {
-        return self::stream($filename)->download();
+        return static::stream($filename)->download();
     }
 
     /**
@@ -71,7 +71,7 @@ final class Storage
      */
     public static function size(string $filename): int|false
     {
-        return filesize(self::getLocation() . $filename);
+        return filesize(static::getLocation() . $filename);
     }
 
     /**
@@ -82,7 +82,7 @@ final class Storage
      */
     public static function exists(string $filename): bool
     {
-        return file_exists(self::getLocation() . $filename);
+        return file_exists(static::getLocation() . $filename);
     }
 
     /**
@@ -93,7 +93,7 @@ final class Storage
      */
     public static function lastModified(string $filename): int|false
     {
-        return filemtime(self::getLocation() .  $filename);
+        return filemtime(static::getLocation() .  $filename);
     }
 
     /**
@@ -104,8 +104,8 @@ final class Storage
      */
     public static function extension(string $filename): string|false
     {
-        if (self::exists($filename)) {
-            return pathinfo(self::getLocation() . $filename, PATHINFO_EXTENSION);
+        if (static::exists($filename)) {
+            return pathinfo(static::getLocation() . $filename, PATHINFO_EXTENSION);
         }
 
         return false;
@@ -119,8 +119,8 @@ final class Storage
      */
     public static function name(string $filename): string|false
     {
-        if (self::exists($filename)) {
-            return pathinfo(self::getLocation() . $filename, PATHINFO_FILENAME);
+        if (static::exists($filename)) {
+            return pathinfo(static::getLocation() . $filename, PATHINFO_FILENAME);
         }
 
         return false;
@@ -134,7 +134,7 @@ final class Storage
      */
     public static function mimeType(string $filename): string|false
     {
-        return mime_content_type(self::getLocation() . $filename);
+        return mime_content_type(static::getLocation() . $filename);
     }
 
     /**
@@ -146,7 +146,7 @@ final class Storage
      */
     public static function copy(string $from, string $to): bool
     {
-        return copy(self::getLocation() . $from, self::getLocation() . $to);
+        return copy(static::getLocation() . $from, static::getLocation() . $to);
     }
 
     /**
@@ -158,7 +158,7 @@ final class Storage
      */
     public static function rename(string $from, string $to): bool
     {
-        return rename(self::getLocation() . $from, self::getLocation() . $to);
+        return rename(static::getLocation() . $from, static::getLocation() . $to);
     }
 
     /**
@@ -169,7 +169,7 @@ final class Storage
      */
     public static function delete(string $filename): bool
     {
-        return unlink(self::getLocation() . $filename);
+        return unlink(static::getLocation() . $filename);
     }
 
     /**
@@ -179,7 +179,7 @@ final class Storage
      */
     public static function files(): array
     {
-        $files = scandir(self::getLocation(), 1);
+        $files = scandir(static::getLocation(), 1);
         return array_diff($files, array('..', '.', '.gitignore'));
     }
 
@@ -192,6 +192,6 @@ final class Storage
      */
     public static function move(string $from, string $to): bool
     {
-        return rename(self::getLocation() . $from, basepath() . '/' . $to . '/' . $from);
+        return rename(static::getLocation() . $from, basepath() . '/' . $to . '/' . $from);
     }
 }

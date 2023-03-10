@@ -25,7 +25,7 @@ final class App
      */
     public static function &new(Application $app): Application
     {
-        self::$app = $app;
+        static::$app = $app;
         return static::get();
     }
 
@@ -36,6 +36,6 @@ final class App
      */
     public static function &get(): Application
     {
-        return self::$app;
+        return static::$app;
     }
 }
