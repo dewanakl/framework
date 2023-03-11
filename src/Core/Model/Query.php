@@ -533,7 +533,7 @@ class Query
      */
     public function create(array $data): Model
     {
-        if ($this->dates) {
+        if (count($this->dates) > 0) {
             $now = now('Y-m-d H:i:s.u');
             $data = array_merge($data, array_combine($this->dates, array($now, $now)));
         }
@@ -554,9 +554,11 @@ class Query
             throw new Exception('Error insert new data [' . implode(', ', $keys) . ']');
         }
 
-        $id = $this->db->lastInsertId();
-        if ($id) {
-            $data[$this->primaryKey] = $id;
+        if ($this->primaryKey) {
+            $id = $this->db->lastInsertId();
+            if ($id) {
+                $data[$this->primaryKey] = $id;
+            }
         }
 
         return $this->build($data);
@@ -570,7 +572,7 @@ class Query
      */
     public function update(array $data): bool
     {
-        if ($this->dates) {
+        if (count($this->dates) > 0) {
             $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
         }
 

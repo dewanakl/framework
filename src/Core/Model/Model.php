@@ -103,6 +103,18 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     }
 
     /**
+     * Hapus attribute dates.
+     *
+     * @return Model
+     */
+    public function clearForDB(): Model
+    {
+        $this->dates = [];
+        $this->primaryKey = null;
+        return $this;
+    }
+
+    /**
      * Ambil attribute.
      *
      * @return array

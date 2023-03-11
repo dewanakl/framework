@@ -23,7 +23,7 @@ final class DB extends Model
      */
     public static function table(string $name): Model
     {
-        return (new static)->setTable($name);
+        return (new static)->setTable($name)->clearForDB();
     }
 
     /**
