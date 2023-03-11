@@ -155,10 +155,10 @@ class Query
     /**
      * Set primaryKey.
      *
-     * @param string $primaryKey
+     * @param string|null $primaryKey
      * @return Query
      */
-    public function setPrimaryKey(string $primaryKey): Query
+    public function setPrimaryKey(string|null $primaryKey): Query
     {
         $this->primaryKey = $primaryKey;
         return $this;

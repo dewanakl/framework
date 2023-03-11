@@ -2,9 +2,7 @@
 
 namespace Core\View;
 
-use Exception;
 use Stringable;
-use Throwable;
 
 /**
  * Tampilkan html dan juga injek variabel.
@@ -84,15 +82,10 @@ class Render implements Stringable
             ob_start();
             extract($__data, EXTR_SKIP);
 
-            try {
-                require_once $__path;
-            } catch (Throwable $e) {
-                throw new Exception($e->getMessage());
-            }
-
+            require_once $__path;
             $content = ob_get_contents();
-            ob_end_clean();
 
+            ob_end_clean();
             unset($__path, $__data);
             return strval($content);
         })($this->path, $this->variables);
