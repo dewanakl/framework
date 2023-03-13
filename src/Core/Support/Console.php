@@ -2,8 +2,11 @@
 
 namespace Core\Support;
 
+use Core\Database\Generator;
+use Core\Database\Migration;
 use Core\Routing\Route;
 use Core\Valid\Hash;
+use Exception;
 
 /**
  * Saya console untuk mempermudah develop app.
@@ -56,7 +59,7 @@ class Console
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
 
-        print($this->createColor('green', "Kamu PHP Framework v1.1.6\n"));
+        print($this->createColor('green', "Kamu PHP Framework v1.1.25\n"));
         print($this->createColor('yellow', "Saya Console\n\n"));
     }
 
@@ -127,7 +130,7 @@ class Console
     private function executeTime(): string
     {
         $now = microtime(true);
-        $result = diffTime($this->timenow, $now);
+        $result = strval(diffTime($this->timenow, $now));
         $this->timenow = $now;
 
         return $this->createColor('cyan', '(' . $result . ' ms)');
@@ -148,6 +151,10 @@ class Console
 
         foreach ($files as $file) {
             $arg = require $baseFile . $file;
+            if (!($arg instanceof Migration)) {
+                throw new Exception('File ' . $file . ' bukan migrasi !');
+            }
+
             ($up) ? $arg->up() : $arg->down();
             $info = ($up) ? $this->createColor('green', ' Migrasi ') : $this->createColor('yellow', ' Migrasi kembali ');
             print("\n" . $file . $info . $this->executeTime());
@@ -162,6 +169,10 @@ class Console
     private function generator(): void
     {
         $arg = require basepath() . '/database/generator.php';
+        if (!($arg instanceof Generator)) {
+            throw new Exception('File ' . $file . ' bukan generator !');
+        }
+
         $arg->run();
         print("\nGenerator" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }

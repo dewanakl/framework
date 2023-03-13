@@ -31,10 +31,10 @@ use Traversable;
  * @method static \Core\Model\Query min(string $name)
  * @method static \Core\Model\Query avg(string $name)
  * @method static \Core\Model\Query sum(string $name)
- * @method static \Core\Model\Query id(mixed $id, mixed $where = null)
+ * @method static \Core\Model\Query id(mixed $id, string|null $where = null)
  * @method static \Core\Model\Model get()
  * @method static \Core\Model\Model first()
- * @method static \Core\Model\Model find(mixed $id, mixed $where = null)
+ * @method static \Core\Model\Model find(mixed $id, string|null $where = null)
  * @method static \Core\Model\Model create(array $data)
  * @method static bool destroy(int $id)
  * @method static bool update(array $data)
@@ -103,7 +103,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     }
 
     /**
-     * Hapus attribute dates.
+     * Hapus attribute dates dan primaryKey.
      *
      * @return Model
      */

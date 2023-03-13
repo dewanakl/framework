@@ -315,7 +315,7 @@ class Query
     public function orderBy(string $name, string $order = 'ASC'): Query
     {
         $agr = str_contains($this->query, 'ORDER BY') ? ', ' : ' ORDER BY ';
-        $this->query = $this->query . $agr . $name . ' ' . strtoupper($order);
+        $this->query = $this->query . $agr . $name . ' ' . ($order === 'ASC' ? 'ASC' : 'DESC');
 
         return $this;
     }
@@ -491,10 +491,10 @@ class Query
      * Cari berdasarkan id.
      *
      * @param mixed $id
-     * @param mixed $where
+     * @param string|null $where
      * @return Model
      */
-    public function find(mixed $id, mixed $where = null): Model
+    public function find(mixed $id, string|null $where = null): Model
     {
         return $this->id($id, $where)->limit(1)->first();
     }
@@ -544,7 +544,7 @@ class Query
             'INSERT INTO %s (%s) VALUES (%s)',
             $this->table,
             implode(', ',  $keys),
-            implode(', ',  array_map(fn ($data) => ':' . $data, $keys))
+            implode(', ',  array_map(fn ($field) => ':' . $field, $keys))
         );
 
         $this->bind($query, $data);
@@ -577,12 +577,10 @@ class Query
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
-        $setQuery = 'SET ' . implode(', ', array_map(fn ($data) => $data . ' = :' . $data, array_keys($data))) . ($this->query ? ' WHERE' : '');
+        $setQuery = 'SET ' . implode(', ', array_map(fn ($field) => $field . ' = :' . $field, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
-        $result = $this->db->execute();
-
-        return boolval($result);
+        return $this->db->execute();
     }
 
     /**
@@ -595,8 +593,6 @@ class Query
         $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
 
         $this->bind($query, $this->param ?? []);
-        $result = $this->db->execute();
-
-        return boolval($result);
+        return $this->db->execute();
     }
 }

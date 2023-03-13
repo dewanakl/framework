@@ -2,8 +2,6 @@
 
 namespace Core\Valid;
 
-use Core\Facades\App;
-
 /**
  * Validasi sebuah nilai.
  * 
@@ -100,8 +98,7 @@ class Validator
                 break;
 
             case $rule == 'dns':
-                $domain = explode('@', $value);
-                if (!checkdnsrr($domain[1])) {
+                if (!checkdnsrr(explode('@', $value)[1])) {
                     $this->setError($param, 'ilegal atau tidak sah !');
                 }
                 break;
@@ -148,8 +145,7 @@ class Validator
 
             case $rule == 'safe':
                 $bad = array_merge(array_map('chr', range(0, 31)), ['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
-                $filename = str_replace($bad, '', $value);
-                $this->__set($param, $filename);
+                $this->__set($param, str_replace($bad, '', $value));
                 break;
 
             case $rule == 'hash':
@@ -161,14 +157,14 @@ class Validator
                 break;
 
             case str_contains($rule, 'min'):
-                $min = explode(':', $rule)[1];
+                $min = intval(explode(':', $rule)[1]);
                 if (strlen($value) < $min) {
                     $this->setError($param, 'panjang minimal', $min);
                 }
                 break;
 
             case str_contains($rule, 'max'):
-                $max = explode(':', $rule)[1];
+                $max = intval(explode(':', $rule)[1]);
                 if (strlen($value) > $max) {
                     $this->setError($param, 'panjang maximal', $max);
                 }
@@ -187,7 +183,7 @@ class Validator
                 $model = 'App\Models\\' . (empty($command[1]) ? 'User' : ucfirst($command[1]));
                 $column = $command[2] ?? $param;
 
-                $data = App::get()->singleton($model)->find($value, $column);
+                $data = (new $model)->find($value, $column);
                 if ($data->{$column}) {
                     $this->setError($param, 'sudah ada !');
                 }
@@ -233,7 +229,7 @@ class Validator
                     break;
 
                 case str_contains($rule, 'min'):
-                    $min = explode(':', $rule)[1] * 1024;
+                    $min = intval(explode(':', $rule)[1]) * 1024;
                     if ($value['size'] < $min) {
                         @unlink($value['tmp_name']);
                         $this->setError($param, 'ukuran minimal', formatBytes($min));
@@ -241,7 +237,7 @@ class Validator
                     break;
 
                 case str_contains($rule, 'max'):
-                    $max = explode(':', $rule)[1] * 1024;
+                    $max = intval(explode(':', $rule)[1]) * 1024;
                     if ($value['size'] > $max) {
                         @unlink($value['tmp_name']);
                         $this->setError($param, 'ukuran maximal', formatBytes($max));
