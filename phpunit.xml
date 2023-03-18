@@ -17,4 +17,11 @@
             <directory suffix=".php">./tests</directory>
         </testsuite>
     </testsuites>
+    <php>
+        <env name="DB_DRIV" value="mysql" />
+        <env name="DB_PORT" value="3306" />
+        <env name="DB_NAME" value="kamu" />
+        <env name="DB_USER" value="root" />
+        <env name="DB_PASS" value="" />
+    </php>
 </phpunit>

@@ -85,18 +85,21 @@ class Stream
 
         $timeFile = @filemtime($file);
         $hashFile = @md5($file);
+        $type = $this->ftype($file);
 
-        if (
-            @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile
-            || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
-        ) {
-            http_response_code(304);
-            header('HTTP/1.1 304 Not Modified', true, 304);
-            exit;
+        if ($type != 'application/octet-stream') {
+            if (
+                @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile
+                || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
+            ) {
+                http_response_code(304);
+                header('HTTP/1.1 304 Not Modified', true, 304);
+                exit;
+            }
+
+            header('Last-Modified: ' . @gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
+            header('Etag: ' . $hashFile);
         }
-
-        header('Last-Modified: ' . @gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
-        header('Etag: ' . $hashFile);
 
         @set_time_limit(0);
         @clear_ob();
@@ -106,7 +109,7 @@ class Stream
         $this->boundary = $hashFile;
         $this->size = @filesize($file);
         $this->download = false;
-        $this->type = $this->ftype($file);
+        $this->type = $type;
     }
 
     /**
@@ -137,9 +140,11 @@ class Stream
         $length = 0;
         $tl = 'Content-Type: ' . $this->type . "\r\n";
         $formatRange = "Content-Range: bytes %s-%s/%s\r\n\r\n";
+        $tmpRanges = [];
 
-        foreach ($ranges as $range) {
+        foreach ($ranges as $id => $range) {
             list($start, $end) = $this->getRange($range);
+            $tmpRanges[$id] = [$start, $end];
             $length += strlen("\r\n--" . $this->boundary . "\r\n");
             $length += strlen($tl);
             $length += strlen(sprintf($formatRange, $start, $end, $this->size));
@@ -151,8 +156,8 @@ class Stream
         header('Content-Type: multipart/byteranges; boundary=' . $this->boundary);
         header('Content-Length: ' . strval($length));
 
-        foreach ($ranges as $range) {
-            list($start, $end) = $this->getRange($range);
+        foreach ($ranges as $id => $range) {
+            list($start, $end) = $tmpRanges[$id];
             echo "\r\n--" . $this->boundary . "\r\n";
             echo $tl;
             echo sprintf($formatRange, $start, $end, $this->size);
@@ -176,6 +181,12 @@ class Stream
         $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
         $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
 
+        fseek($this->file, $start);
+        $start = ftell($this->file);
+
+        fseek($this->file, $end);
+        $end = ftell($this->file);
+
         if ($start > $end) {
             header('Status: 416 Requested Range Not Satisfiable');
             header('Content-Range: */' . strval($this->size));
@@ -198,8 +209,6 @@ class Stream
     {
         while (!feof($this->file)) {
             echo fgets($this->file);
-            @ob_flush();
-            @flush();
         }
     }
 
@@ -217,8 +226,6 @@ class Stream
             $bytesRead = ($bytesLeft > $size) ? $size : $bytesLeft;
             echo fread($this->file, $bytesRead);
             $bytesLeft -= $bytesRead;
-            @ob_flush();
-            @flush();
         }
     }
 
@@ -230,7 +237,7 @@ class Stream
      */
     private function ftype(string|null $typeFile = null): string
     {
-        if ($this->download) {
+        if ($this->download || $typeFile === null) {
             return 'application/octet-stream';
         }
 
@@ -281,14 +288,13 @@ class Stream
             $t = count($ranges);
         }
 
-        header('Accept-Ranges: bytes');
+        header('Accept-Ranges: 0-' . strval($this->size - 1));
         header('Content-Type: ' . $this->type);
         header('Content-Transfer-Encoding: binary');
 
         if ($this->type == 'application/octet-stream') {
             header(sprintf('Content-Disposition: attachment; filename="%s"', $this->name));
         } else {
-            header('Cache-Control: max-age=604800');
             header('Content-Disposition: inline');
         }
 
@@ -303,8 +309,6 @@ class Stream
             $this->readFile();
         }
 
-        @ob_flush();
-        @flush();
         @fclose($this->file);
     }
 
