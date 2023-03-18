@@ -89,8 +89,8 @@ class Stream
 
         if ($type != 'application/octet-stream') {
             if (
-                @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile
-                || @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
+                @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile ||
+                @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
             ) {
                 http_response_code(304);
                 header('HTTP/1.1 304 Not Modified', true, 304);
@@ -104,7 +104,7 @@ class Stream
         @set_time_limit(0);
         @clear_ob();
 
-        $this->file = @fopen($file, 'rb');
+        $this->file = @fopen($file, 'r');
         $this->name = @basename($file);
         $this->boundary = $hashFile;
         $this->size = @filesize($file);
@@ -191,10 +191,6 @@ class Stream
             header('Status: 416 Requested Range Not Satisfiable');
             header('Content-Range: */' . strval($this->size));
             exit;
-        }
-
-        if (($start > 0) || ($end < ($this->size - 1))) {
-            header('HTTP/1.1 206 Partial Content', true, 206);
         }
 
         return [$start, $end];
@@ -299,6 +295,7 @@ class Stream
         }
 
         if ($t > 0) {
+            header('HTTP/1.1 206 Partial Content', true, 206);
             if ($t === 1) {
                 $this->pushSingle($range);
             } else {
