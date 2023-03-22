@@ -3,6 +3,7 @@
 namespace Core\Model;
 
 use Closure;
+use Core\Database\DataBase;
 use Core\Facades\App;
 use Exception;
 use Throwable;
