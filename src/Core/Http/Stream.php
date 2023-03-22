@@ -83,15 +83,15 @@ class Stream
             notFound();
         }
 
-        $timeFile = @filemtime($file);
         $hashFile = @md5($file);
         $type = $this->ftype($file);
 
         if ($type != 'application/octet-stream') {
-            if (
-                @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', '')) == $timeFile ||
-                @trim($this->request->server('HTTP_IF_NONE_MATCH', '')) == $hashFile
-            ) {
+            $timeFile = @filemtime($file);
+            $modified = @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', ''));
+            $match = @trim($this->request->server('HTTP_IF_NONE_MATCH', ''));
+
+            if ($modified == $timeFile || $match == $hashFile) {
                 http_response_code(304);
                 header('HTTP/1.1 304 Not Modified', true, 304);
                 exit;
@@ -306,6 +306,8 @@ class Stream
             $this->readFile();
         }
 
+        @ob_flush();
+        @flush();
         @fclose($this->file);
     }
 
