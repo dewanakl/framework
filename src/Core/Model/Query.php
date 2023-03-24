@@ -204,6 +204,70 @@ class Query
     }
 
     /**
+     * Where IN syntax sql.
+     *
+     * @param string $colomn
+     * @param array|Model $value
+     * @param string $agr
+     * @return Query
+     */
+    public function whereIn(string $column, array|Model $value, string $agr = 'AND'): Query
+    {
+        if (!$this->query && !$this->param) {
+            $this->query = 'SELECT * FROM ' . $this->table;
+        }
+
+        if (!str_contains($this->query ?? '', 'WHERE')) {
+            $agr = 'WHERE';
+        }
+
+        $data = [];
+        if ($value instanceof Model) {
+            foreach ($value->toArray() as $value) {
+                $data[] = array_values($value)[0];
+            }
+        }
+
+        $value  = count($data) == 0 ? ['\'\''] : $data;
+
+        $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, implode(', ', $value));
+
+        return $this;
+    }
+
+    /**
+     * Where Not IN syntax sql.
+     *
+     * @param string $colomn
+     * @param array|Model $value
+     * @param string $agr
+     * @return Query
+     */
+    public function whereNotIn(string $column, array|Model $value, string $agr = 'AND'): Query
+    {
+        if (!$this->query && !$this->param) {
+            $this->query = 'SELECT * FROM ' . $this->table;
+        }
+
+        if (!str_contains($this->query ?? '', 'WHERE')) {
+            $agr = 'WHERE';
+        }
+
+        $data = [];
+        if ($value instanceof Model) {
+            foreach ($value->toArray() as $value) {
+                $data[] = array_values($value)[0];
+            }
+        }
+
+        $value  = count($data) == 0 ? ['\'\''] : $data;
+
+        $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, implode(', ', $value));
+
+        return $this;
+    }
+
+    /**
      * Where NULL syntax sql.
      *
      * @param string $colomn
