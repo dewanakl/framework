@@ -47,6 +47,7 @@ use Traversable;
  */
 abstract class Model implements IteratorAggregate, JsonSerializable
 {
+    use Relational;
     /**
      * Nama tabelnya.
      * 

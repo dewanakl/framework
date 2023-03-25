@@ -56,6 +56,8 @@ class Query
      */
     private $targetObject;
 
+    private $relational;
+
     /**
      * Object database.
      * 
@@ -114,7 +116,17 @@ class Query
      */
     private function build(array|bool $data): Model
     {
-        return (new $this->targetObject)->setAttribute($data);
+        $model = (new $this->targetObject)->setAttribute($data);
+
+        foreach ($this->relational as $value) {
+            if (!method_exists($model, $value)) {
+                throw new Exception('Method ' . $value . ' tidak ada !');
+            }
+
+            $model->{$value} = $model->{$value}();
+        }
+
+        return $model;
     }
 
     /**
@@ -173,6 +185,16 @@ class Query
     public function setObject(string $targetObject): Query
     {
         $this->targetObject = $targetObject;
+        return $this;
+    }
+
+    public function with(string|array $relational): Query
+    {
+        if (!is_array($relational)) {
+            $relational = array($relational);
+        }
+
+        $this->relational = $relational;
         return $this;
     }
 
