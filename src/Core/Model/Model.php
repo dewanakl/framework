@@ -14,6 +14,7 @@ use Traversable;
 /**
  * Representasi table database.
  * 
+ * @method static \Core\Model\Query with(string|array $relational)
  * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
  * @method static \Core\Model\Query whereNotNull(string $column, string $agr = 'AND')
@@ -47,7 +48,6 @@ use Traversable;
  */
 abstract class Model implements IteratorAggregate, JsonSerializable
 {
-    use Relational;
     /**
      * Nama tabelnya.
      * 
@@ -78,6 +78,32 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * @var array|bool $attributes
      */
     protected $attributes;
+
+    /**
+     * Mempunyai satu dari.
+     * 
+     * @param string $model
+     * @param string $foreign_key
+     * @param string|null $local_key
+     * @return HasOne
+     */
+    protected function hasOne(string $model, string $foreign_key, string|null $local_key = null): HasOne
+    {
+        return new HasOne($model, $foreign_key, $local_key ? $local_key : $this->primaryKey);
+    }
+
+    /**
+     * Mempunyai banyak dari.
+     * 
+     * @param string $model
+     * @param string $foreign_key
+     * @param string|null $local_key
+     * @return HasMany
+     */
+    protected function hasMany(string $model, string $foreign_key, string|null $local_key = null): HasMany
+    {
+        return new HasMany($model, $foreign_key, $local_key ? $local_key : $this->primaryKey);
+    }
 
     /**
      * Set attributenya.

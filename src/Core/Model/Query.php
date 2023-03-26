@@ -56,6 +56,11 @@ class Query
      */
     private $targetObject;
 
+    /**
+     * Set Target relasinya.
+     * 
+     * @var array $targetObject
+     */
     private $relational;
 
     /**
@@ -118,12 +123,25 @@ class Query
     {
         $model = (new $this->targetObject)->setAttribute($data);
 
-        foreach ($this->relational as $value) {
-            if (!method_exists($model, $value)) {
-                throw new Exception('Method ' . $value . ' tidak ada !');
+        if (is_bool($data)) {
+            return $model;
+        }
+
+        foreach ($this->relational as $method) {
+            if (!method_exists($model, $method)) {
+                throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
-            $model->{$value} = $model->{$value}();
+            if (array_values($data) !== $data) {
+                $relational = $model->{$method}();
+                $model->{$method} = $relational->setLocalKey($model->{$relational->getLocalKey()})->relational();
+                continue;
+            }
+
+            foreach ($data as $key => $value) {
+                $relational = $model->{$method}();
+                $model->{$key}->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+            }
         }
 
         return $model;
@@ -188,6 +206,12 @@ class Query
         return $this;
     }
 
+    /**
+     * Tambahkan relasi dengan fungsi yang ada di model.
+     *
+     * @param string|array $relational
+     * @return Query
+     */
     public function with(string|array $relational): Query
     {
         if (!is_array($relational)) {
