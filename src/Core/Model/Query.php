@@ -268,14 +268,15 @@ class Query
             $agr = 'WHERE';
         }
 
-        $data = [];
         if ($value instanceof Model) {
-            foreach ($value->toArray() as $value) {
-                $data[] = array_values($value)[0];
+            $data = [];
+            foreach ($value->toArray() as $val) {
+                $data[] = array_values($val)[0];
             }
+            $value = $data;
         }
 
-        $value  = count($data) == 0 ? ['\'\''] : $data;
+        $value = count($data) == 0 ? ['\'\''] : $data;
 
         $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, implode(', ', $value));
 
@@ -300,14 +301,15 @@ class Query
             $agr = 'WHERE';
         }
 
-        $data = [];
         if ($value instanceof Model) {
-            foreach ($value->toArray() as $value) {
-                $data[] = array_values($value)[0];
+            $data = [];
+            foreach ($value->toArray() as $val) {
+                $data[] = array_values($val)[0];
             }
+            $value = $data;
         }
 
-        $value  = count($data) == 0 ? ['\'\''] : $data;
+        $value = count($data) == 0 ? ['\'\''] : $data;
 
         $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, implode(', ', $value));
 

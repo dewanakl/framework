@@ -17,6 +17,8 @@ use Traversable;
  * @method static \Core\Model\Query with(string|array $relational)
  * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
+ * @method static \Core\Model\Query whereIn(string $column, array|Model $value, string $agr = 'AND')
+ * @method static \Core\Model\Query whereNotIn(string $column, array|Model $value, string $agr = 'AND')
  * @method static \Core\Model\Query whereNotNull(string $column, string $agr = 'AND')
  * @method static \Core\Model\Query join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER')
  * @method static \Core\Model\Query leftJoin(string $table, string $column, string $refers, string $param = '=')
@@ -85,11 +87,12 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * @param string $model
      * @param string $foreign_key
      * @param string|null $local_key
+     * @param Closure|null $callback
      * @return HasOne
      */
-    protected function hasOne(string $model, string $foreign_key, string|null $local_key = null): HasOne
+    protected function hasOne(string $model, string $foreign_key, string|null $local_key = null, Closure|null $callback = null): HasOne
     {
-        return new HasOne($model, $local_key ? $local_key : $this->primaryKey, $foreign_key);
+        return new HasOne($model, $local_key ? $local_key : $this->primaryKey, $foreign_key, $callback);
     }
 
     /**
@@ -98,11 +101,12 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * @param string $model
      * @param string $foreign_key
      * @param string|null $local_key
+     * @param Closure|null $callback
      * @return HasMany
      */
-    protected function hasMany(string $model, string $foreign_key, string|null $local_key = null): HasMany
+    protected function hasMany(string $model, string $foreign_key, string|null $local_key = null, Closure|null $callback = null): HasMany
     {
-        return new HasMany($model, $foreign_key, $local_key ? $local_key : $this->primaryKey);
+        return new HasMany($model, $foreign_key, $local_key ? $local_key : $this->primaryKey, $callback);
     }
 
     /**
