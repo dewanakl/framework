@@ -167,6 +167,7 @@ class Query
     public function setTable(string $name): Query
     {
         $this->table = $name;
+        $this->relational = [];
         return $this;
     }
 

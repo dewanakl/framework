@@ -89,7 +89,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     protected function hasOne(string $model, string $foreign_key, string|null $local_key = null): HasOne
     {
-        return new HasOne($model, $foreign_key, $local_key ? $local_key : $this->primaryKey);
+        return new HasOne($model, $local_key ? $local_key : $this->primaryKey, $foreign_key);
     }
 
     /**
