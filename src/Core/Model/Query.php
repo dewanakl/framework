@@ -276,7 +276,7 @@ class Query
             $value = $data;
         }
 
-        $value = count($data) == 0 ? ['\'\''] : $data;
+        $value = count($value) == 0 ? ['\'\''] : $value;
 
         $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, implode(', ', $value));
 
@@ -309,7 +309,7 @@ class Query
             $value = $data;
         }
 
-        $value = count($data) == 0 ? ['\'\''] : $data;
+        $value = count($value) == 0 ? ['\'\''] : $value;
 
         $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, implode(', ', $value));
 
