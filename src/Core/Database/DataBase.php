@@ -51,6 +51,10 @@ class DataBase
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
         ];
 
+        if (env('MYSQL_ATTR_SSL_CA')) {
+            $option[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+        }
+
         try {
             if ($this->pdo === null) {
                 $this->pdo = new PDO($dsn, env('DB_USER'), env('DB_PASS'), $option);
