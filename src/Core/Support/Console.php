@@ -360,17 +360,12 @@ class Console
         }
 
         Route::setRouteFromFile();
-
         $routes = '<?php return ' . var_export(Route::router()->routes(), true) . ';';
         $envs = '<?php return ' . var_export($env, true) . ';';
 
-        $folder =  basepath() . '/app/cache/';
-        if (!is_dir($folder)) {
-            mkdir($folder, 7777, true);
-        }
-
-        file_put_contents($folder . 'routes.php', $routes);
-        file_put_contents($folder . 'env.php', $envs);
+        $folder = basepath() . '/cache';
+        file_put_contents($folder . '/routes.php', $routes);
+        file_put_contents($folder . '/env.php', $envs);
 
         print("\nCache siap !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
@@ -382,8 +377,9 @@ class Console
      */
     private function deleteCache(): void
     {
-        $status = @unlink(basepath() . '/app/cache/routes.php');
-        if ($status) {
+        $routes = @unlink(basepath() . '/cache/routes.php');
+        $env = @unlink(basepath() . '/cache/env.php');
+        if ($routes && $env) {
             print("\nCache dihapus !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
         } else {
             $this->exception('file cache tidak ada !');
