@@ -128,7 +128,7 @@ final class Route
     public static function setRouteFromCacheIfExist(): void
     {
         $cache = basepath() . '/app/cache/routes.php';
-        if (!is_readable($cache)) {
+        if (!is_file($cache)) {
             static::setRouteFromFile();
         } else {
             $cache = require_once $cache;

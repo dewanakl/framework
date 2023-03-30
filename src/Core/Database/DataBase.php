@@ -38,21 +38,23 @@ class DataBase
      */
     function __construct()
     {
-        $dsn = sprintf(
-            '%s:host=%s;dbname=%s;port=%s;',
-            env('DB_DRIV'),
-            env('DB_HOST'),
-            env('DB_NAME'),
-            env('DB_PORT')
-        );
+        if ($this->pdo === null) {
+            $dsn = sprintf(
+                '%s:host=%s;dbname=%s;port=%s;',
+                env('DB_DRIV'),
+                env('DB_HOST'),
+                env('DB_NAME'),
+                env('DB_PORT')
+            );
 
-        $option = [
-            PDO::ATTR_PERSISTENT => true,
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-        ];
+            $option = [
+                PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ];
 
-        if (env('MYSQL_ATTR_SSL_CA')) {
-            $option[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+            if (env('MYSQL_ATTR_SSL_CA')) {
+                $option[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+            }
         }
 
         try {

@@ -42,8 +42,10 @@ final class Kernel
      */
     private static function setEnv(): void
     {
-        $file = App::get()->singleton(AppKernel::class)->getPath() . '/.env';
-        $lines = file_exists($file) ? file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+        $path = App::get()->singleton(AppKernel::class)->getPath();
+        $lines = is_file($path . '/app/cache/env.php')
+            ? require_once $path . '/app/cache/env.php'
+            : (is_file($path . '/.env') ? file($path . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : []);
 
         foreach ($lines as $line) {
             if (strpos(trim($line), '#') === 0) {

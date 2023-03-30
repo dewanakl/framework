@@ -152,7 +152,7 @@ class Console
         foreach ($files as $file) {
             $arg = require $baseFile . $file;
             if (!($arg instanceof Migration)) {
-                throw new Exception('File ' . $file . ' bukan migrasi !');
+                $this->exception('File ' . $file . ' bukan migrasi !');
             }
 
             ($up) ? $arg->up() : $arg->down();
@@ -170,7 +170,7 @@ class Console
     {
         $arg = require basepath() . '/database/generator.php';
         if (!($arg instanceof Generator)) {
-            throw new Exception('File ' . $file . ' bukan generator !');
+            $this->exception('File ' . $file . ' bukan generator !');
         }
 
         $arg->run();
@@ -344,18 +344,35 @@ class Console
      */
     private function createCache(): void
     {
+        $env = [];
+        if (!is_file(basepath() . '/.env')) {
+            $this->exception('File env tidak ada !');
+        }
+
+        $lines = file(basepath() . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) {
+                continue;
+            }
+
+            list($name, $value) = explode('=', $line, 2);
+            $env[trim($name)] = trim($value);
+        }
+
         Route::setRouteFromFile();
-        $route = Route::router()->routes();
-        $data = '<?php return ' . var_export($route, true) . ';';
+
+        $routes = '<?php return ' . var_export(Route::router()->routes(), true) . ';';
+        $envs = '<?php return ' . var_export($env, true) . ';';
 
         $folder =  basepath() . '/app/cache/';
         if (!is_dir($folder)) {
             mkdir($folder, 7777, true);
         }
 
-        file_put_contents($folder . 'routes.php', $data);
+        file_put_contents($folder . 'routes.php', $routes);
+        file_put_contents($folder . 'env.php', $envs);
 
-        print("\nCache route siap !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
+        print("\nCache siap !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
 
     /**
