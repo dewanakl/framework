@@ -404,11 +404,11 @@ class Console
             ],
             [
                 'command' => 'cache',
-                'description' => 'Buat route cache agar lebih cepat'
+                'description' => 'Buat cache agar lebih cepat'
             ],
             [
                 'command' => 'cache:delete',
-                'description' => 'Hapus file cache route tersebut'
+                'description' => 'Hapus file cache tersebut'
             ],
             [
                 'command' => 'migrasi',
