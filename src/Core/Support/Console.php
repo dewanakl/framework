@@ -59,7 +59,7 @@ class Console
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
 
-        print($this->createColor('green', "Kamu PHP Framework v1.1.25\n"));
+        print($this->createColor('green', "Kamu PHP Framework v1.1.27\n"));
         print($this->createColor('yellow', "Saya Console\n\n"));
     }
 
@@ -404,11 +404,11 @@ class Console
             ],
             [
                 'command' => 'cache',
-                'description' => 'Buat route cache agar lebih cepat'
+                'description' => 'Buat cache agar lebih cepat'
             ],
             [
                 'command' => 'cache:delete',
-                'description' => 'Hapus file cache route tersebut'
+                'description' => 'Hapus file cache tersebut'
             ],
             [
                 'command' => 'migrasi',
