@@ -103,7 +103,7 @@ class Respond
     {
         if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
             if ($respond instanceof Stringable) {
-                $this->session->set('_oldroute', App::get()->singleton(Request::class)->server('REQUEST_URI'));
+                $this->session->set('_oldroute', App::get()->singleton(Request::class)->get('REQUEST_URL'));
                 $this->session->unset('old');
                 $this->session->unset('error');
             }
