@@ -5,6 +5,7 @@ namespace Core\Database;
 use Exception;
 use PDO;
 use PDOException;
+use PDOStatement;
 use Throwable;
 
 /**
@@ -49,7 +50,8 @@ class DataBase
 
             $option = [
                 PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
             ];
 
             if (env('MYSQL_ATTR_SSL_CA')) {
@@ -64,6 +66,16 @@ class DataBase
         } catch (PDOException $e) {
             $this->catchException($e);
         }
+    }
+
+    /**
+     * Dapatkan statement sekarang.
+     *
+     * @return PDOStatement
+     */
+    public function getStatement(): PDOStatement
+    {
+        return $this->stmt;
     }
 
     /**
@@ -132,6 +144,12 @@ class DataBase
             $this->catchException($e);
         }
 
+        if ($result === false) {
+            $this->catchException(
+                new Exception('Error saat mengeksekusi')
+            );
+        }
+
         return $result;
     }
 
@@ -151,29 +169,21 @@ class DataBase
      *
      * @param int|string $param
      * @param mixed $value
-     * @param int|null $type
      * @return void
      */
-    public function bind(int|string $param, mixed $value, int|null $type = null): void
+    public function bind(int|string $param, mixed $value): void
     {
-        if ($type === null) {
-            switch (true) {
-                case is_int($value):
-                    $type = PDO::PARAM_INT;
-                    break;
-                case is_bool($value):
-                    $type = PDO::PARAM_BOOL;
-                    break;
-                case is_null($value):
-                    $type = PDO::PARAM_NULL;
-                    break;
-                default:
-                    $type = PDO::PARAM_STR;
-                    break;
+        $this->stmt->bindValue(
+            $param,
+            $value,
+            match (true) {
+                is_int($value) => PDO::PARAM_INT,
+                is_bool($value) => PDO::PARAM_BOOL,
+                is_null($value) => PDO::PARAM_NULL,
+                is_resource($value) => PDO::PARAM_LOB,
+                default => PDO::PARAM_STR
             }
-        }
-
-        $this->stmt->bindValue($param, $value, $type);
+        );
     }
 
     /**
@@ -193,35 +203,13 @@ class DataBase
             $this->catchException($e);
         }
 
+        if (!$result) {
+            $this->catchException(
+                new Exception('Error saat mengeksekusi')
+            );
+        }
+
         return $result;
-    }
-
-    /**
-     * Tampilkan semua.
-     *
-     * @return array|bool
-     */
-    public function all(): array|bool
-    {
-        if (!$this->execute()) {
-            return false;
-        }
-
-        return $this->stmt->fetchAll(PDO::FETCH_OBJ);
-    }
-
-    /**
-     * Tampilkan satu aja.
-     *
-     * @return array|bool
-     */
-    public function first(): array|bool
-    {
-        if (!$this->execute()) {
-            return false;
-        }
-
-        return $this->stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /**

@@ -2,9 +2,12 @@
 
 namespace Core\Model;
 
+use Core\Database\Connection;
 use Core\Database\DataBase;
 use Core\Facades\App;
+use DateTime;
 use Exception;
+use Stringable;
 
 /**
  * Create raw query sql.
@@ -70,6 +73,29 @@ class Query
      */
     private $db;
 
+    private $connection;
+
+    /**
+     * Data tunggal.
+     * 
+     * @var int Fetch
+     */
+    private const Fetch = 1;
+
+    /**
+     * Data banyak.
+     * 
+     * @var int FetchAll
+     */
+    private const FetchAll = 2;
+
+    /**
+     * Status dari fetch.
+     * 
+     * @var int|null $status
+     */
+    private $status;
+
     /**
      * Buat objek model.
      *
@@ -79,6 +105,10 @@ class Query
     {
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
+        }
+
+        if (!($this->connection instanceof Connection)) {
+            $this->connection = App::get()->singleton(Connection::class);
         }
     }
 
@@ -91,11 +121,12 @@ class Query
      */
     private function bind(string $query, array $data = []): void
     {
-        $this->db->query($query);
-
+        $bindings = [];
         foreach ($data as $key => $val) {
-            $this->db->bind(':' . $key, $val);
+            $bindings[':' . $key] = $val;
         }
+
+        $this->connection->prepare($query, $bindings);
 
         $this->query = null;
         $this->param = [];
@@ -111,6 +142,22 @@ class Query
         if (!str_contains($this->query ?? '', 'SELECT')) {
             $this->query = 'SELECT * FROM ' . $this->table . $this->query;
         }
+    }
+
+    private function dateTime(string $datetime = 'now'): object
+    {
+        return new class($datetime) extends DateTime implements Stringable
+        {
+            public function __toString(): string
+            {
+                return $this->format('Y m d H:i:s');
+            }
+
+            public function diffForHuman(): string
+            {
+                return $this->diff(new DateTime)->format('Y m d H:i:s');
+            }
+        };
     }
 
     /**
@@ -132,17 +179,21 @@ class Query
                 throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
-            if (array_values($data) !== $data) {
+            if ($this->status == static::Fetch) {
                 $relational = $model->{$method}();
                 $model->{$method} = $relational->setLocalKey($model->{$relational->getLocalKey()})->relational();
                 continue;
             }
 
-            foreach ($data as $key => $value) {
-                $relational = $model->{$method}();
-                $model->{$key}->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+            if ($this->status == static::FetchAll) {
+                foreach ($data as $key => $value) {
+                    $relational = $model->{$method}();
+                    $model->{$key}->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+                }
             }
         }
+
+        $this->status = null;
 
         return $model;
     }
@@ -168,6 +219,7 @@ class Query
     {
         $this->table = $name;
         $this->relational = [];
+        $this->status = null;
         return $this;
     }
 
@@ -621,7 +673,18 @@ class Query
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
-        return $this->build($this->db->all());
+        $this->status = static::FetchAll;
+        return $this->build($this->connection->get(
+            function (object $data) {
+                if ($this->dates) {
+                    foreach ($this->dates as $value) {
+                        $data->{$value} = $this->dateTime($data->{$value});
+                    }
+                }
+
+                return $data;
+            }
+        ));
     }
 
     /**
@@ -633,7 +696,18 @@ class Query
     {
         $this->checkSelect();
         $this->bind($this->query, $this->param ?? []);
-        return $this->build($this->db->first());
+        $this->status = static::Fetch;
+        return $this->build($this->connection->first(
+            function (object $data) {
+                if ($this->dates) {
+                    foreach ($this->dates as $value) {
+                        $data->{$value} = $this->dateTime($data->{$value});
+                    }
+                }
+
+                return $data;
+            }
+        ));
     }
 
     /**
@@ -641,8 +715,6 @@ class Query
      * 
      * @param array $data
      * @return Model
-     * 
-     * @throws Exception
      */
     public function create(array $data): Model
     {
@@ -661,11 +733,7 @@ class Query
         );
 
         $this->bind($query, $data);
-        $result = $this->db->execute();
-
-        if ($result === false) {
-            throw new Exception('Error insert new data [' . implode(', ', $keys) . ']');
-        }
+        $this->db->execute();
 
         if ($this->primaryKey) {
             $id = $this->db->lastInsertId();
@@ -681,9 +749,9 @@ class Query
      * Update datanya.
      * 
      * @param array $data
-     * @return bool
+     * @return int
      */
-    public function update(array $data): bool
+    public function update(array $data): int
     {
         if (count($this->dates) > 0) {
             $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
@@ -693,19 +761,19 @@ class Query
         $setQuery = 'SET ' . implode(', ', array_map(fn ($field) => $field . ' = :' . $field, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
-        return $this->db->execute();
+        return $this->connection->affectingStatement();
     }
 
     /**
      * Hapus datanya.
      * 
-     * @return bool
+     * @return int
      */
-    public function delete(): bool
+    public function delete(): int
     {
         $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
 
         $this->bind($query, $this->param ?? []);
-        return $this->db->execute();
+        return $this->connection->affectingStatement();
     }
 }
