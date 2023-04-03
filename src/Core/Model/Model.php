@@ -77,7 +77,7 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Attributes hasil query.
      * 
-     * @var array|bool $attributes
+     * @var array $attributes
      */
     protected $attributes;
 
@@ -112,10 +112,10 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Set attributenya.
      *
-     * @param array|bool $data
+     * @param array $data
      * @return Model
      */
-    public function setAttribute(array|bool $data): Model
+    public function setAttribute(array $data): Model
     {
         $this->attributes = $data;
         return $this;
@@ -152,10 +152,6 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      */
     public function attribute(): array
     {
-        if (is_bool($this->attributes)) {
-            return [];
-        }
-
         return $this->attributes ?? [];
     }
 

@@ -2,7 +2,6 @@
 
 namespace Core\Model;
 
-use Core\Database\Connection;
 use Core\Database\DataBase;
 use Core\Facades\App;
 use DateTime;
@@ -73,7 +72,19 @@ class Query
      */
     private $db;
 
-    private $connection;
+    /**
+     * Log query.
+     * 
+     * @var array $queryLog
+     */
+    private $queryLog;
+
+    /**
+     * Waktu query.
+     * 
+     * @var float $queryDuration
+     */
+    private $queryDuration;
 
     /**
      * Data tunggal.
@@ -106,10 +117,11 @@ class Query
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
         }
+    }
 
-        if (!($this->connection instanceof Connection)) {
-            $this->connection = App::get()->singleton(Connection::class);
-        }
+    private function recordQueryLog()
+    {
+        $this->queryLog[] = [$this->query, round((microtime(true) - $this->queryDuration) * 1000, 2)];
     }
 
     /**
@@ -121,12 +133,14 @@ class Query
      */
     private function bind(string $query, array $data = []): void
     {
-        $bindings = [];
-        foreach ($data as $key => $val) {
-            $bindings[':' . $key] = $val;
-        }
+        $this->queryDuration = microtime(true);
+        $this->query = $query;
 
-        $this->connection->prepare($query, $bindings);
+        $this->db->query($query);
+
+        foreach ($data as $key => $value) {
+            $this->db->bind(is_string($key) ? ':' . $key : $key + 1, $value);
+        }
 
         $this->query = null;
         $this->param = [];
@@ -170,10 +184,6 @@ class Query
     {
         $model = (new $this->targetObject)->setAttribute($data);
 
-        if (is_bool($data)) {
-            return $model;
-        }
-
         foreach ($this->relational as $method) {
             if (!method_exists($model, $method)) {
                 throw new Exception('Method ' . $method . ' tidak ada !');
@@ -194,7 +204,6 @@ class Query
         }
 
         $this->status = null;
-
         return $model;
     }
 
@@ -207,6 +216,12 @@ class Query
     {
         $this->checkSelect();
         dd($this->query, $this->param);
+    }
+
+
+    public function getRecordQueryLog(): array
+    {
+        return $this->queryLog;
     }
 
     /**
@@ -672,19 +687,26 @@ class Query
     public function get(): Model
     {
         $this->checkSelect();
-        $this->bind($this->query, $this->param ?? []);
         $this->status = static::FetchAll;
-        return $this->build($this->connection->get(
-            function (object $data) {
-                if ($this->dates) {
-                    foreach ($this->dates as $value) {
-                        $data->{$value} = $this->dateTime($data->{$value});
+
+        $this->bind($this->query, $this->param ?? []);
+        $this->db->execute();
+
+        $sets = array();
+        while ($record = $this->db->getStatement()->fetch()) {
+            if ($this->dates) {
+                foreach ($this->dates as $value) {
+                    if (!empty($record->{$value})) {
+                        $record->{$value} = $this->dateTime($record->{$value});
                     }
                 }
-
-                return $data;
             }
-        ));
+
+            $sets[] = $record;
+        }
+
+        $this->recordQueryLog();
+        return $this->build($sets);
     }
 
     /**
@@ -695,19 +717,22 @@ class Query
     public function first(): Model
     {
         $this->checkSelect();
-        $this->bind($this->query, $this->param ?? []);
         $this->status = static::Fetch;
-        return $this->build($this->connection->first(
-            function (object $data) {
-                if ($this->dates) {
-                    foreach ($this->dates as $value) {
-                        $data->{$value} = $this->dateTime($data->{$value});
-                    }
-                }
 
-                return $data;
+        $this->bind($this->query, $this->param ?? []);
+        $this->db->execute();
+
+        $record = $this->db->getStatement()->fetch();
+        if ($this->dates) {
+            foreach ($this->dates as $value) {
+                if (!empty($record[$value])) {
+                    $record[$value] = $this->dateTime($record[$value]);
+                }
             }
-        ));
+        }
+
+        $this->recordQueryLog();
+        return $this->build($record);
     }
 
     /**
@@ -742,6 +767,7 @@ class Query
             }
         }
 
+        $this->recordQueryLog();
         return $this->build($data);
     }
 
@@ -761,7 +787,9 @@ class Query
         $setQuery = 'SET ' . implode(', ', array_map(fn ($field) => $field . ' = :' . $field, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
-        return $this->connection->affectingStatement();
+        $this->db->execute();
+        $this->recordQueryLog();
+        return $this->db->rowCount();
     }
 
     /**
@@ -774,6 +802,8 @@ class Query
         $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
 
         $this->bind($query, $this->param ?? []);
-        return $this->connection->affectingStatement();
+        $this->db->execute();
+        $this->recordQueryLog();
+        return $this->db->rowCount();
     }
 }

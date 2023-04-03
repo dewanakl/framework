@@ -1,10 +1,10 @@
 <?php
 
-namespace Core\Model;
+namespace Core\Database;
 
 use Closure;
-use Core\Database\DataBase;
 use Core\Facades\App;
+use Core\Model\Model;
 use Exception;
 use Throwable;
 
