@@ -39,9 +39,9 @@ use Traversable;
  * @method static \Core\Model\Model first()
  * @method static \Core\Model\Model find(mixed $id, string|null $where = null)
  * @method static \Core\Model\Model create(array $data)
- * @method static bool destroy(int $id)
- * @method static bool update(array $data)
- * @method static bool delete()
+ * @method static int destroy(int $id)
+ * @method static int update(array $data)
+ * @method static int delete()
  * 
  * @see \Core\Model\Query
  *
@@ -86,13 +86,17 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * 
      * @param string $model
      * @param string $foreign_key
-     * @param string|null $local_key
+     * @param Closure|string|null $local_key
      * @param Closure|null $callback
-     * @return HasOne
+     * @return BelongsTo
      */
-    protected function hasOne(string $model, string $foreign_key, string|null $local_key = null, Closure|null $callback = null): HasOne
+    protected function belongsTo(string $model, string $foreign_key, Closure|string|null $local_key = null, Closure|null $callback = null): BelongsTo
     {
-        return new HasOne($model, $local_key ? $local_key : $this->primaryKey, $foreign_key, $callback);
+        if ($local_key instanceof Closure) {
+            return new BelongsTo($model, $this->primaryKey, $foreign_key, $local_key);
+        }
+
+        return new BelongsTo($model, $local_key ? $local_key : $this->primaryKey, $foreign_key, $callback);
     }
 
     /**
@@ -100,12 +104,16 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      * 
      * @param string $model
      * @param string $foreign_key
-     * @param string|null $local_key
+     * @param Closure|string|null $local_key
      * @param Closure|null $callback
      * @return HasMany
      */
-    protected function hasMany(string $model, string $foreign_key, string|null $local_key = null, Closure|null $callback = null): HasMany
+    protected function hasMany(string $model, string $foreign_key, Closure|string|null $local_key = null, Closure|null $callback = null): HasMany
     {
+        if ($local_key instanceof Closure) {
+            return new HasMany($model, $foreign_key, $this->primaryKey, $local_key);
+        }
+
         return new HasMany($model, $foreign_key, $local_key ? $local_key : $this->primaryKey, $callback);
     }
 
@@ -236,6 +244,8 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      *
      * @param Closure|null $fn
      * @return mixed
+     * 
+     * TODO: check if array empty must be return fail? if array empty because TRUE empty?
      */
     public function fail(Closure|null $fn = null): mixed
     {
@@ -243,11 +253,11 @@ abstract class Model implements IteratorAggregate, JsonSerializable
             return $this;
         }
 
-        if ($fn === null) {
-            return false;
+        if ($fn instanceof Closure) {
+            return App::get()->resolve($fn);
         }
 
-        return App::get()->resolve($fn);
+        return false;
     }
 
     /**
@@ -263,11 +273,11 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     /**
      * Save perubahan pada attribute dengan primarykey.
      *
-     * @return bool
+     * @return int
      * 
      * @throws Exception
      */
-    public function save(): bool
+    public function save(): int
     {
         if (empty($this->primaryKey) || empty($this->__get($this->primaryKey))) {
             throw new Exception('Nilai primary key tidak ada !');

@@ -140,14 +140,12 @@ class DataBase
 
         try {
             $result = $this->pdo->exec($command);
+
+            if ($result === false) {
+                new Exception('Error saat mengeksekusi');
+            }
         } catch (Throwable $e) {
             $this->catchException($e);
-        }
-
-        if ($result === false) {
-            $this->catchException(
-                new Exception('Error saat mengeksekusi')
-            );
         }
 
         return $result;
@@ -199,14 +197,12 @@ class DataBase
 
         try {
             $result = $this->stmt->execute();
+
+            if (!$result) {
+                new Exception('Error saat mengeksekusi');
+            }
         } catch (Exception $e) {
             $this->catchException($e);
-        }
-
-        if (!$result) {
-            $this->catchException(
-                new Exception('Error saat mengeksekusi')
-            );
         }
 
         return $result;

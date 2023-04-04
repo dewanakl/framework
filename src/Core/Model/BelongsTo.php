@@ -5,10 +5,10 @@ namespace Core\Model;
 /**
  * Create one to one relationship.
  *
- * @class HasOne
+ * @class BelongsTo
  * @package \Core\Model
  */
-final class HasOne extends Relational
+final class BelongsTo extends Relational
 {
     /**
      * Relasikan tabelnya.

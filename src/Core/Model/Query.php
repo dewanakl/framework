@@ -122,6 +122,8 @@ class Query
     private function recordQueryLog()
     {
         $this->queryLog[] = [$this->query, round((microtime(true) - $this->queryDuration) * 1000, 2)];
+        $this->query = null;
+        $this->param = [];
     }
 
     /**
@@ -141,9 +143,6 @@ class Query
         foreach ($data as $key => $value) {
             $this->db->bind(is_string($key) ? ':' . $key : $key + 1, $value);
         }
-
-        $this->query = null;
-        $this->param = [];
     }
 
     /**
@@ -179,6 +178,8 @@ class Query
      * 
      * @param array|bool $data
      * @return Model
+     * 
+     * @throws Exception
      */
     private function build(array|bool $data): Model
     {
@@ -705,6 +706,7 @@ class Query
             $sets[] = $record;
         }
 
+        unset($record);
         $this->recordQueryLog();
         return $this->build($sets);
     }
@@ -722,7 +724,7 @@ class Query
         $this->bind($this->query, $this->param ?? []);
         $this->db->execute();
 
-        $record = $this->db->getStatement()->fetch();
+        $record = (array) $this->db->getStatement()->fetch();
         if ($this->dates) {
             foreach ($this->dates as $value) {
                 if (!empty($record[$value])) {
