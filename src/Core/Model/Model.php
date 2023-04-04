@@ -244,8 +244,6 @@ abstract class Model implements IteratorAggregate, JsonSerializable
      *
      * @param Closure|null $fn
      * @return mixed
-     * 
-     * TODO: check if array empty must be return fail? if array empty because TRUE empty?
      */
     public function fail(Closure|null $fn = null): mixed
     {

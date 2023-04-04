@@ -166,9 +166,9 @@ class Query
                 return $this->format('Y m d H:i:s');
             }
 
-            public function diffForHuman(): string
+            public function diffForHuman(): object
             {
-                return $this->diff(new DateTime)->format('Y m d H:i:s');
+                return $this->diff(new DateTime);
             }
         };
     }
@@ -706,7 +706,6 @@ class Query
             $sets[] = $record;
         }
 
-        unset($record);
         $this->recordQueryLog();
         return $this->build($sets);
     }
@@ -724,7 +723,8 @@ class Query
         $this->bind($this->query, $this->param ?? []);
         $this->db->execute();
 
-        $record = (array) $this->db->getStatement()->fetch();
+        $record = $this->db->getStatement()->fetch();
+        $record = $record === false ? [] : $record;
         if ($this->dates) {
             foreach ($this->dates as $value) {
                 if (!empty($record[$value])) {

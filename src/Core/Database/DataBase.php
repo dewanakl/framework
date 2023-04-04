@@ -142,7 +142,7 @@ class DataBase
             $result = $this->pdo->exec($command);
 
             if ($result === false) {
-                new Exception('Error saat mengeksekusi');
+                throw new Exception('Error saat mengeksekusi');
             }
         } catch (Throwable $e) {
             $this->catchException($e);
@@ -199,7 +199,7 @@ class DataBase
             $result = $this->stmt->execute();
 
             if (!$result) {
-                new Exception('Error saat mengeksekusi');
+                throw new Exception('Error saat mengeksekusi');
             }
         } catch (Exception $e) {
             $this->catchException($e);
