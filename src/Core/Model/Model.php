@@ -9,6 +9,7 @@ use Exception;
 use IteratorAggregate;
 use JsonSerializable;
 use ReturnTypeWillChange;
+use Stringable;
 use Traversable;
 
 /**
@@ -48,7 +49,7 @@ use Traversable;
  * @class Model
  * @package \Core\Model
  */
-abstract class Model implements IteratorAggregate, JsonSerializable
+abstract class Model implements IteratorAggregate, JsonSerializable, Stringable
 {
     /**
      * Nama tabelnya.
@@ -203,6 +204,16 @@ abstract class Model implements IteratorAggregate, JsonSerializable
     public function __unserialize(array $data): void
     {
         $this->attributes = $data;
+    }
+
+    /**
+     * Magic to string.
+     * 
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->toJson();
     }
 
     /**

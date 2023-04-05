@@ -14,7 +14,7 @@ use Stringable;
  * @class Query
  * @package \Core\Model
  */
-class Query
+class Query implements Stringable
 {
     /**
      * String query sql.
@@ -119,9 +119,14 @@ class Query
         }
     }
 
-    private function recordQueryLog()
+    /**
+     * Record query yang terlah dimuat.
+     * 
+     * @return void
+     */
+    private function recordQueryLog(): void
     {
-        $this->queryLog[] = [$this->query, round((microtime(true) - $this->queryDuration) * 1000, 2)];
+        $this->queryLog[] = [$this->query, round((microtime(true) - $this->queryDuration) * 1000, 2), $this->targetObject];
         $this->query = null;
         $this->param = [];
     }
@@ -157,18 +162,65 @@ class Query
         }
     }
 
+    /**
+     * Datetime created_at and updated_at
+     * 
+     * @param string $datetime
+     * @return object
+     */
     private function dateTime(string $datetime = 'now'): object
     {
         return new class($datetime) extends DateTime implements Stringable
         {
+            /**
+             * Magic to string.
+             * 
+             * @return string
+             */
             public function __toString(): string
             {
                 return $this->format('Y m d H:i:s');
             }
 
-            public function diffForHuman(): object
+            /**
+             * Agar bisa dibaca oleh kita.
+             * 
+             * @param int $deep
+             * @return string
+             */
+            public function diffForHuman(int $deep = 2): string
             {
-                return $this->diff(new DateTime);
+                $interval = $this->diff(new DateTime);
+                $grammar = [
+                    'y' => 'tahun',
+                    'm' => 'bulan',
+                    'd' => 'hari',
+                    'h' => 'jam',
+                    'i' => 'menit',
+                    's' => 'detik',
+                ];
+
+                $result = [];
+
+                foreach ($interval as $key => $value) {
+                    if ($value == 0 || $deep <= 0) {
+                        continue;
+                    }
+
+                    foreach ($grammar as $short => $long) {
+                        if ($key == $short) {
+                            $result[] = $value . ' ' . $long;
+                        }
+                    }
+
+                    $deep--;
+
+                    if ($key == 's') {
+                        break;
+                    }
+                }
+
+                return join(' ', $result) . ' yang lalu';
             }
         };
     }
@@ -176,12 +228,12 @@ class Query
     /**
      * Build ke target object.
      * 
-     * @param array|bool $data
+     * @param array $data
      * @return Model
      * 
      * @throws Exception
      */
-    private function build(array|bool $data): Model
+    private function build(array $data): Model
     {
         $model = (new $this->targetObject)->setAttribute($data);
 
@@ -219,7 +271,21 @@ class Query
         dd($this->query, $this->param);
     }
 
+    /**
+     * Magic to string.
+     * 
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->query;
+    }
 
+    /**
+     * Dapatkan log dari semua query.
+     * 
+     * @return array
+     */
     public function getRecordQueryLog(): array
     {
         return $this->queryLog;
@@ -496,7 +562,7 @@ class Query
     public function orderBy(string $name, string $order = 'ASC'): Query
     {
         $agr = str_contains($this->query, 'ORDER BY') ? ', ' : ' ORDER BY ';
-        $this->query = $this->query . $agr . $name . ' ' . ($order === 'ASC' ? 'ASC' : 'DESC');
+        $this->query = $this->query . $agr . $name . ' ' . ($order === 'ASC' || $order === 'asc' ? 'ASC' : 'DESC');
 
         return $this;
     }
@@ -706,6 +772,7 @@ class Query
             $sets[] = $record;
         }
 
+        unset($record);
         $this->recordQueryLog();
         return $this->build($sets);
     }
@@ -724,7 +791,7 @@ class Query
         $this->db->execute();
 
         $record = $this->db->getStatement()->fetch();
-        $record = $record === false ? [] : $record;
+        $record = $record === false ? [] : (array) $record;
         if ($this->dates) {
             foreach ($this->dates as $value) {
                 if (!empty($record[$value])) {
