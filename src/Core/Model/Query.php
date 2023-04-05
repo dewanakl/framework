@@ -727,9 +727,9 @@ class Query implements Stringable
      * Delete by id primary key.
      *
      * @param int $id
-     * @return bool
+     * @return int
      */
-    public function destroy(int $id): bool
+    public function destroy(int $id): int
     {
         return $this->id($id)->delete();
     }
