@@ -5,6 +5,7 @@ namespace Core\Model;
 use ArrayIterator;
 use Closure;
 use Core\Facades\App;
+use Countable;
 use Exception;
 use IteratorAggregate;
 use JsonSerializable;
@@ -30,7 +31,6 @@ use Traversable;
  * @method static \Core\Model\Query limit(int $param)
  * @method static \Core\Model\Query offset(int $param)
  * @method static \Core\Model\Query select(string|array $param)
- * @method static \Core\Model\Query count(string $name = '*')
  * @method static \Core\Model\Query max(string $name)
  * @method static \Core\Model\Query min(string $name)
  * @method static \Core\Model\Query avg(string $name)
@@ -49,7 +49,7 @@ use Traversable;
  * @class Model
  * @package \Core\Model
  */
-abstract class Model implements IteratorAggregate, JsonSerializable, Stringable
+abstract class Model implements Countable, IteratorAggregate, JsonSerializable, Stringable
 {
     /**
      * Nama tabelnya.
@@ -183,6 +183,16 @@ abstract class Model implements IteratorAggregate, JsonSerializable, Stringable
     public function jsonSerialize(): array
     {
         return $this->attribute();
+    }
+
+    /**
+     * Hitung jumlah arraynya.
+     * 
+     * @return int
+     */
+    public function count(): int
+    {
+        return count($this->attribute());
     }
 
     /**

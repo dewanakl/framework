@@ -188,7 +188,7 @@ class Query implements Stringable
              * @param int $deep
              * @return string
              */
-            public function diffForHuman(int $deep = 2): string
+            public function diffForHuman(int $depth = 1): string
             {
                 $interval = $this->diff(new DateTime);
                 $grammar = [
@@ -203,7 +203,7 @@ class Query implements Stringable
                 $result = [];
 
                 foreach ($interval as $key => $value) {
-                    if ($value == 0 || $deep <= 0) {
+                    if ($value == 0 || $depth <= 0) {
                         continue;
                     }
 
@@ -213,14 +213,14 @@ class Query implements Stringable
                         }
                     }
 
-                    $deep--;
+                    $depth--;
 
                     if ($key == 's') {
                         break;
                     }
                 }
 
-                return join(' ', $result) . ' yang lalu';
+                return join(', ', $result) . ' yang lalu';
             }
         };
     }
