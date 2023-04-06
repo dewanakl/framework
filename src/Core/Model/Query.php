@@ -179,7 +179,7 @@ class Query implements Stringable
              */
             public function __toString(): string
             {
-                return $this->format('Y m d H:i:s');
+                return $this->format('Y-m-d H:i:s');
             }
 
             /**
@@ -201,22 +201,14 @@ class Query implements Stringable
                 ];
 
                 $result = [];
-
-                foreach ($interval as $key => $value) {
-                    if ($value == 0 || $depth <= 0) {
-                        continue;
-                    }
-
-                    foreach ($grammar as $short => $long) {
-                        if ($key == $short) {
-                            $result[] = $value . ' ' . $long;
-                        }
-                    }
-
-                    $depth--;
-
-                    if ($key == 's') {
+                foreach ($grammar as $short => $long) {
+                    if ($depth <= 0) {
                         break;
+                    }
+
+                    if ($interval->{$short}) {
+                        $result[] = strval($interval->{$short}) . ' ' . $long;
+                        $depth--;
                     }
                 }
 
@@ -850,6 +842,9 @@ class Query implements Stringable
     {
         if (count($this->dates) > 0) {
             $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
+            if (!empty($data[$this->dates[0]])) {
+                $data[$this->dates[0]] = $data[$this->dates[0]]->__toString();
+            }
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
