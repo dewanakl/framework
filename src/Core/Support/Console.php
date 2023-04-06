@@ -59,7 +59,7 @@ class Console
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
 
-        print($this->createColor('green', "Kamu PHP Framework v1.1.29\n"));
+        print($this->createColor('green', "Kamu PHP Framework v1.2.1\n"));
         print($this->createColor('yellow', "Saya Console\n\n"));
     }
 

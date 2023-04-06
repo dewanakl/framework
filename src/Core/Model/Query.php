@@ -752,7 +752,12 @@ class Query implements Stringable
         $this->db->execute();
 
         $sets = array();
-        while ($record = $this->db->getStatement()->fetch()) {
+        do {
+            $record = $this->db->getStatement()->fetch();
+            if (!$record) {
+                break;
+            }
+
             if ($this->dates) {
                 foreach ($this->dates as $value) {
                     if (!empty($record->{$value})) {
@@ -762,9 +767,8 @@ class Query implements Stringable
             }
 
             $sets[] = $record;
-        }
+        } while (true);
 
-        unset($record);
         $this->recordQueryLog();
         return $this->build($sets);
     }
