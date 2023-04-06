@@ -166,9 +166,9 @@ class Query implements Stringable
      * Datetime created_at and updated_at
      * 
      * @param string $datetime
-     * @return object
+     * @return DateTime
      */
-    private function dateTime(string $datetime = 'now'): object
+    private function dateTime(string $datetime = 'now'): DateTime
     {
         return new class($datetime) extends DateTime implements Stringable
         {
@@ -185,7 +185,7 @@ class Query implements Stringable
             /**
              * Agar bisa dibaca oleh kita.
              * 
-             * @param int $deep
+             * @param int $depth
              * @return string
              */
             public function diffForHuman(int $depth = 1): string
