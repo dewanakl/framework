@@ -832,6 +832,12 @@ class Query implements Stringable
             }
         }
 
+        if (count($this->dates) > 0) {
+            foreach ($this->dates as $value) {
+                $data[$value] = $this->dateTime($data[$value]);
+            }
+        }
+
         $this->recordQueryLog();
         return $this->build($data);
     }
