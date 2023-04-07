@@ -188,7 +188,7 @@ class Query implements Stringable
              * @param int $depth
              * @return string
              */
-            public function diffForHuman(int $depth = 1): string
+            public function diffForHumans(int $depth = 1): string
             {
                 $interval = $this->diff(new DateTime);
                 $grammar = [
