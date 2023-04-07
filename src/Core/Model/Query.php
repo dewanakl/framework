@@ -197,7 +197,7 @@ class Query implements Stringable
                     'd' => 'hari',
                     'h' => 'jam',
                     'i' => 'menit',
-                    's' => 'detik',
+                    's' => 'detik'
                 ];
 
                 $result = [];
@@ -210,6 +210,10 @@ class Query implements Stringable
                         $result[] = strval($interval->{$short}) . ' ' . $long;
                         $depth--;
                     }
+                }
+
+                if (count($result) == 0) {
+                    return 'baru saja';
                 }
 
                 return join(', ', $result) . ' yang lalu';
