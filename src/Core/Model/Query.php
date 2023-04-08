@@ -163,7 +163,19 @@ class Query implements Stringable
     }
 
     /**
-     * Datetime created_at and updated_at
+     * Check query if empty.
+     * 
+     * @return void
+     */
+    private function checkQuery(): void
+    {
+        if (!$this->query && !$this->param) {
+            $this->query = 'SELECT * FROM ' . $this->table;
+        }
+    }
+
+    /**
+     * Datetime created_at and updated_at.
      * 
      * @param string $datetime
      * @return DateTime
@@ -364,9 +376,7 @@ class Query implements Stringable
      */
     public function where(string $column, mixed $value, string $statment = '=', string $agr = 'AND'): Query
     {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
+        $this->checkQuery();
 
         if (!str_contains($this->query ?? '', 'WHERE')) {
             $agr = 'WHERE';
@@ -390,9 +400,7 @@ class Query implements Stringable
      */
     public function whereIn(string $column, array|Model $value, string $agr = 'AND'): Query
     {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
+        $this->checkQuery();
 
         if (!str_contains($this->query ?? '', 'WHERE')) {
             $agr = 'WHERE';
@@ -423,9 +431,7 @@ class Query implements Stringable
      */
     public function whereNotIn(string $column, array|Model $value, string $agr = 'AND'): Query
     {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
+        $this->checkQuery();
 
         if (!str_contains($this->query ?? '', 'WHERE')) {
             $agr = 'WHERE';
@@ -455,9 +461,7 @@ class Query implements Stringable
      */
     public function whereNull(string $column, string $agr = 'AND'): Query
     {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
+        $this->checkQuery();
 
         if (!str_contains($this->query ?? '', 'WHERE')) {
             $agr = 'WHERE';
@@ -477,9 +481,7 @@ class Query implements Stringable
      */
     public function whereNotNull(string $column, string $agr = 'AND'): Query
     {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
+        $this->checkQuery();
 
         if (!str_contains($this->query ?? '', 'WHERE')) {
             $agr = 'WHERE';
