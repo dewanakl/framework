@@ -12,7 +12,7 @@ use Throwable;
  * Helper class DB untuk customizable nama table.
  *
  * @class DB
- * @package \Core\Model
+ * @package \Core\Database
  */
 final class DB extends Model
 {
