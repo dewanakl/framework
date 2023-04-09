@@ -759,6 +759,11 @@ class Query implements Stringable
         $this->bind($this->query, $this->param ?? []);
         $this->db->execute();
 
+        $isDates = false;
+        if (count($this->dates) > 0) {
+            $isDates = true;
+        }
+
         $sets = array();
         do {
             $record = $this->db->getStatement()->fetch();
@@ -766,7 +771,7 @@ class Query implements Stringable
                 break;
             }
 
-            if ($this->dates) {
+            if ($isDates) {
                 foreach ($this->dates as $value) {
                     if (!empty($record->{$value})) {
                         $record->{$value} = $this->dateTime($record->{$value});
@@ -795,14 +800,9 @@ class Query implements Stringable
         $this->db->execute();
 
         $record = $this->db->getStatement()->fetch();
-        $record = $record === false ? null : $record;
+        $set = get_object_vars($record === false ? null : $record);
 
-        $set = array();
-        foreach (get_object_vars($record) as $key => $value) {
-            $set[$key] = $value;
-        }
-
-        if ($this->dates) {
+        if (count($this->dates) > 0) {
             foreach ($this->dates as $value) {
                 if (!empty($set[$value])) {
                     $set[$value] = $this->dateTime($set[$value]);
@@ -822,7 +822,12 @@ class Query implements Stringable
      */
     public function create(array $data): Model
     {
+        $isDates = false;
         if (count($this->dates) > 0) {
+            $isDates = true;
+        }
+
+        if ($isDates) {
             $now = now('Y-m-d H:i:s.u');
             $data = array_merge($data, array_combine($this->dates, array($now, $now)));
         }
@@ -846,7 +851,7 @@ class Query implements Stringable
             }
         }
 
-        if (count($this->dates) > 0) {
+        if ($isDates) {
             foreach ($this->dates as $value) {
                 $data[$value] = $this->dateTime($data[$value]);
             }
