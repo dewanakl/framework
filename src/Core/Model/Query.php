@@ -213,6 +213,7 @@ class Query implements Stringable
                 ];
 
                 $result = [];
+                $isEmpty = true;
                 foreach ($grammar as $short => $long) {
                     if ($depth <= 0) {
                         break;
@@ -221,10 +222,11 @@ class Query implements Stringable
                     if ($interval->{$short}) {
                         $result[] = strval($interval->{$short}) . ' ' . $long;
                         $depth--;
+                        $isEmpty = false;
                     }
                 }
 
-                if (count($result) == 0) {
+                if ($isEmpty) {
                     return 'baru saja';
                 }
 
@@ -793,17 +795,23 @@ class Query implements Stringable
         $this->db->execute();
 
         $record = $this->db->getStatement()->fetch();
-        $record = $record === false ? [] : (array) $record;
+        $record = $record === false ? null : $record;
+
+        $set = array();
+        foreach (get_object_vars($record) as $key => $value) {
+            $set[$key] = $value;
+        }
+
         if ($this->dates) {
             foreach ($this->dates as $value) {
-                if (!empty($record[$value])) {
-                    $record[$value] = $this->dateTime($record[$value]);
+                if (!empty($set[$value])) {
+                    $set[$value] = $this->dateTime($set[$value]);
                 }
             }
         }
 
         $this->recordQueryLog();
-        return $this->build($record);
+        return $this->build($set);
     }
 
     /**
