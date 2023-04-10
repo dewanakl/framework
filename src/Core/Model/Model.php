@@ -143,18 +143,6 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     }
 
     /**
-     * Set attribute by key value.
-     *
-     * @param int|string $key
-     * @param mixed $value
-     * @return void
-     */
-    public function setAttributeByKey(int|string $key, mixed $value): void
-    {
-        $this->attributes[$key] = $value;
-    }
-
-    /**
      * Hapus attribute dates dan primaryKey.
      *
      * @return Model

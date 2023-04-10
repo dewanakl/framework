@@ -247,19 +247,21 @@ class Query implements Stringable
     {
         $model = (new $this->targetObject);
 
-        foreach ($this->relational as $method) {
+        $methods = $this->relational;
+        $status = $this->status;
+        foreach ($methods as $method) {
             if (!method_exists($model, $method)) {
                 throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
             $relational = $model->{$method}();
 
-            if ($this->status == static::Fetch) {
+            if ($status == static::Fetch) {
                 $data[$method] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
                 continue;
             }
 
-            if ($this->status == static::FetchAll) {
+            if ($status == static::FetchAll) {
                 foreach ($data as $key => $value) {
                     $value->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
                     $data[$key] = $value;
@@ -311,8 +313,6 @@ class Query implements Stringable
     public function setTable(string $name): Query
     {
         $this->table = $name;
-        $this->relational = [];
-        $this->status = null;
         return $this;
     }
 
@@ -349,6 +349,8 @@ class Query implements Stringable
     public function setObject(string $targetObject): Query
     {
         $this->targetObject = $targetObject;
+        $this->relational = [];
+        $this->status = null;
         return $this;
     }
 
