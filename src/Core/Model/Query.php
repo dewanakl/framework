@@ -245,29 +245,30 @@ class Query implements Stringable
      */
     private function build(array $data): Model
     {
-        $model = (new $this->targetObject)->setAttribute($data);
+        $model = (new $this->targetObject);
 
         foreach ($this->relational as $method) {
             if (!method_exists($model, $method)) {
                 throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
+            $relational = $model->{$method}();
+
             if ($this->status == static::Fetch) {
-                $relational = $model->{$method}();
-                $model->{$method} = $relational->setLocalKey($model->{$relational->getLocalKey()})->relational();
+                $data[$method] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
                 continue;
             }
 
             if ($this->status == static::FetchAll) {
                 foreach ($data as $key => $value) {
-                    $relational = $model->{$method}();
-                    $model->{$key}->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+                    $value->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+                    $data[$key] = $value;
                 }
             }
         }
 
         $this->status = null;
-        return $model;
+        return $model->setAttribute($data);
     }
 
     /**
@@ -800,7 +801,7 @@ class Query implements Stringable
         $this->db->execute();
 
         $record = $this->db->getStatement()->fetch();
-        $set = get_object_vars($record === false ? null : $record);
+        $set = $record === false ? [] : get_object_vars($record);
 
         if (count($this->dates) > 0) {
             foreach ($this->dates as $value) {

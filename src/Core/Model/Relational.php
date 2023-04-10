@@ -13,9 +13,9 @@ use Closure;
 abstract class Relational
 {
     /**
-     * Object model.
+     * Object name model.
      * 
-     * @var Model $model
+     * @var string $model
      */
     protected $model;
 
@@ -29,7 +29,7 @@ abstract class Relational
     /**
      * local key dari object awal.
      * 
-     * @var string $local_key
+     * @var string|array $local_key
      */
     protected $local_key;
 
@@ -51,7 +51,7 @@ abstract class Relational
      */
     function __construct(string $model, string $foreign_key, string $local_key, Closure|null $callback = null)
     {
-        $this->model = new $model;
+        $this->model = $model;
         $this->foreign_key = $foreign_key;
         $this->local_key = $local_key;
         $this->callback = $callback;
@@ -63,6 +63,18 @@ abstract class Relational
      * @return Model
      */
     abstract public function relational(): Model;
+
+    /**
+     * Ambil value local key.
+     *
+     * @return mixed
+     */
+    protected function getValueLocalKey(): mixed
+    {
+        $value = $this->local_key[1];
+        $this->local_key = $this->local_key[0];
+        return $value;
+    }
 
     /**
      * Ambil nama local key.

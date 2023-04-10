@@ -17,11 +17,11 @@ final class HasMany extends Relational
      */
     public function relational(): Model
     {
-        $model = $this->model->where($this->foreign_key, $this->local_key[1]);
+        $model = (new $this->model)->where($this->foreign_key, $this->getValueLocalKey());
 
         if (!is_null($this->callback)) {
             $callback = $this->callback;
-            $model = $callback($model);
+            return $callback($model)->get();
         }
 
         return $model->get();
