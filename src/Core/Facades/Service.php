@@ -134,9 +134,16 @@ class Service
      */
     public function run(): int
     {
-        $url = empty($sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1])
-            ? $this->request->server('REQUEST_URI')
-            : (empty($raw = explode($sep, $this->request->server('REQUEST_URI'), 2)[1]) ? '/' : $raw);
+        $url = '/';
+        $sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1];
+        if (empty($sep)) {
+            $url = $this->request->server('REQUEST_URI');
+        } else {
+            $raw = explode($sep, $this->request->server('REQUEST_URI'), 2)[1];
+            if (!empty($raw)) {
+                $url = $raw;
+            }
+        }
 
         $path = parse_url($url, PHP_URL_PATH);
         $this->request->__set('REQUEST_URL', $url);
