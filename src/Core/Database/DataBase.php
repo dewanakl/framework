@@ -47,22 +47,20 @@ class DataBase
                 env('DB_PORT')
             );
 
-            $option = [
+            $options = [
                 PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_STRINGIFY_FETCHES => false,
-                PDO::ATTR_CASE => PDO::CASE_NATURAL,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
             ];
 
             if (env('MYSQL_ATTR_SSL_CA')) {
-                $option[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+                $options[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
             }
         }
 
         try {
             if ($this->pdo === null) {
-                $this->pdo = new PDO($dsn, env('DB_USER'), env('DB_PASS'), $option);
+                $this->pdo = new PDO($dsn, env('DB_USER'), env('DB_PASS'), $options);
             }
         } catch (PDOException $e) {
             $this->catchException($e);
