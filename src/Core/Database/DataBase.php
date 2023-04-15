@@ -50,7 +50,7 @@ class DataBase
             $options = [
                 PDO::ATTR_PERSISTENT => true,
                 PDO::ATTR_CASE => PDO::CASE_NATURAL,
-                // PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_EMULATE_PREPARES => false,
                 PDO::ATTR_STRINGIFY_FETCHES => false,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
