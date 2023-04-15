@@ -5,7 +5,6 @@ namespace Core\Database;
 use Exception;
 use PDO;
 use PDOException;
-use PDOStatement;
 use Throwable;
 
 /**
@@ -50,6 +49,8 @@ class DataBase
 
             $option = [
                 PDO::ATTR_PERSISTENT => true,
+                PDO::ATTR_EMULATE_PREPARES => false,
+                PDO::ATTR_STRINGIFY_FETCHES => false,
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
             ];
@@ -66,16 +67,6 @@ class DataBase
         } catch (PDOException $e) {
             $this->catchException($e);
         }
-    }
-
-    /**
-     * Dapatkan statement sekarang.
-     *
-     * @return PDOStatement
-     */
-    public function getStatement(): PDOStatement
-    {
-        return $this->stmt;
     }
 
     /**
@@ -206,6 +197,26 @@ class DataBase
         }
 
         return $result;
+    }
+
+    /**
+     * Dapatkan data per baris.
+     *
+     * @return mixed
+     */
+    public function fetch(): mixed
+    {
+        return $this->stmt->fetch();
+    }
+
+    /**
+     * Closes the cursor.
+     *
+     * @return bool
+     */
+    public function close(): bool
+    {
+        return $this->stmt->closeCursor();
     }
 
     /**

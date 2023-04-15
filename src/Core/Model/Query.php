@@ -47,7 +47,7 @@ class Query implements Stringable
     /**
      * Primary key tabelnya.
      * 
-     * @var string $primaryKey
+     * @var string|null $primaryKey
      */
     private $primaryKey;
 
@@ -61,7 +61,7 @@ class Query implements Stringable
     /**
      * Set Target relasinya.
      * 
-     * @var array $targetObject
+     * @var array $relational
      */
     private $relational;
 
@@ -126,7 +126,13 @@ class Query implements Stringable
      */
     private function recordQueryLog(): void
     {
-        $this->queryLog[] = [$this->query, round((microtime(true) - $this->queryDuration) * 1000, 2), $this->targetObject];
+        $this->queryLog[] = [
+            $this->query,
+            round((microtime(true) - $this->queryDuration) * 1000, 2),
+            $this->targetObject
+        ];
+
+        $this->db->close();
         $this->query = null;
         $this->param = [];
     }
@@ -245,10 +251,10 @@ class Query implements Stringable
      */
     private function build(array $data): Model
     {
-        $model = (new $this->targetObject);
-
+        $model = new $this->targetObject;
         $methods = $this->relational;
         $status = $this->status;
+
         foreach ($methods as $method) {
             if (!method_exists($model, $method)) {
                 throw new Exception('Method ' . $method . ' tidak ada !');
@@ -341,7 +347,7 @@ class Query implements Stringable
     }
 
     /**
-     * Set targetObject.
+     * Set target object.
      *
      * @param string $targetObject
      * @return Query
@@ -373,7 +379,7 @@ class Query implements Stringable
     /**
      * Where syntax sql.
      *
-     * @param string $colomn
+     * @param string $column
      * @param mixed $value
      * @param string $statment
      * @param string $agr
@@ -398,7 +404,7 @@ class Query implements Stringable
     /**
      * Where IN syntax sql.
      *
-     * @param string $colomn
+     * @param string $column
      * @param array|Model $value
      * @param string $agr
      * @return Query
@@ -429,7 +435,7 @@ class Query implements Stringable
     /**
      * Where Not IN syntax sql.
      *
-     * @param string $colomn
+     * @param string $column
      * @param array|Model $value
      * @param string $agr
      * @return Query
@@ -460,7 +466,7 @@ class Query implements Stringable
     /**
      * Where NULL syntax sql.
      *
-     * @param string $colomn
+     * @param string $column
      * @param string $agr
      * @return Query
      */
@@ -480,7 +486,7 @@ class Query implements Stringable
     /**
      * Where Not NULL syntax sql.
      *
-     * @param string $colomn
+     * @param string $column
      * @param string $agr
      * @return Query
      */
@@ -606,7 +612,7 @@ class Query implements Stringable
      */
     public function limit(int $param): Query
     {
-        $this->query = $this->query . ' LIMIT ' . strval($param);
+        $this->query = $this->query . ' LIMIT ' . strval(intval($param));
         return $this;
     }
 
@@ -618,7 +624,7 @@ class Query implements Stringable
      */
     public function offset(int $param): Query
     {
-        $this->query = $this->query . ' OFFSET ' . strval($param);
+        $this->query = $this->query . ' OFFSET ' . strval(intval($param));
         return $this;
     }
 
@@ -635,7 +641,7 @@ class Query implements Stringable
         }
 
         $this->checkSelect();
-        $data = explode(' FROM', $this->query);
+        $data = explode(' FROM', $this->query, 2);
 
         $this->query = $data[0] . (str_contains($this->query, 'SELECT *') ? ' ' : ', ') . $param . ' FROM' . $data[1];
         $this->query = str_replace('SELECT *', 'SELECT', $this->query);
@@ -769,7 +775,7 @@ class Query implements Stringable
 
         $sets = array();
         do {
-            $record = $this->db->getStatement()->fetch();
+            $record = $this->db->fetch();
             if (!$record) {
                 break;
             }
@@ -802,7 +808,7 @@ class Query implements Stringable
         $this->bind($this->query, $this->param ?? []);
         $this->db->execute();
 
-        $record = $this->db->getStatement()->fetch();
+        $record = $this->db->fetch();
         $set = $record === false ? [] : get_object_vars($record);
 
         if (count($this->dates) > 0) {
@@ -840,8 +846,8 @@ class Query implements Stringable
         $query = sprintf(
             'INSERT INTO %s (%s) VALUES (%s)',
             $this->table,
-            implode(', ',  $keys),
-            implode(', ',  array_map(fn ($field) => ':' . $field, $keys))
+            implode(', ', $keys),
+            implode(', ', array_map(fn ($field) => ':' . $field, $keys))
         );
 
         $this->bind($query, $data);
@@ -874,9 +880,6 @@ class Query implements Stringable
     {
         if (count($this->dates) > 0) {
             $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
-            if (!empty($data[$this->dates[0]])) {
-                $data[$this->dates[0]] = $data[$this->dates[0]]->__toString();
-            }
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
@@ -896,8 +899,8 @@ class Query implements Stringable
     public function delete(): int
     {
         $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
-
         $this->bind($query, $this->param ?? []);
+
         $this->db->execute();
         $this->recordQueryLog();
         return $this->db->rowCount();

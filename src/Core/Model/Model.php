@@ -243,11 +243,9 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
      */
     public function toArray(): array
     {
-        foreach ($this->attribute() as $key => $value) {
-            $this->attributes[$key] = is_object($value) ? get_object_vars($value) : $value;
-        }
-
-        return $this->attribute();
+        return $this->map(function ($value) {
+            return is_object($value) ? get_object_vars($value) : $value;
+        })->attribute();
     }
 
     /**
@@ -306,13 +304,32 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     }
 
     /**
-     * Ambil sebagian dari attribute.
+     * Iterasikan data dari attribute.
      * 
-     * @param array $only
+     * @param Closure $fn
      * @return Model
      */
-    public function only(array $only): Model
+    public function map(Closure $fn): Model
     {
+        foreach ($this->attribute() as $key => $value) {
+            $this->attributes[$key] = $fn($value, $key);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Ambil sebagian dari attribute.
+     * 
+     * @param array|string $only
+     * @return Model
+     */
+    public function only(array|string $only): Model
+    {
+        if (is_string($only)) {
+            $only = array($only);
+        }
+
         $temp = [];
         foreach ($only as $ol) {
             $temp[$ol] = $this->__get($ol);
@@ -325,11 +342,15 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Ambil kecuali dari attribute.
      * 
-     * @param array $except
+     * @param array|string $except
      * @return Model
      */
-    public function except(array $except): Model
+    public function except(array|string $except): Model
     {
+        if (is_string($except)) {
+            $except = array($except);
+        }
+
         $temp = [];
         foreach ($this->attribute() as $key => $value) {
             if (!in_array($key, $except)) {
@@ -344,10 +365,10 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Ambil nilai dari attribute.
      * 
-     * @param string $name
+     * @param string|int $name
      * @return mixed
      */
-    public function __get(string $name): mixed
+    public function __get(string|int $name): mixed
     {
         return ($this->__isset($name)) ? $this->attributes[$name] : null;
     }
@@ -355,15 +376,15 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Isi nilai ke model ini.
      *
-     * @param string $name
+     * @param string|int $name
      * @param mixed $value
      * @return void
      * 
      * @throws Exception
      */
-    public function __set(string $name, mixed $value): void
+    public function __set(string|int $name, mixed $value): void
     {
-        if ($this->primaryKey == $name && $this->__isset($name)) {
+        if ($this->primaryKey === $name && $this->__isset($name)) {
             throw new Exception('Nilai primary key tidak bisa di ubah !');
         }
 
@@ -373,10 +394,10 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Cek nilai dari attribute.
      * 
-     * @param string $name
+     * @param string|int $name
      * @return bool
      */
-    public function __isset(string $name): bool
+    public function __isset(string|int $name): bool
     {
         return isset($this->attributes[$name]);
     }
