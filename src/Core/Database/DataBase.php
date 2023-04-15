@@ -208,16 +208,6 @@ class DataBase
     }
 
     /**
-     * Closes the cursor.
-     *
-     * @return bool
-     */
-    public function close(): bool
-    {
-        return $this->stmt->closeCursor();
-    }
-
-    /**
      * Hitung jumlah rownya.
      *
      * @return int
