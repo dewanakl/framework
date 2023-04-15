@@ -132,6 +132,7 @@ class Query implements Stringable
             $this->targetObject
         ];
 
+        $this->db->close();
         $this->query = null;
         $this->param = [];
     }
