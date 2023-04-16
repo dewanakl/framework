@@ -45,7 +45,7 @@ class Router
      * 
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $this->routes = [];
         $this->middleware = [];

@@ -49,7 +49,7 @@ abstract class Relational
      * @param Closure|null $callback
      * @return void
      */
-    function __construct(string $model, string $foreign_key, string $local_key, Closure|null $callback = null)
+    public function __construct(string $model, string $foreign_key, string $local_key, Closure|null $callback = null)
     {
         $this->model = $model;
         $this->foreign_key = $foreign_key;

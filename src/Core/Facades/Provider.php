@@ -22,7 +22,7 @@ abstract class Provider
      *
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $this->app = App::get();
     }

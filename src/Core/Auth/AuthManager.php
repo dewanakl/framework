@@ -35,7 +35,7 @@ class AuthManager
      * @param Session $session
      * @return void
      */
-    function __construct(Session $session)
+    public function __construct(Session $session)
     {
         $this->session = $session;
     }

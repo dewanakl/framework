@@ -40,7 +40,7 @@ class Request
      * 
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $request = array_merge(@$_REQUEST ?? [], @json_decode(file_get_contents('php://input'), true) ?? []);
         @$_REQUEST = $request;

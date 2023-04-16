@@ -38,7 +38,7 @@ class Service
      * @param Respond $respond
      * @return void
      */
-    function __construct(Request $request, Respond $respond)
+    public function __construct(Request $request, Respond $respond)
     {
         $this->request = $request;
         $this->respond = $respond;

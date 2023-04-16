@@ -29,7 +29,7 @@ class Application
      *
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         if ($this->objectPool === null) {
             $this->objectPool = [];

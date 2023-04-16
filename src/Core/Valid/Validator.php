@@ -31,7 +31,7 @@ class Validator
      * @param array $rule
      * @return void
      */
-    function __construct(array $data, array $rule)
+    public function __construct(array $data, array $rule)
     {
         $this->setData($data);
         $this->validate($rule);

@@ -50,7 +50,7 @@ class Console
      * @param array $argv
      * @return void
      */
-    function __construct(array $argv = [])
+    public function __construct(array $argv = [])
     {
         $this->timenow = env('_STARTTIME');
         $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');

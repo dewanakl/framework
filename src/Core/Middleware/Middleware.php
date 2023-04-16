@@ -27,7 +27,7 @@ class Middleware
      * @param array $layers
      * @return void
      */
-    function __construct(array $layers = [])
+    public function __construct(array $layers = [])
     {
         for ($i = (count($layers) - 1); $i >= 0; $i--) {
             $this->layers[] = new $layers[$i];

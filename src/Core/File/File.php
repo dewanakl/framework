@@ -33,7 +33,7 @@ class File
      * @param Request $request
      * @return void
      */
-    function __construct(Request $request)
+    public function __construct(Request $request)
     {
         $this->request = $request;
     }

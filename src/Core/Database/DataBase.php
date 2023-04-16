@@ -36,7 +36,7 @@ class DataBase
      * 
      * @throws PDOException
      */
-    function __construct()
+    public function __construct()
     {
         if ($this->pdo === null) {
             $dsn = sprintf(

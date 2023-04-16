@@ -2,6 +2,7 @@
 
 namespace Core\Model;
 
+use ArrayAccess;
 use ArrayIterator;
 use Closure;
 use Core\Facades\App;
@@ -10,7 +11,6 @@ use Exception;
 use IteratorAggregate;
 use JsonSerializable;
 use ReturnTypeWillChange;
-use Stringable;
 use Traversable;
 
 /**
@@ -49,7 +49,7 @@ use Traversable;
  * @class Model
  * @package \Core\Model
  */
-abstract class Model implements Countable, IteratorAggregate, JsonSerializable, Stringable
+abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonSerializable
 {
     /**
      * Nama tabelnya.
@@ -186,6 +186,55 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     }
 
     /**
+     * Set nilai ke attribute.
+     *
+     * @param mixed $offset
+     * @param mixed $value
+     * @return void
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (is_null($offset)) {
+            $this->attributes[] = $value;
+        } else {
+            $this->attributes[$offset] = $value;
+        }
+    }
+
+    /**
+     * Apakah ada di attribute?.
+     *
+     * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->attributes[$offset]);
+    }
+
+    /**
+     * Hapus datanya lewat unset.
+     *
+     * @param mixed $offset
+     * @return void
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->attributes[$offset]);
+    }
+
+    /**
+     * Dapatkan nilai dari attributenya.
+     *
+     * @param mixed $offset
+     * @return mixed
+     */
+    public function offsetGet(mixed $offset): mixed
+    {
+        return isset($this->attributes[$offset]) ? $this->attributes[$offset] : null;
+    }
+
+    /**
      * Hitung jumlah arraynya.
      * 
      * @return int
@@ -214,16 +263,6 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     public function __unserialize(array $data): void
     {
         $this->attributes = $data;
-    }
-
-    /**
-     * Magic to string.
-     * 
-     * @return string
-     */
-    public function __toString(): string
-    {
-        return $this->toJson();
     }
 
     /**
@@ -365,10 +404,10 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Ambil nilai dari attribute.
      * 
-     * @param string|int $name
+     * @param string $name
      * @return mixed
      */
-    public function __get(string|int $name): mixed
+    public function __get(string $name): mixed
     {
         return ($this->__isset($name)) ? $this->attributes[$name] : null;
     }
@@ -376,15 +415,15 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Isi nilai ke model ini.
      *
-     * @param string|int $name
+     * @param string $name
      * @param mixed $value
      * @return void
      * 
      * @throws Exception
      */
-    public function __set(string|int $name, mixed $value): void
+    public function __set(string $name, mixed $value): void
     {
-        if ($this->primaryKey === $name && $this->__isset($name)) {
+        if ($this->primaryKey == $name && $this->__isset($name)) {
             throw new Exception('Nilai primary key tidak bisa di ubah !');
         }
 
@@ -394,10 +433,10 @@ abstract class Model implements Countable, IteratorAggregate, JsonSerializable, 
     /**
      * Cek nilai dari attribute.
      * 
-     * @param string|int $name
+     * @param string $name
      * @return bool
      */
-    public function __isset(string|int $name): bool
+    public function __isset(string $name): bool
     {
         return isset($this->attributes[$name]);
     }

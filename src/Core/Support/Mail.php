@@ -114,7 +114,7 @@ class Mail
      * 
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $this->server = env('MAIL_HOST');
         $this->port = intval(env('MAIL_PORT'));

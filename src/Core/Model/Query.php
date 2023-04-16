@@ -14,7 +14,7 @@ use Stringable;
  * @class Query
  * @package \Core\Model
  */
-class Query implements Stringable
+class Query
 {
     /**
      * String query sql.
@@ -112,7 +112,7 @@ class Query implements Stringable
      *
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
@@ -220,6 +220,7 @@ class Query implements Stringable
 
                 $result = [];
                 $isEmpty = true;
+
                 foreach ($grammar as $short => $long) {
                     if ($depth <= 0) {
                         break;
@@ -288,16 +289,6 @@ class Query implements Stringable
     {
         $this->checkSelect();
         dd($this->query, $this->param);
-    }
-
-    /**
-     * Magic to string.
-     * 
-     * @return string
-     */
-    public function __toString(): string
-    {
-        return $this->query;
     }
 
     /**

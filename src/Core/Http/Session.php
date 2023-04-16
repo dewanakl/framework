@@ -38,7 +38,7 @@ class Session
      *
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $this->name = (https() ? '__Secure-' : '') . env('APP_NAME', 'kamu') . '_sessid';
         $this->expires = intval(env('COOKIE_LIFETIME', 86400)) + time();

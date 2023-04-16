@@ -53,7 +53,7 @@ class Table
      *
      * @return void
      */
-    function __construct()
+    public function __construct()
     {
         $this->type = env('DB_DRIV', 'mysql');
         $this->query = [];
