@@ -6,6 +6,8 @@ use Core\Database\DataBase;
 use Core\Facades\App;
 use DateTime;
 use Exception;
+use JsonSerializable;
+use ReturnTypeWillChange;
 use Stringable;
 
 /**
@@ -188,8 +190,19 @@ class Query
      */
     private function dateTime(string $datetime = 'now'): DateTime
     {
-        return new class($datetime) extends DateTime implements Stringable
+        return new class($datetime) extends DateTime implements Stringable, JsonSerializable
         {
+            /**
+             * Ubah objek ke json secara langsung.
+             *
+             * @return mixed
+             */
+            #[ReturnTypeWillChange]
+            public function jsonSerialize(): mixed
+            {
+                return $this->__toString();
+            }
+
             /**
              * Magic to string.
              * 

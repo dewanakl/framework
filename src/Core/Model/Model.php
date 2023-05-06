@@ -177,10 +177,10 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Ubah objek ke json secara langsung.
      *
-     * @return array
+     * @return mixed
      */
     #[ReturnTypeWillChange]
-    public function jsonSerialize(): array
+    public function jsonSerialize(): mixed
     {
         return $this->attribute();
     }

@@ -42,7 +42,7 @@ class Request
      */
     public function __construct()
     {
-        $request = array_merge(@$_REQUEST ?? [], @json_decode(file_get_contents('php://input'), true) ?? []);
+        $request = array_merge(@$_REQUEST ?? [], @json_decode(file_get_contents('php://input', true), true) ?? []);
         @$_REQUEST = $request;
         $this->requestData = array_merge($request, @$_FILES ?? []);
         $this->serverData = @$_SERVER ?? [];

@@ -83,7 +83,7 @@ class Stream
             notFound();
         }
 
-        $hashFile = @md5($file);
+        $hashFile = @md5_file($file);
         $type = $this->ftype($file);
 
         if ($type != 'application/octet-stream') {
@@ -104,7 +104,7 @@ class Stream
         @set_time_limit(0);
         @clear_ob();
 
-        $this->file = @fopen($file, 'r');
+        $this->file = @fopen($file, 'r', true);
         $this->name = @basename($file);
         $this->boundary = $hashFile;
         $this->size = @filesize($file);

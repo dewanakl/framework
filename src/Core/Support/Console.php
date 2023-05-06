@@ -74,6 +74,25 @@ class Console
     }
 
     /**
+     * Buat dan tulis file.
+     * 
+     * @param string $file
+     * @param string $content
+     * @return bool
+     */
+    private function writeFileContent(string $file, string $content): bool
+    {
+        $arr = explode('/', $file);
+        $folder = implode('/', array_splice($arr, 0, -1));
+        if (!is_dir($folder)) {
+            mkdir($folder, 0777, true);
+        }
+
+        $write = file_put_contents($file, $content);
+        return $write && chmod($file, 0777);
+    }
+
+    /**
      * Buat warna untuk string.
      *
      * @param string $name
@@ -234,8 +253,8 @@ class Console
                 break;
         }
 
-        $result = file_put_contents(basepath() . '/' . $type . '/' . $optional . $name . '.php', $data);
-        $this->exception('Gagal membuat ' . $type, !$result, 'Berhasil membuat ' . $type . ' ' . $name);
+        $result = $this->writeFileContent(basepath() . '/' . $type . '/' . $optional . $name . '.php', $data);
+        $this->exception('Gagal membuat ' . $type, !$result, 'Berhasil membuat ' . $type . '/' . $name . '.php');
     }
 
     /**
@@ -330,10 +349,7 @@ class Console
             }
         }
 
-        $myfile = fopen($env, 'w');
-        fwrite($myfile, join("\n", $lines));
-        fclose($myfile);
-
+        file_put_contents($env, join("\n", $lines));
         print("\nAplikasi aman !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
 
@@ -364,8 +380,8 @@ class Console
         $envs = '<?php return ' . var_export($env, true) . ';';
 
         $folder = basepath() . '/cache';
-        file_put_contents($folder . '/routes.php', $routes);
-        file_put_contents($folder . '/env.php', $envs);
+        $this->writeFileContent($folder . '/routes.php', $routes);
+        $this->writeFileContent($folder . '/env.php', $envs);
 
         print("\nCache siap !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
