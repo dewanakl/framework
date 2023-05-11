@@ -52,6 +52,19 @@ final class Route
     }
 
     /**
+     * Simpan url route patch.
+     *
+     * @param string $path
+     * @param array|string|null $action
+     * @param array|string|null $middleware
+     * @return Router
+     */
+    public static function patch(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
+    {
+        return static::router()->patch($path, $action, $middleware);
+    }
+
+    /**
      * Simpan url route delete.
      *
      * @param string $path
