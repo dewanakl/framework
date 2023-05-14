@@ -97,8 +97,11 @@ class Service
      */
     private function process(array $route, array $variables): void
     {
-        $middlewares = array_merge(App::get()->singleton(Kernel::class)->middlewares(), $route['middleware']);
-        $middleware = new Middleware($middlewares);
+        $middleware = new Middleware([
+            ...App::get()->singleton(Kernel::class)->middlewares(),
+            ...$route['middleware']
+        ]);
+
         $this->respond->send($middleware->handle($this->request, $this->coreMiddleware($route, $variables)));
     }
 
@@ -113,7 +116,6 @@ class Service
     {
         $controller = $route['controller'];
         $function = $route['function'];
-        array_shift($variables);
 
         if ($function === null) {
             return null;
@@ -124,50 +126,12 @@ class Service
             $function = '__invoke';
         }
 
+        array_shift($variables);
         return App::get()->invoke($controller, $function, $variables);
     }
 
-    /**
-     * Jalankan servicenya.
-     *
-     * @return int
-     */
-    public function run(): int
+    private function handleOutOfRoute(bool $routeMatch): int
     {
-        $url = '/';
-        $sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1];
-        if (empty($sep)) {
-            $url = $this->request->server('REQUEST_URI');
-        } else {
-            $raw = explode($sep, $this->request->server('REQUEST_URI'), 2)[1];
-            if (!empty($raw)) {
-                $url = $raw;
-            }
-        }
-
-        $path = parse_url($url, PHP_URL_PATH);
-        $this->request->__set('REQUEST_URL', $url);
-
-        $method = $this->request->method() == 'POST'
-            ? strtoupper($this->request->get('_method', 'POST'))
-            : $this->request->method();
-
-        $routeMatch = false;
-
-        foreach (Route::router()->routes() as $route) {
-            $pattern = '#^' . $route['path'] . '$#';
-            $variables = [];
-
-            if (preg_match($pattern, $path, $variables)) {
-                $routeMatch = true;
-
-                if ($route['method'] === $method) {
-                    $this->process($route, $variables);
-                    return 0;
-                }
-            }
-        }
-
         if ($routeMatch) {
             if (!$this->request->ajax()) {
                 notAllowed();
@@ -189,5 +153,54 @@ class Service
         ], 404));
 
         return 0;
+    }
+
+    private function getValidUrl(): string
+    {
+        $sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1];
+        if (empty($sep)) {
+            return $this->request->server('REQUEST_URI');
+        }
+
+        $raw = explode($sep, $this->request->server('REQUEST_URI'), 2)[1];
+        if (!empty($raw)) {
+            return $raw;
+        }
+
+        return '/';
+    }
+
+    /**
+     * Jalankan servicenya.
+     *
+     * @return int
+     */
+    public function run(): int
+    {
+        $url = $this->getValidUrl();
+        $path = parse_url($url, PHP_URL_PATH);
+        $this->request->__set('REQUEST_URL', $url);
+
+        $method = $this->request->method() === 'POST'
+            ? strtoupper($this->request->get('_method', 'POST'))
+            : $this->request->method();
+
+        $routeMatch = false;
+
+        foreach (Route::router()->routes() as $route) {
+            $pattern = '#^' . $route['path'] . '$#';
+            $variables = [];
+
+            if (preg_match($pattern, $path, $variables)) {
+                $routeMatch = true;
+
+                if ($route['method'] === $method) {
+                    $this->process($route, $variables);
+                    return 0;
+                }
+            }
+        }
+
+        return $this->handleOutOfRoute($routeMatch);
     }
 }

@@ -271,7 +271,7 @@ class Router
 
                 if (!empty($tempMiddleware)) {
                     $result = empty($this->middleware) ? $tempMiddleware : $this->middleware;
-                    $this->routes[$id]['middleware'] = array_merge($result, $this->routes[$id]['middleware']);
+                    $this->routes[$id]['middleware'] = [...$result, ...$this->routes[$id]['middleware']];
                 }
             }
         }

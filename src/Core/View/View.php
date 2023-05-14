@@ -2,6 +2,7 @@
 
 namespace Core\View;
 
+use Exception;
 use Stringable;
 
 /**
@@ -39,6 +40,15 @@ class View implements Stringable
      * @var Render|null $content
      */
     private $content;
+
+    private $compiler;
+
+    private $pairSection;
+
+    public function __construct(Compiler $compiler)
+    {
+        $this->compiler = $compiler;
+    }
 
     /**
      * Magic to string.
@@ -83,7 +93,7 @@ class View implements Stringable
      */
     public function variables(array $variables = []): void
     {
-        $this->variables = array_merge($this->variables ?? [], $variables);
+        $this->variables = [...$this->variables ?? [], ...$variables];
     }
 
     /**
@@ -107,7 +117,7 @@ class View implements Stringable
      */
     public function including(string $name): Render
     {
-        return render('resources/views/' . $name, $this->variables ?? []);
+        return render($this->compiler->compile($name)->getPathFileCache(), $this->variables ?? []);
     }
 
     /**
@@ -115,9 +125,16 @@ class View implements Stringable
      * 
      * @param string $name
      * @return void
+     * 
+     * @throws Exception
      */
     public function section(string $name): void
     {
+        if ($this->pairSection !== null) {
+            throw new Exception(sprintf('Unclose endsection %s', $this->pairSection));
+        }
+
+        $this->pairSection = $name;
         $this->section[$name] = null;
         ob_start();
     }
@@ -140,12 +157,12 @@ class View implements Stringable
     /**
      * Bagian akhir dari html.
      * 
-     * @param string $name
      * @return void
      */
-    public function endsection(string $name): void
+    public function endsection(): void
     {
-        $this->section[$name] = strval(ob_get_contents());
+        $this->section[$this->pairSection] = strval(ob_get_contents());
         ob_end_clean();
+        $this->pairSection = null;
     }
 }

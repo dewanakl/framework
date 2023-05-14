@@ -28,7 +28,7 @@ final class Kernel
         App::new(new Application());
         static::setEnv();
 
-        if (!date_default_timezone_set(@$_ENV['TIMEZONE'] ?? 'Asia/Jakarta')) {
+        if (!@date_default_timezone_set(env('TIMEZONE', 'Asia/Jakarta'))) {
             throw new Exception('Timezone invalid !');
         }
 
@@ -45,18 +45,16 @@ final class Kernel
         $path = App::get()->singleton(AppKernel::class)->getPath();
 
         if (is_file($path . '/cache/env.php')) {
-            foreach (require_once $path . '/cache/env.php' as $key => $value) {
+            foreach ((array) require_once $path . '/cache/env.php' as $key => $value) {
                 $_ENV[$key] = $value;
             }
         } else {
             $lines = is_file($path . '/.env') ? file($path . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
             foreach ($lines as $line) {
-                if (strpos(trim($line), '#') === 0) {
-                    continue;
+                if (strpos(trim($line), '#') !== 0) {
+                    [$name, $value] = explode('=', $line, 2);
+                    $_ENV[trim($name)] = trim($value);
                 }
-
-                list($name, $value) = explode('=', $line, 2);
-                $_ENV[trim($name)] = trim($value);
             }
         }
     }

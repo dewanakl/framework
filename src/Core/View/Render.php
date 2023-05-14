@@ -41,7 +41,7 @@ class Render implements Stringable
      */
     public function __construct(string $path)
     {
-        $this->path = basepath() . '/' . $path . '.php';
+        $this->path = basepath() . $path . '.php';
     }
 
     /**

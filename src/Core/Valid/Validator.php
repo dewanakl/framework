@@ -66,9 +66,10 @@ class Validator
 
             if (is_array($value)) {
                 $this->validateFile($param, $value, $rule);
-            } else {
-                $this->validateRequest($param, $value, $rule);
+                continue;
             }
+
+            $this->validateRequest($param, $value, $rule);
         }
     }
 
@@ -84,7 +85,7 @@ class Validator
     {
         switch (true) {
             case $rule == 'required':
-                if (!$this->__isset($param) || empty(trim(strval($value ?? '')))) {
+                if (!$this->__isset($param) || empty(trim(strval($value)))) {
                     $this->setError($param, 'dibutuhkan !');
                 }
                 break;
@@ -144,7 +145,7 @@ class Validator
                 break;
 
             case $rule == 'safe':
-                $bad = array_merge(array_map('chr', range(0, 31)), ['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
+                $bad = [...array_map('chr', range(0, 31)), ...['\\', '/', ':', '*', '?', '"', '<', '>', '|']];
                 $this->__set($param, str_replace($bad, '', $value));
                 break;
 
@@ -192,6 +193,34 @@ class Validator
                 unset($data);
                 break;
         }
+    }
+
+    private function maliciousKeywords(string $file): bool
+    {
+        $malicious = implode('|', [
+            '\\/bin\\/bash',
+            '__HALT_COMPILER',
+            'Monolog',
+            'PendingRequest',
+            '\\<script',
+            'ThinkPHP',
+            'phar',
+            'phpinfo',
+            '\\<\\?php',
+            '\\$_GET',
+            '\\$_POST',
+            '\\$_SESSION',
+            '\\$_REQUEST',
+            'whoami',
+            'python',
+            'composer',
+            'passthru',
+            'shell_exec',
+            'PHPShell',
+            'exec',
+        ]);
+
+        return !(bool)preg_match(sprintf('/(%s)/im', $malicious), strval(file_get_contents($file, true)));
     }
 
     /**
@@ -257,6 +286,13 @@ class Validator
                     if (!in_array(pathinfo($value['full_path'], PATHINFO_EXTENSION), explode(',', $mime))) {
                         @unlink($value['tmp_name']);
                         $this->setError($param, 'diperbolehkan', $mime);
+                    }
+                    break;
+
+                case $rule == 'safe':
+                    if (!$this->maliciousKeywords($value['tmp_name'])) {
+                        @unlink($value['tmp_name']);
+                        $this->setError($param, 'file berbahaya !');
                     }
                     break;
             }
@@ -341,7 +377,7 @@ class Validator
      */
     public function throw(array $error = []): void
     {
-        $this->errors = array_merge($this->failed(), $error);
+        $this->errors = [...$this->failed(), ...$error];
     }
 
     /**

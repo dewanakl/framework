@@ -842,7 +842,7 @@ class Query
 
         if ($isDates) {
             $now = now('Y-m-d H:i:s.u');
-            $data = array_merge($data, array_combine($this->dates, array($now, $now)));
+            $data = [...$data, ...array_combine($this->dates, array($now, $now))];
         }
 
         $keys = array_keys($data);
@@ -883,13 +883,13 @@ class Query
     public function update(array $data): int
     {
         if (count($this->dates) > 0) {
-            $data = array_merge($data, [$this->dates[1] => now('Y-m-d H:i:s.u')]);
+            $data = [...$data, ...[$this->dates[1] => now('Y-m-d H:i:s.u')]];
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
         $setQuery = 'SET ' . implode(', ', array_map(fn ($field) => $field . ' = :' . $field, array_keys($data))) . ($this->query ? ' WHERE' : '');
 
-        $this->bind(str_replace('WHERE', $setQuery, $query), array_merge($data, $this->param ?? []));
+        $this->bind(str_replace('WHERE', $setQuery, $query), [...$data, ...$this->param ?? []]);
         $this->db->execute();
         $this->recordQueryLog();
         return $this->db->rowCount();

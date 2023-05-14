@@ -548,12 +548,11 @@ if (!function_exists('endsection')) {
     /**
      * Bagian akhir dari html.
      * 
-     * @param string $name
      * @return void
      */
-    function endsection(string $name): void
+    function endsection(): void
     {
-        App::get()->singleton(View::class)->endsection($name);
+        App::get()->singleton(View::class)->endsection();
     }
 }
 
