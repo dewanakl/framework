@@ -38,35 +38,48 @@ class DataBase
      */
     public function __construct()
     {
+        $dsn = sprintf(
+            '%s:host=%s;dbname=%s;port=%s;',
+            env('DB_DRIV'),
+            env('DB_HOST'),
+            env('DB_NAME'),
+            env('DB_PORT')
+        );
+
         if ($this->pdo === null) {
-            $dsn = sprintf(
-                '%s:host=%s;dbname=%s;port=%s;',
-                env('DB_DRIV'),
-                env('DB_HOST'),
-                env('DB_NAME'),
-                env('DB_PORT')
-            );
-
-            $options = [
-                PDO::ATTR_PERSISTENT => true,
-                PDO::ATTR_CASE => PDO::CASE_NATURAL,
-                PDO::ATTR_STRINGIFY_FETCHES => false,
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
-            ];
-
-            if (env('MYSQL_ATTR_SSL_CA')) {
-                $options[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+            try {
+                $this->pdo = new PDO(
+                    $dsn,
+                    env('DB_USER'),
+                    env('DB_PASS'),
+                    $this->options()
+                );
+            } catch (PDOException $e) {
+                $this->catchException($e);
             }
         }
+    }
 
-        try {
-            if ($this->pdo === null) {
-                $this->pdo = new PDO($dsn, env('DB_USER'), env('DB_PASS'), $options);
-            }
-        } catch (PDOException $e) {
-            $this->catchException($e);
+    /**
+     * Opsi untuk PDO ini.
+     * 
+     * @return array
+     */
+    private function options(): array
+    {
+        $options = [
+            PDO::ATTR_PERSISTENT => true,
+            PDO::ATTR_CASE => PDO::CASE_NATURAL,
+            PDO::ATTR_STRINGIFY_FETCHES => false,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
+        ];
+
+        if (env('MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
         }
+
+        return $options;
     }
 
     /**
@@ -79,12 +92,15 @@ class DataBase
      */
     public function catchException(Throwable $e): void
     {
-        if (debug()) {
-            $sql = empty($this->stmt->queryString) ? '' : PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"';
-            throw new Exception($e->getMessage() . $sql);
+        if (!debug()) {
+            unavailable();
         }
 
-        unavailable();
+        if (empty($this->stmt->queryString)) {
+            throw new Exception($e->getMessage());
+        }
+
+        throw new Exception($e->getMessage() . PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"');
     }
 
     /**

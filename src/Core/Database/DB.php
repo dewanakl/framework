@@ -72,17 +72,22 @@ final class DB extends Model
      * DB transaction sederhana.
      *
      * @param Closure $fn
-     * @return void
+     * @return mixed
      */
-    public static function transaction(Closure $fn): void
+    public static function transaction(Closure $fn): mixed
     {
+        $result = null;
+
         try {
             static::beginTransaction();
-            App::get()->resolve($fn);
+            $result = App::get()->resolve($fn);
             static::commit();
         } catch (Exception $e) {
+            $result = null;
             static::rollBack();
             static::exception($e);
         }
+
+        return $result;
     }
 }

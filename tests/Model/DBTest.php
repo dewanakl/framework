@@ -2,7 +2,7 @@
 
 namespace Test\Model;
 
-use Core\Model\DB;
+use Core\Database\DB;
 use Core\Model\Model;
 use Core\Model\Query;
 use Test\ApplicationTest as TestCase;

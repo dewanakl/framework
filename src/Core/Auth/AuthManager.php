@@ -30,6 +30,13 @@ class AuthManager
     private $session;
 
     /**
+     * Nama dari session user.
+     * 
+     * @var string SESSUSER
+     */
+    public const SESSUSER = '__sessuser';
+
+    /**
      * Init obejct.
      * 
      * @param Session $session
@@ -73,7 +80,7 @@ class AuthManager
     public function user(): Model|null
     {
         if (!($this->user instanceof Model)) {
-            $user = $this->session->get('_user');
+            $user = $this->session->get(static::SESSUSER);
             $this->user = empty($user) ? null : unserialize($user)->refresh();
         }
 
@@ -88,7 +95,7 @@ class AuthManager
     public function logout(): void
     {
         $this->user = null;
-        $this->session->unset('_user');
+        $this->session->unset(static::SESSUSER);
     }
 
     /**
@@ -101,7 +108,7 @@ class AuthManager
     {
         $this->logout();
         $this->user = clone $user;
-        $this->session->set('_user', serialize($user->only([$user->getPrimaryKey()])));
+        $this->session->set(static::SESSUSER, serialize($user->only($user->getPrimaryKey())));
     }
 
     /**
@@ -113,7 +120,7 @@ class AuthManager
      */
     public function attempt(array $credential, string $model = 'App\Models\User'): bool
     {
-        list($email, $password) = array_keys($credential);
+        [$email, $password] = array_keys($credential);
         $user = App::get()->singleton($model)->find($credential[$email], $email);
 
         if ($user->fail()) {
@@ -125,7 +132,7 @@ class AuthManager
 
         $this->logout();
         $this->session->set('old', [$email => $credential[$email]]);
-        $this->session->set('error', [$email => $email . ' atau ' . $password . ' salah !']);
+        $this->session->set('error', [$email => sprintf('%s atau %s salah !', $email, $password)]);
         return false;
     }
 }

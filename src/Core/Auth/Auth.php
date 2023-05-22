@@ -30,7 +30,7 @@ final class Auth
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        return App::get()->singleton(static::class)->__call($method, $parameters);
+        return (new static)->__call($method, $parameters);
     }
 
     /**

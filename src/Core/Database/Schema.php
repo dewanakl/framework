@@ -53,7 +53,7 @@ final class Schema
      */
     public static function drop(string $name): void
     {
-        App::get()->singleton(DataBase::class)->exec('DROP TABLE IF EXISTS ' . $name . ';');
+        App::get()->singleton(DataBase::class)->exec(sprintf('DROP TABLE IF EXISTS %s;', $name));
     }
 
     /**
@@ -65,6 +65,6 @@ final class Schema
      */
     public static function rename(string $from, string $to): void
     {
-        App::get()->singleton(DataBase::class)->exec('ALTER TABLE ' . $from . ' RENAME TO ' . $to . ';');
+        App::get()->singleton(DataBase::class)->exec(sprintf('ALTER TABLE %s RENAME TO %s;', $from, $to));
     }
 }
