@@ -19,20 +19,26 @@ final class Kernel
      * Build aplikasi ini.
      * 
      * @return Application
-     * 
-     * @throws Exception
      */
     private static function build(): Application
     {
-        $_ENV['_STARTTIME'] = microtime(true);
         App::new(new Application());
         static::setEnv();
+        return App::get();
+    }
 
+    /**
+     * Tetapkan timezone pada aplikasi ini.
+     * 
+     * @return void
+     * 
+     * @throws Exception
+     */
+    private static function setTimezone(): void
+    {
         if (!@date_default_timezone_set(env('TIMEZONE', 'Asia/Jakarta'))) {
             throw new Exception('Timezone invalid !');
         }
-
-        return App::get();
     }
 
     /**
@@ -49,12 +55,18 @@ final class Kernel
                 $_ENV[$key] = $value;
             }
         } else {
-            $lines = is_file($path . '/.env') ? file($path . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [];
+            $lines = is_file($path . '/.env')
+                ? file($path . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
+                : [];
+
             foreach ($lines as $line) {
-                if (strpos(trim($line), '#') !== 0) {
-                    [$name, $value] = explode('=', $line, 2);
-                    $_ENV[trim($name)] = trim($value);
+                $line = trim($line);
+                if (strpos($line, '#') === 0) {
+                    continue;
                 }
+
+                [$name, $value] = explode('=', $line, 2);
+                $_ENV[trim($name)] = trim($value);
             }
         }
     }
@@ -70,16 +82,13 @@ final class Kernel
     {
         $app = static::build();
 
-        $https = (!empty(@$_SERVER['HTTPS']) && @$_SERVER['HTTPS'] != 'off') || @$_SERVER['SERVER_PORT'] == '443' || @$_ENV['HTTPS'] == 'true';
-        $debug = @$_ENV['DEBUG'] == 'true';
+        $_ENV['_HTTPS'] = @$_SERVER['HTTPS'] !== 'off' || @$_SERVER['SERVER_PORT'] == '443' || @$_ENV['HTTPS'] == 'true';
+        $_ENV['_BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : (https() ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
+        $_ENV['_DEBUG'] = @$_ENV['DEBUG'] == 'true';
 
-        $_ENV['_BASEURL'] = @$_ENV['BASEURL'] ? rtrim($_ENV['BASEURL'], '/') : ($https ? 'https://' : 'http://') . trim($_SERVER['HTTP_HOST']);
-        $_ENV['_HTTPS'] = $https;
-        $_ENV['_DEBUG'] = $debug;
-
-        error_reporting($debug ? E_ALL : 0);
-        set_exception_handler(function (Throwable $error) use ($debug) {
-            if ($debug) {
+        error_reporting(debug() ? E_ALL : 0);
+        set_exception_handler(function (Throwable $error): void {
+            if (debug()) {
                 trace($error);
             }
 
@@ -87,6 +96,8 @@ final class Kernel
         });
 
         $service = $app->make(Service::class);
+
+        static::setTimezone();
 
         if (!env('APP_KEY')) {
             throw new Exception('App Key gk ada !');
@@ -102,6 +113,8 @@ final class Kernel
      */
     public static function console(): Console
     {
-        return static::build()->make(Console::class, array($_SERVER['argv']));
+        $app = static::build();
+        static::setTimezone();
+        return $app->make(Console::class, array($_SERVER['argv']));
     }
 }

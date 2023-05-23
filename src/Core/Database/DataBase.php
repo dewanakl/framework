@@ -25,7 +25,7 @@ class DataBase
     /**
      * Statement dari query.
      * 
-     * @var object|false $stmt
+     * @var object $stmt
      */
     private $stmt;
 
@@ -163,10 +163,18 @@ class DataBase
      *
      * @param string $query
      * @return void
+     * 
+     * @throws Exception
      */
     public function query(string $query): void
     {
-        $this->stmt = $this->pdo->prepare($query);
+        $result = $this->pdo->prepare($query);
+
+        if ($result === false) {
+            throw new Exception('Error Processing query: ' . $query);
+        }
+
+        $this->stmt = $result;
     }
 
     /**
@@ -175,10 +183,12 @@ class DataBase
      * @param int|string $param
      * @param mixed $value
      * @return void
+     * 
+     * @throws Exception
      */
     public function bind(int|string $param, mixed $value): void
     {
-        $this->stmt->bindValue(
+        $result = $this->stmt->bindValue(
             $param,
             $value,
             match (true) {
@@ -189,6 +199,10 @@ class DataBase
                 default => PDO::PARAM_STR
             }
         );
+
+        if (!$result) {
+            throw new Exception('Error saat bindValue: ' . strval($param));
+        }
     }
 
     /**
@@ -249,9 +263,9 @@ class DataBase
      * Dapatkan idnya.
      * 
      * @param string|null $name
-     * @return int|string|bool
+     * @return string|bool
      */
-    public function lastInsertId(string|null $name = null): int|string|bool
+    public function lastInsertId(string|null $name = null): string|bool
     {
         return $this->pdo->lastInsertId($name);
     }

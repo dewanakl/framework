@@ -82,7 +82,7 @@ class Service
      */
     private function coreMiddleware(array $route, array $variables): Closure
     {
-        return function () use ($route, $variables) {
+        return function () use ($route, $variables): mixed {
             $this->registerProvider();
             return $this->invokeController($route, $variables);
         };
@@ -93,9 +93,9 @@ class Service
      *
      * @param array $route
      * @param array $variables
-     * @return void
+     * @return int
      */
-    private function process(array $route, array $variables): void
+    private function process(array $route, array $variables): int
     {
         $middleware = new Middleware([
             ...App::get()->singleton(Kernel::class)->middlewares(),
@@ -103,6 +103,8 @@ class Service
         ]);
 
         $this->respond->send($middleware->handle($this->request, $this->coreMiddleware($route, $variables)));
+
+        return 0;
     }
 
     /**
@@ -130,6 +132,11 @@ class Service
         return App::get()->invoke($controller, $function, $variables);
     }
 
+    /**
+     * Tangani permintaan yang diluar dari route.
+     * 
+     * @return int
+     */
     private function handleOutOfRoute(bool $routeMatch): int
     {
         if ($routeMatch) {
@@ -155,6 +162,11 @@ class Service
         return 0;
     }
 
+    /**
+     * Get valid url based on baseurl.
+     * 
+     * @return string
+     */
     private function getValidUrl(): string
     {
         $sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1];
@@ -195,8 +207,7 @@ class Service
                 $routeMatch = true;
 
                 if ($route['method'] === $method) {
-                    $this->process($route, $variables);
-                    return 0;
+                    return $this->process($route, $variables);
                 }
             }
         }

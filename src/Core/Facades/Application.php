@@ -53,9 +53,6 @@ class Application
             $constructor = $reflector->getConstructor();
             $args = is_null($constructor) ? [] : $constructor->getParameters();
 
-            $reflector = null;
-            unset($reflector);
-
             return new $name(...$this->getDependencies($args, $default));
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
@@ -75,12 +72,15 @@ class Application
         $id = 0;
 
         foreach ($parameters as $parameter) {
-            if ($parameter->getType() && !$parameter->getType()->isBuiltin()) {
-                $args[] = $this->singleton($parameter->getType()->getName());
-            } else {
-                $args[] = $default[$id] ?? $parameter->getDefaultValue();
-                $id++;
+            $type = $parameter->getType();
+
+            if ($type && !$type->isBuiltin()) {
+                $args[] = $this->singleton($type->getName());
+                continue;
             }
+
+            $args[] = $default[$id] ?? $parameter->getDefaultValue();
+            $id++;
         }
 
         return $args;
@@ -115,10 +115,8 @@ class Application
      */
     public function &make(string $name, array $default = []): object
     {
-        $this->clean($name);
-        $this->objectPool[$name] = $this->build($name, $default);
-
-        return $this->objectPool[$name];
+        unset($this->clean($name));
+        return $this->singleton($name, $default);
     }
 
     /**
@@ -140,9 +138,6 @@ class Application
         try {
             $reflector = new ReflectionClass($name);
             $params = $this->getDependencies($reflector->getMethod($method)->getParameters(), $default);
-
-            $reflector = null;
-            unset($reflector);
 
             return $name->{$method}(...$params);
         } catch (ReflectionException $e) {
@@ -178,9 +173,6 @@ class Application
         try {
             $reflector = new ReflectionFunction($name);
             $arg = $reflector->getParameters();
-
-            $reflector = null;
-            unset($reflector);
 
             return $name(...$this->getDependencies($arg, $default));
         } catch (ReflectionException $e) {
