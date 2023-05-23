@@ -29,6 +29,13 @@ class Respond
     private $redirect;
 
     /**
+     * Content to respond.
+     * 
+     * @var string|null $content
+     */
+    private $content;
+
+    /**
      * Init object.
      * 
      * @param Session $session
@@ -42,12 +49,12 @@ class Respond
     /**
      * Alihkan halaman.
      * 
-     * @param string $prm
+     * @param string $url
      * @return Respond
      */
-    public function to(string $prm): Respond
+    public function to(string $url): Respond
     {
-        $this->redirect = $prm;
+        $this->redirect = $url;
         return $this;
     }
 
@@ -71,7 +78,32 @@ class Respond
      */
     public function back(): Respond
     {
-        return $this->to($this->session->get('_oldroute', '/'));
+        return $this->to($this->session->get('__oldroute', '/'));
+    }
+
+    /**
+     * Respond sebagai json.
+     * 
+     * @param mixed $data
+     * @param int $code
+     * @return Respond
+     */
+    public function json(mixed $data, int $code = 200): Respond
+    {
+        $this->content = strval(json($data, $code));
+        return $this;
+    }
+
+    /**
+     * Redirect with route name.
+     * 
+     * @param string $route
+     * @param mixed ...$key
+     * @return Respond
+     */
+    public function route(string $route, mixed ...$key): Respond
+    {
+        return $this->to(route($route, $key));
     }
 
     /**
@@ -103,7 +135,7 @@ class Respond
     {
         if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
             if ($respond instanceof Stringable) {
-                $this->session->set('_oldroute', App::get()->singleton(Request::class)->get('REQUEST_URL'));
+                $this->session->set('__oldroute', App::get()->singleton(Request::class)->get('REQUEST_URL'));
                 $this->session->unset('old');
                 $this->session->unset('error');
             }
@@ -120,6 +152,11 @@ class Respond
         if ($respond instanceof Respond) {
             if ($this->redirect !== null) {
                 $this->redirect($this->redirect);
+            }
+
+            if ($this->content !== null) {
+                $this->session->send();
+                $this->echo($this->content);
             }
         }
 

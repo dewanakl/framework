@@ -113,45 +113,4 @@ class File
             basepath() . '/' . $folder . '/' . $name . '.' . $this->getClientOriginalExtension()
         );
     }
-
-    /**
-     * Simpan filenya secara bertahap.
-     * 
-     * @param string $name
-     * @param string $folder
-     * @return bool
-     */
-    public function chunk(string $name, string $folder = 'shared'): bool
-    {
-        $filePath = basepath() . '/' . $folder . '/' . $name;
-
-        $chunk = isset($this->request->chunk) ? intval($this->request->chunk) : 0;
-        $chunks = isset($this->request->chunks) ? intval($this->request->chunks) : 0;
-
-        $out = fopen("{$filePath}.part", $chunk === 0 ? 'wb' : 'ab');
-        if ($out) {
-            $in = fopen($this->file->tmp_name, 'rb');
-            if ($in) {
-                while ($buff = fread($in, 4096)) {
-                    fwrite($out, $buff);
-                }
-
-                fclose($in);
-            } else {
-                fclose($in);
-                fclose($out);
-                return false;
-            }
-            fclose($out);
-        } else {
-            fclose($out);
-            return false;
-        }
-
-        if (!$chunks || ($chunk === $chunks - 1)) {
-            rename("{$filePath}.part", $filePath);
-        }
-
-        return unlink($this->file->tmp_name);
-    }
 }

@@ -144,7 +144,7 @@ final class Route
         if (!is_file($cache)) {
             static::setRouteFromFile();
         } else {
-            $cache = require_once $cache;
+            $cache = (array) require_once $cache;
             static::router()->setRoutes($cache);
         }
     }

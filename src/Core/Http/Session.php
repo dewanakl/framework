@@ -44,7 +44,7 @@ class Session
         $this->expires = intval(env('COOKIE_LIFETIME', 86400)) + time();
         $this->data = [];
 
-        if (env('COOKIE', 'true') === 'true') {
+        if (env('COOKIE', 'true') == 'true') {
             if (@$_COOKIE[$this->name]) {
                 $this->data = @unserialize(Hash::decrypt(rawurldecode($_COOKIE[$this->name])));
             }
@@ -72,7 +72,7 @@ class Session
      */
     public function send(): void
     {
-        if (env('COOKIE', 'true') === 'true') {
+        if (env('COOKIE', 'true') == 'true') {
             $header = 'Set-Cookie: ' . $this->name . '=' . rawurlencode(Hash::encrypt(serialize($this->data)));
 
             $header .= '; Expires=' . date('D, d-M-Y H:i:s', $this->expires) . ' GMT';

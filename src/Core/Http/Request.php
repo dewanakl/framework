@@ -42,7 +42,7 @@ class Request
      */
     public function __construct()
     {
-        @$_REQUEST = [...@$_REQUEST ?? [], ...@json_decode(strval(file_get_contents('php://input', true)), true, 1024) ?? []];
+        @$_REQUEST = [...@$_REQUEST ?? [], ...@json_decode(strval(file_get_contents('php://input')), true, 1024) ?? []];
         $this->requestData = [...@$_REQUEST, ...@$_FILES ?? []];
         $this->serverData = @$_SERVER ?? [];
     }
@@ -57,7 +57,7 @@ class Request
         if ($this->validator->fails()) {
             session()->set('old', $this->all());
             session()->set('error', $this->validator->failed());
-            respond()->redirect(session()->get('_oldroute', '/'));
+            respond()->redirect(session()->get('__oldroute', '/'));
         }
     }
 
@@ -81,6 +81,7 @@ class Request
      * Ambil nilai dari request server ini.
      *
      * @param string|null $name
+     * @param mixed $defaultValue
      * @return mixed
      */
     public function server(string|null $name = null, mixed $defaultValue = null): mixed
@@ -146,12 +147,20 @@ class Request
     }
 
     /**
-     * Cek apakah ajax?.
+     * Cek apakah ajax atau fetch?.
      *
      * @return string|bool
      */
     public function ajax(): string|bool
     {
+        if (str_contains(strtolower($this->server('HTTP_ACCEPT')), 'json')) {
+            if ($this->server('HTTP_TOKEN')) {
+                return $this->server('HTTP_TOKEN');
+            }
+
+            return true;
+        }
+
         if ($this->server('CONTENT_TYPE') && $this->server('HTTP_COOKIE') && $this->server('HTTP_TOKEN')) {
             return $this->server('HTTP_TOKEN');
         }

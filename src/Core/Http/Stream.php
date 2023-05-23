@@ -120,7 +120,7 @@ class Stream
      */
     private function pushSingle(string $range): void
     {
-        list($start, $end) = $this->getRange($range);
+        [$start, $end] = $this->getRange($range);
 
         header('Content-Length: ' . strval($end - $start + 1));
         header(sprintf('Content-Range: bytes %s-%s/%s', $start, $end, $this->size));
@@ -143,7 +143,7 @@ class Stream
         $tmpRanges = [];
 
         foreach ($ranges as $id => $range) {
-            list($start, $end) = $this->getRange($range);
+            [$start, $end] = $this->getRange($range);
             $tmpRanges[$id] = [$start, $end];
             $length += strlen("\r\n--" . $this->boundary . "\r\n");
             $length += strlen($tl);
@@ -157,7 +157,7 @@ class Stream
         header('Content-Length: ' . strval($length));
 
         foreach ($ranges as $id => $range) {
-            list($start, $end) = $tmpRanges[$id];
+            [$start, $end] = $tmpRanges[$id];
             echo "\r\n--" . $this->boundary . "\r\n";
             echo $tl;
             echo sprintf($formatRange, $start, $end, $this->size);
@@ -176,16 +176,10 @@ class Stream
      */
     private function getRange(string $range): array
     {
-        list($start, $end) = explode('-', $range);
+        [$start, $end] = explode('-', $range);
 
         $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
         $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
-
-        fseek($this->file, $start);
-        $start = ftell($this->file);
-
-        fseek($this->file, $end);
-        $end = ftell($this->file);
 
         if ($start > $end) {
             header('Status: 416 Requested Range Not Satisfiable');
