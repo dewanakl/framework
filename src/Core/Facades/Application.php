@@ -115,7 +115,7 @@ class Application
      */
     public function &make(string $name, array $default = []): object
     {
-        unset($this->clean($name));
+        $this->clean($name);
         return $this->singleton($name, $default);
     }
 

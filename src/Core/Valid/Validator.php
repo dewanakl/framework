@@ -195,6 +195,12 @@ class Validator
         }
     }
 
+    /**
+     * Cek apakah file ini berbahaya?
+     * 
+     * @param string $file
+     * @return bool
+     */
     private function maliciousKeywords(string $file): bool
     {
         $malicious = implode('|', [
@@ -220,7 +226,7 @@ class Validator
             'exec',
         ]);
 
-        return !(bool)preg_match(sprintf('/(%s)/im', $malicious), strval(file_get_contents($file, true)));
+        return (bool) preg_match(sprintf('/(%s)/im', $malicious), strval(file_get_contents($file, true)));
     }
 
     /**
@@ -233,7 +239,7 @@ class Validator
      */
     private function validateFile(string $param, array $value, string $rule): void
     {
-        $error = array(
+        $error = [
             0 => false,
             1 => 'The uploaded file exceeds the upload_max_filesize directive in php.ini',
             2 => 'The uploaded file exceeds the MAX_FILE_SIZE directive that was specified in the HTML form',
@@ -242,7 +248,7 @@ class Validator
             6 => 'Missing a temporary folder',
             7 => 'Failed to write file to disk.',
             8 => 'A PHP extension stopped the file upload.',
-        );
+        ];
 
         $err = $error[$value['error']];
         if ($err) {
@@ -290,7 +296,7 @@ class Validator
                     break;
 
                 case $rule == 'safe':
-                    if (!$this->maliciousKeywords($value['tmp_name'])) {
+                    if ($this->maliciousKeywords($value['tmp_name'])) {
                         @unlink($value['tmp_name']);
                         $this->setError($param, 'file berbahaya !');
                     }

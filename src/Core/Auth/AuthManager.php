@@ -3,7 +3,6 @@
 namespace Core\Auth;
 
 use Core\Model\Model;
-use Core\Facades\App;
 use Core\Http\Session;
 use Core\Valid\Hash;
 
@@ -121,7 +120,7 @@ class AuthManager
     public function attempt(array $credential, string $model = 'App\Models\User'): bool
     {
         [$email, $password] = array_keys($credential);
-        $user = App::get()->singleton($model)->find($credential[$email], $email);
+        $user = (new $model)->find($credential[$email], $email);
 
         if ($user->fail()) {
             if (Hash::check($credential[$password], $user->{$password})) {

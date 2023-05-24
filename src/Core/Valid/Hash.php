@@ -34,9 +34,9 @@ final class Hash
     {
         $key = explode(':', env('APP_KEY'), 2);
         $iv = openssl_random_pseudo_bytes(intval(openssl_cipher_iv_length(static::CIPHERING)));
-        $encrypted = openssl_encrypt($str, static::CIPHERING, $key[1] ?? static::rand(5), OPENSSL_RAW_DATA, $iv);
+        $encrypted = openssl_encrypt($str, static::CIPHERING, base64_decode($key[1]), OPENSSL_RAW_DATA, $iv);
 
-        return base64_encode($iv . hash_hmac(static::HASH, $encrypted, $key[0] ?? static::rand(5), true) . $encrypted);
+        return base64_encode($iv . hash_hmac(static::HASH, $encrypted, base64_decode($key[0]), true) . $encrypted);
     }
 
     /**
@@ -50,14 +50,26 @@ final class Hash
         $key = explode(':', env('APP_KEY'), 2);
         $raw = base64_decode($str, true);
 
-        $iv = intval(openssl_cipher_iv_length(static::CIPHERING));
-        $encrypted = substr($raw, $iv + 64);
-
-        if (!hash_equals(substr($raw, $iv, 64), hash_hmac(static::HASH, $encrypted, $key[0] ?? static::rand(5), true))) {
+        if ($raw === false) {
             return null;
         }
 
-        return openssl_decrypt($encrypted, static::CIPHERING, $key[1] ?? static::rand(5), OPENSSL_RAW_DATA, substr($raw, 0, $iv));
+        $iv = intval(openssl_cipher_iv_length(static::CIPHERING));
+        $encrypted = substr($raw, $iv + 64);
+
+        if (!hash_equals(
+            substr($raw, $iv, 64),
+            hash_hmac(static::HASH, $encrypted, base64_decode($key[0]), true)
+        )) {
+            return null;
+        }
+
+        $result = openssl_decrypt($encrypted, static::CIPHERING, base64_decode($key[1]), OPENSSL_RAW_DATA, substr($raw, 0, $iv));
+        if ($result === false) {
+            return null;
+        }
+
+        return $result;
     }
 
     /**

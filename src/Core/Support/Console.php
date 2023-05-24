@@ -5,8 +5,6 @@ namespace Core\Support;
 use Core\Database\Generator;
 use Core\Database\Migration;
 use Core\Routing\Route;
-use Core\Valid\Hash;
-use Exception;
 
 /**
  * Saya console untuk mempermudah develop app.
@@ -52,14 +50,14 @@ class Console
      */
     public function __construct(array $argv = [])
     {
-        $this->timenow = env('_STARTTIME');
+        $this->timenow = constant('SAYA_START');
         $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
 
         array_shift($argv);
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
 
-        print($this->createColor('green', "Kamu PHP Framework v1.2.1\n"));
+        print($this->createColor('green', sprintf("Kamu PHP Framework %s\n", $this->getVersion())));
         print($this->createColor('yellow', "Saya Console\n\n"));
     }
 
@@ -68,9 +66,32 @@ class Console
      *
      * @return void
      */
-    function __destruct()
+    public function __destruct()
     {
         print(PHP_EOL);
+    }
+
+    /**
+     * Get version the Framework.
+     * 
+     * @return string
+     */
+    private function getVersion(): string
+    {
+        $composerLock = json_decode(
+            file_get_contents(basepath() . '/composer.lock', true),
+            false,
+            1024
+        );
+
+        foreach ($composerLock->packages as $value) {
+            if ($value->name == 'kamu/framework') {
+                return $value->version;
+            }
+        }
+
+        $this->exception('File composer.lock tidak ada !');
+        return '';
     }
 
     /**
@@ -344,7 +365,7 @@ class Console
         $lines = file($env, FILE_IGNORE_NEW_LINES);
         foreach ($lines as $id => $line) {
             if (str_contains($line, 'APP_KEY=')) {
-                $lines[$id] = 'APP_KEY=' . Hash::rand(10) . ':' . Hash::rand(10);
+                $lines[$id] = 'APP_KEY=' . base64_encode(openssl_random_pseudo_bytes(32)) . ':' . base64_encode(openssl_random_pseudo_bytes(32));
                 break;
             }
         }
