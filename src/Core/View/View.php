@@ -41,10 +41,26 @@ class View implements Stringable
      */
     private $content;
 
+    /**
+     * Object compiler.
+     * 
+     * @var Compiler $compiler
+     */
     private $compiler;
 
+    /**
+     * Pair section start and end.
+     * 
+     * @var string|null $pairSection
+     */
     private $pairSection;
 
+    /**
+     * Init object.
+     * 
+     * @param Compiler $compiler
+     * @return void
+     */
     public function __construct(Compiler $compiler)
     {
         $this->compiler = $compiler;
@@ -121,7 +137,7 @@ class View implements Stringable
     }
 
     /**
-     * Bagian awal dari html.
+     * Bagian awal dari section.
      * 
      * @param string $name
      * @return void

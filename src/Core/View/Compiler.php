@@ -14,9 +14,9 @@ use Exception;
 class Compiler
 {
     /**
-     * Pairing Tag kita syntax
+     * Pairing Tag kita syntax.
      * 
-     * @var array
+     * @var array pairingTag
      */
     private const pairingTag = [
         'if',
@@ -32,9 +32,9 @@ class Compiler
     ];
 
     /**
-     * Self Close Tag kita syntax
+     * Self Close Tag kita syntax.
      * 
-     * @var array
+     * @var array selfClosing
      */
     private const selfClosing = [
         'extend',
@@ -49,9 +49,9 @@ class Compiler
     ];
 
     /**
-     * Echo tag kita syntax
+     * Echo tag kita syntax.
      * 
-     * @var array
+     * @var array echoTag
      */
     private const echoTag = [
         '{{' => '}}',
@@ -59,9 +59,9 @@ class Compiler
     ];
 
     /**
-     * Comment tag kita syntax
+     * Comment tag kita syntax.
      * 
-     * @var array
+     * @var array commentTag
      */
     private const commentTag = [
         '{{--' => '--}}',
@@ -69,7 +69,7 @@ class Compiler
     ];
 
     /**
-     * Tmp original blocks.
+     * Temporary original blocks.
      * 
      * @var array $originalBlocks
      */
@@ -90,15 +90,23 @@ class Compiler
     private $cachePath;
 
     /**
+     * Original cache path.
+     * 
+     * @var string $originCachePath
+     */
+    private $originCachePath;
+
+    /**
      * Init object.
      * 
+     * @param string $path
      * @return void
      */
-    public function __construct()
+    public function __construct(string $path = '/cache/views')
     {
+        $this->originCachePath = $path;
         $this->uid = md5(random_bytes(5));
         $this->orignalBlocks = [];
-        $this->cachePath = '/cache/views/';
     }
 
     /**
@@ -119,7 +127,7 @@ class Compiler
      */
     public function compile(string $file): Compiler
     {
-        $this->cachePath .= $file;
+        $this->cachePath = $this->originCachePath . '/' . $file;
 
         if (!debug()) {
             return $this;
@@ -130,7 +138,11 @@ class Compiler
 
         // Comment Tag
         foreach (self::commentTag as $key => $value) {
-            $content = strval(preg_replace(sprintf('/%s(.*?)%s/s', $key, $value), '', strval($content)));
+            $content = strval(preg_replace(
+                sprintf('/%s(.*?)%s/s', $key, $value),
+                '',
+                strval($content)
+            ));
         }
 
         // Self Close Tag
@@ -156,7 +168,6 @@ class Compiler
      * @param string $pattern
      * @param Closure $callback
      * @param string $subject
-     * 
      * @return string
      */
     private function pregReplaceCallback(string $pattern, Closure $callback, string $subject): string
@@ -164,7 +175,7 @@ class Compiler
         return strval(preg_replace_callback(
             $pattern,
             function (array $matches) use ($callback): string {
-                return $callback(strval($matches[1]));
+                return $callback(strval($matches[1] ?? $matches[0]));
             },
             $subject
         ));
@@ -182,11 +193,11 @@ class Compiler
     {
         $content = file_get_contents(sprintf(basepath() . '/resources/views/%s.kita.php', $file), true);
 
-        if (!(bool)$content) {
+        if (!(bool) $content) {
             throw new Exception(sprintf('Can\'t open file [%s.kita.php]', $file));
         }
 
-        return $content;
+        return strval($content);
     }
 
     /**
@@ -198,10 +209,12 @@ class Compiler
     private function putContent(string $content): void
     {
         $file = basepath() . $this->cachePath;
-        $arr = explode('/', $file);
-        $folder = implode('/', array_splice($arr, 0, -1));
 
-        if (!is_dir($folder)) {
+        $arr = explode('/', $file);
+        $depth = count($arr) - 1;
+
+        $folder = implode('/', array_splice($arr, 0, -1));
+        if (!is_dir($folder) && $depth > 3) {
             mkdir($folder, 0777, true);
         }
 
@@ -214,7 +227,6 @@ class Compiler
      * Save temporary orignal blocks.
      * 
      * @param string $content
-     * 
      * @return string
      */
     private function orignalBlocks(string $content): string
@@ -222,18 +234,33 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@original(.*?)@endoriginal/s',
             function (string $matches): string {
-                return sprintf('@__%s__%s__@', $this->uid, array_push($this->orignalBlocks, strval($matches[1])) - 1);
+                return sprintf(
+                    '@__%s__%s__@',
+                    $this->uid,
+                    array_push(
+                        $this->orignalBlocks,
+                        $matches
+                    ) - 1
+                );
             },
             $content
         );
     }
 
+    /**
+     * Tag untuk menampilkan hasil.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function echoTag(string $content): string
     {
         foreach (self::echoTag as $key => $value) {
             $content = $this->pregReplaceCallback(
                 sprintf('/%s\s*(.+?)\s*%s/s', $key, $value),
                 function (string $matches) use ($key, $value): string {
+
+                    // Safe echo tag
                     if ($key == '{{' && $value == '}}') {
                         $matches = sprintf('e(%s)', $matches);
                     }
@@ -247,6 +274,12 @@ class Compiler
         return $content;
     }
 
+    /**
+     * Kembalikan lagi hasil yang original.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function storeOriginalBlocks(string $content): string
     {
         if (!empty($this->orignalBlocks)) {
@@ -264,6 +297,12 @@ class Compiler
         return $content;
     }
 
+    /**
+     * Tag kondisi if.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function ifOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -275,6 +314,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag kondisi jika ada.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function issetOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -286,6 +331,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag kondisi jika kosong.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function emptyOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -297,6 +348,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag untuk menampilkan pesan error.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function errorOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -308,6 +365,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag untuk perulangan.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function forOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -319,6 +382,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag untuk iterasi.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function foreachOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -330,10 +399,16 @@ class Compiler
         );
     }
 
+    /**
+     * Tag section beberapa part.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function sectionOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@section\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@section\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
                 return sprintf('<?php section(%s) ?>', $matches);
             },
@@ -341,6 +416,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag kondisi sudah login.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function authOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -352,6 +433,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag kondisi belum login.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function guestOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -363,6 +450,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag raw php syntax.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function phpOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -374,6 +467,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup percabangan.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function ifCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -385,6 +484,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup jika ada.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function issetCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -396,6 +501,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup jika kosong.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function emptyCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -406,6 +517,13 @@ class Compiler
             $content
         );
     }
+
+    /**
+     * Tag penutup dari menampilkan error.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function errorCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -417,6 +535,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup dari perulangan.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function forCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -428,6 +552,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup dari iterasi.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function foreachCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -439,6 +569,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup dari section beberapa part.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function sectionCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -450,6 +586,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup dari sudah login.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function authCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -461,6 +603,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup dari belum login.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function guestCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -472,6 +620,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag penutup raw php syntax.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function phpCloseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -483,10 +637,16 @@ class Compiler
         );
     }
 
+    /**
+     * Tag untuk menambahkan parent.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function extendTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@extend\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@extend\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
                 return sprintf('<?php parents(%s) ?>', $matches);
             },
@@ -494,10 +654,16 @@ class Compiler
         );
     }
 
+    /**
+     * Tag import dari file lain.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function includeTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@include\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@include\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
                 return sprintf('<?php including(%s) ?>', $matches);
             },
@@ -505,10 +671,16 @@ class Compiler
         );
     }
 
+    /**
+     * Tag isi dari section.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function contentTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@content\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@content\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
                 return sprintf('<?php echo content(%s) ?>', $matches);
             },
@@ -516,6 +688,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag percabangan.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function elseifTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -527,6 +705,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag akhir percabangan.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function elseTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -538,6 +722,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag continue dari loop.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function continueTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -549,6 +739,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag break dari loop.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function breakTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -560,6 +756,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag csrf token.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function csrfTag(string $content): string
     {
         return $this->pregReplaceCallback(
@@ -571,6 +773,12 @@ class Compiler
         );
     }
 
+    /**
+     * Tag optional method http.
+     * 
+     * @param string $content
+     * @return string
+     */
     private function methodTag(string $content): string
     {
         return $this->pregReplaceCallback(

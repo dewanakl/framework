@@ -85,7 +85,7 @@ if (!function_exists('clear_ob')) {
     function clear_ob(): void
     {
         while (ob_get_level() > 0) {
-            ob_end_clean();
+            @ob_end_clean();
         }
     }
 }
@@ -102,7 +102,7 @@ if (!function_exists('json')) {
     {
         http_response_code($statusCode);
         header('Content-Type: application/json', true, $statusCode);
-        return json_encode($data);
+        return json_encode($data, 0, 1024);
     }
 }
 
@@ -145,6 +145,7 @@ if (!function_exists('trace')) {
     function trace(mixed $error): void
     {
         @clear_ob();
+        http_response_code(500);
         header('Content-Type: text/html');
         header('HTTP/1.1 500 Internal Server Error', true, 500);
         $path = str_replace(basepath(), '', __DIR__);
@@ -163,7 +164,9 @@ if (!function_exists('dd')) {
     function dd(mixed ...$param): void
     {
         @clear_ob();
+        http_response_code(500);
         header('Content-Type: text/html');
+        header('HTTP/1.1 500 Internal Server Error', true, 500);
         $path = str_replace(basepath(), '', __DIR__);
         echo render($path . '/errors/dd', ['param' => $param]);
         exit(0);
@@ -179,6 +182,7 @@ if (!function_exists('abort')) {
     function abort(): void
     {
         @clear_ob();
+        http_response_code(403);
         header('Content-Type: text/html');
         header('HTTP/1.1 403 Forbidden', true, 403);
         $path = str_replace(basepath(), '', __DIR__);
@@ -196,6 +200,7 @@ if (!function_exists('notFound')) {
     function notFound(): void
     {
         @clear_ob();
+        http_response_code(404);
         header('Content-Type: text/html');
         header('HTTP/1.1 404 Not Found', true, 404);
         $path = str_replace(basepath(), '', __DIR__);
@@ -213,6 +218,7 @@ if (!function_exists('notAllowed')) {
     function notAllowed(): void
     {
         @clear_ob();
+        http_response_code(405);
         header('Content-Type: text/html');
         header('HTTP/1.1 405 Method Not Allowed', true, 405);
         $path = str_replace(basepath(), '', __DIR__);
@@ -230,6 +236,7 @@ if (!function_exists('pageExpired')) {
     function pageExpired(): void
     {
         @clear_ob();
+        http_response_code(400);
         header('Content-Type: text/html');
         header('HTTP/1.1 400 Bad Request', true, 400);
         $path = str_replace(basepath(), '', __DIR__);
@@ -247,6 +254,7 @@ if (!function_exists('unavailable')) {
     function unavailable(): void
     {
         @clear_ob();
+        http_response_code(503);
         header('Content-Type: text/html');
         header('HTTP/1.1 503 Service Unavailable', true, 503);
         $path = str_replace(basepath(), '', __DIR__);
@@ -592,11 +600,11 @@ if (!function_exists('diffTime')) {
      * 
      * @param float $start
      * @param float $end
-     * @return int
+     * @return float
      */
-    function diffTime(float $start, float $end): int
+    function diffTime(float $start, float $end): float
     {
-        return intval(floor(floatval(number_format($end - $start, 3, '', ''))));
+        return round(($end - $start) * 1000, 2);
     }
 }
 
@@ -604,10 +612,10 @@ if (!function_exists('getPageTime')) {
     /**
      * Dapatkan waktu yang dibutuhkan untuk merender halaman dalam (ms).
      * 
-     * @return int
+     * @return float
      */
-    function getPageTime(): int
+    function getPageTime(): float
     {
-        return diffTime(env('_STARTTIME'), microtime(true));
+        return diffTime(constant('KAMU_START'), microtime(true));
     }
 }

@@ -78,7 +78,7 @@ class Render implements Stringable
      */
     public function show(): void
     {
-        $this->content = (function ($__path, $__data) {
+        $this->content = (function ($__path, $__data): string {
             ob_start();
             extract($__data, EXTR_SKIP);
 
