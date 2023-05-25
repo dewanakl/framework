@@ -272,7 +272,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
      */
     public function toJson(): string|bool
     {
-        return json_encode($this->attribute());
+        return json_encode($this->attribute(), 0, 1024);
     }
 
     /**
@@ -282,7 +282,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
      */
     public function toArray(): array
     {
-        return $this->map(function ($value) {
+        return $this->map(function ($value): mixed {
             return is_object($value) ? get_object_vars($value) : $value;
         })->attribute();
     }
@@ -339,7 +339,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
             throw new Exception('Nilai primary key tidak ada !');
         }
 
-        return $this->id($this->__get($this->primaryKey))->update($this->except([$this->primaryKey])->attribute());
+        return $this->id($this->__get($this->primaryKey))->update($this->except($this->primaryKey)->attribute());
     }
 
     /**

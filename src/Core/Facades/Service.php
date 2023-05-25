@@ -2,12 +2,14 @@
 
 namespace Core\Facades;
 
-use App\Kernel;
+use App\Kernel as AppKernel;
 use Closure;
 use Core\Http\Request;
 use Core\Http\Respond;
 use Core\Middleware\Middleware;
 use Core\Routing\Route;
+use Exception;
+use Throwable;
 
 /**
  * Class untuk menjalankan middleware dan controller.
@@ -34,15 +36,53 @@ class Service
     /**
      * Buat objek service.
      *
-     * @param Request $request
-     * @param Respond $respond
+     * @return void
+     * 
+     * @throws Exception
+     */
+    public function __construct()
+    {
+        $this->request = App::get()->singleton(Request::class);
+
+        $this->setDefaultEnv();
+        $this->setExceptionHandler();
+
+        Kernel::setTimezone();
+        if (!env('APP_KEY')) {
+            throw new Exception('App Key gk ada !');
+        }
+
+        $this->respond = App::get()->singleton(Respond::class);
+        $this->bootingProviders();
+    }
+
+    /**
+     * Handle this app exception.
+     * 
      * @return void
      */
-    public function __construct(Request $request, Respond $respond)
+    private function setExceptionHandler(): void
     {
-        $this->request = $request;
-        $this->respond = $respond;
-        $this->bootingProviders();
+        error_reporting(debug() ? E_ALL : 0);
+        set_exception_handler(function (Throwable $error): void {
+            if (debug()) {
+                trace($error);
+            }
+
+            unavailable();
+        });
+    }
+
+    /**
+     * Set default env to function.
+     * 
+     * @return void
+     */
+    private function setDefaultEnv(): void
+    {
+        $_ENV['_HTTPS'] = env('HTTPS') == 'true' || $this->request->server('HTTPS', 'off') !== 'off' || $this->request->server('SERVER_PORT') == '443';
+        $_ENV['_BASEURL'] = env('BASEURL') ? rtrim(env('BASEURL'), '/') : (https() ? 'https://' : 'http://') . trim($this->request->server('HTTP_HOST'));
+        $_ENV['_DEBUG'] = env('DEBUG') == 'true';
     }
 
     /**
@@ -52,7 +92,7 @@ class Service
      */
     private function bootingProviders(): void
     {
-        $services = App::get()->singleton(Kernel::class)->services();
+        $services = App::get()->singleton(AppKernel::class)->services();
 
         foreach ($services as $service) {
             App::get()->make($service)->booting();
@@ -66,7 +106,7 @@ class Service
      */
     private function registerProvider(): void
     {
-        $services = App::get()->singleton(Kernel::class)->services();
+        $services = App::get()->singleton(AppKernel::class)->services();
 
         foreach ($services as $service) {
             App::get()->clean($service)->registrasi();
@@ -98,7 +138,7 @@ class Service
     private function process(array $route, array $variables): int
     {
         $middleware = new Middleware([
-            ...App::get()->singleton(Kernel::class)->middlewares(),
+            ...App::get()->singleton(AppKernel::class)->middlewares(),
             ...$route['middleware']
         ]);
 

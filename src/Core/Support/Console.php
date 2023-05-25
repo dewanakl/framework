@@ -4,7 +4,11 @@ namespace Core\Support;
 
 use Core\Database\Generator;
 use Core\Database\Migration;
+use Core\Facades\Kernel;
 use Core\Routing\Route;
+use Core\View\Compiler;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 /**
  * Saya console untuk mempermudah develop app.
@@ -44,15 +48,16 @@ class Console
 
     /**
      * Buat objek console.
-     *
-     * @param array $argv
+     * 
      * @return void
      */
-    public function __construct(array $argv = [])
+    public function __construct()
     {
+        Kernel::setTimezone();
         $this->timenow = constant('SAYA_START');
         $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
 
+        $argv = $_SERVER['argv'];
         array_shift($argv);
         $this->command = $argv[0] ?? null;
         $this->options = $argv[1] ?? null;
@@ -388,11 +393,12 @@ class Console
 
         $lines = file(basepath() . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) {
+            $line = trim($line);
+            if (strpos($line, '#') === 0) {
                 continue;
             }
 
-            list($name, $value) = explode('=', $line, 2);
+            [$name, $value] = explode('=', $line, 2);
             $env[trim($name)] = trim($value);
         }
 
@@ -424,6 +430,42 @@ class Console
     }
 
     /**
+     * Cache views.
+     * 
+     * @return void
+     */
+    private function viewCache(): void
+    {
+        $views = basepath() . '/resources/views';
+        $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($views));
+        $compiler = new Compiler;
+
+        printf("%s\n\n", $this->createColor('yellow', 'Cache View Start'));
+        $begin = $this->timenow;
+
+        foreach ($rii as $file) {
+            if (!$file->isDir()) {
+                $path = $compiler->compile(
+                    ltrim(str_replace(
+                        '\\',
+                        '/',
+                        str_replace(
+                            $views,
+                            '',
+                            str_replace('.kita.php', '', $file->getPathname())
+                        )
+                    ), '/')
+                )->getPathFileCache();
+
+                printf("%-30s %s\n", $path, $this->executeTime());
+            }
+        }
+
+        $this->timenow = $begin;
+        printf("\n%-10s %s \n", $this->createColor('green', 'Execute success'), $this->executeTime());
+    }
+
+    /**
      * Tampilkan list menu yang ada.
      *
      * @return void
@@ -446,6 +488,10 @@ class Console
             [
                 'command' => 'cache:delete',
                 'description' => 'Hapus file cache tersebut'
+            ],
+            [
+                'command' => 'view:cache',
+                'description' => 'Buat cache pada view agar jadi cepat'
             ],
             [
                 'command' => 'migrasi',
@@ -486,7 +532,7 @@ class Console
         ];
 
         print("Penggunaan:\n perintah [options]\n\n");
-        $mask = $this->createColor('cyan', "%-20s") . " %-30s\n";
+        $mask = $this->createColor('cyan', "%-20s") . " %s\n";
 
         foreach ($menus as $value) {
             printf($mask, $value['command'], $value['description']);
@@ -513,6 +559,9 @@ class Console
                 break;
             case 'cache:delete':
                 $this->deleteCache();
+                break;
+            case 'view:cache':
+                $this->viewCache();
                 break;
             case 'migrasi':
                 $this->migrasi(true);
