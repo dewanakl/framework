@@ -665,7 +665,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@include\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php including(%s) ?>', $matches);
+                return sprintf('<?php echo including(%s) ?>', $matches);
             },
             $content
         );
