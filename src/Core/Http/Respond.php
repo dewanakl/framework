@@ -103,7 +103,7 @@ class Respond
      */
     public function route(string $route, mixed ...$key): Respond
     {
-        return $this->to(route($route, $key));
+        return $this->to(route($route, ...$key));
     }
 
     /**
