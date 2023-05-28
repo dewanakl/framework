@@ -28,7 +28,7 @@ class Console
     /**
      * Optional perintah untuk eksekusi.
      * 
-     * @var string $command
+     * @var string|null $command
      */
     private $options;
 
@@ -280,7 +280,7 @@ class Console
         }
 
         $result = $this->writeFileContent(basepath() . '/' . $type . '/' . $optional . $name . '.php', $data);
-        $this->exception('Gagal membuat ' . $type, !$result, 'Berhasil membuat ' . $type . '/' . $name . '.php');
+        $this->exception('Gagal membuat ' . $type . '/' . $name, !$result, 'Berhasil membuat ' . $type . '/' . $name . '.php');
     }
 
     /**
@@ -346,13 +346,14 @@ class Console
     private function createMail(mixed $name): void
     {
         $this->exception('Butuh Nama file !', !$name);
+
         $folder =  basepath() . '/resources/views/email/';
         if (!is_dir($folder)) {
-            mkdir($folder, 7777, true);
+            mkdir($folder, 0777, true);
         }
 
         $result = copy(__DIR__ . '/../../helpers/templates/templateMail.php', $folder . $name . '.php');
-        $this->exception('Gagal membuat email', !$result, 'Berhasil membuat email ' . $name);
+        $this->exception('Gagal membuat email ' . $name, !$result, 'Berhasil membuat email ' . $name);
     }
 
     /**
@@ -444,25 +445,29 @@ class Console
         $begin = $this->timenow;
 
         foreach ($rii as $file) {
-            if (!$file->isDir()) {
-                $path = $compiler->compile(
-                    ltrim(str_replace(
-                        '\\',
-                        '/',
-                        str_replace(
-                            $views,
-                            '',
-                            str_replace('.kita.php', '', $file->getPathname())
-                        )
-                    ), '/')
-                )->getPathFileCache();
-
-                printf("%-30s %s\n", $path, $this->executeTime());
+            if ($file->isDir()) {
+                continue;
             }
+
+            $path = $compiler->compile(ltrim(str_replace(
+                '\\',
+                '/',
+                str_replace(
+                    $views,
+                    '',
+                    str_replace(
+                        '.kita.php',
+                        '',
+                        $file->getPathname()
+                    )
+                )
+            ), '/'))->getPathFileCache();
+
+            printf("%-30s %s\n", $path, $this->executeTime());
         }
 
         $this->timenow = $begin;
-        printf("\n%-10s %s \n", $this->createColor('green', 'Execute success'), $this->executeTime());
+        printf("\n%-10s %s\n", $this->createColor('green', 'Execute success'), $this->executeTime());
     }
 
     /**
