@@ -47,6 +47,13 @@ class Query
     private $dates;
 
     /**
+     * Casting a attribute.
+     * 
+     * @var array $cast
+     */
+    protected $cast = [];
+
+    /**
      * Primary key tabelnya.
      * 
      * @var string|null $primaryKey
@@ -294,6 +301,33 @@ class Query
     }
 
     /**
+     * Cast attribute.
+     * 
+     * @param string $type
+     * @param mixed $data
+     * @return mixed
+     * 
+     * @throws Exception
+     */
+    private function cast(string $type, mixed $data): mixed
+    {
+        $grammar = [
+            'string' => fn (mixed $data): string => strval($data),
+            'int' => fn (mixed $data): int => intval($data),
+            'float' => fn (mixed $data): float => floatval($data),
+            'bool' => fn (mixed $data): bool => boolval($data)
+        ];
+
+        foreach ($grammar as $key => $value) {
+            if ($key == $type) {
+                return $value($data);
+            }
+        }
+
+        throw new Exception('Undefined cast type: ' . $type);
+    }
+
+    /**
      * Debug querynya.
      *
      * @return void
@@ -335,6 +369,18 @@ class Query
     public function setDates(array $date): Query
     {
         $this->dates = $date;
+        return $this;
+    }
+
+    /**
+     * Set cast attribute.
+     *
+     * @param array $cast
+     * @return Query
+     */
+    public function setCast(array $cast): Query
+    {
+        $this->cast = $cast;
         return $this;
     }
 
@@ -792,6 +838,10 @@ class Query
                 }
             }
 
+            foreach ($this->cast as $attribute => $type) {
+                $record->{$attribute} = $this->cast($type, $record->{$attribute});
+            }
+
             $sets[] = $record;
         } while (true);
 
@@ -820,6 +870,12 @@ class Query
                 if (!empty($set[$value])) {
                     $set[$value] = $this->dateTime($set[$value]);
                 }
+            }
+        }
+
+        foreach ($this->cast as $attribute => $type) {
+            if (!empty($set[$attribute])) {
+                $set[$attribute] = $this->cast($type, $set[$attribute]);
             }
         }
 
