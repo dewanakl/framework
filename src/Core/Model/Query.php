@@ -47,11 +47,11 @@ class Query
     private $dates;
 
     /**
-     * Casting a attribute.
+     * Castsing a attribute.
      * 
-     * @var array $cast
+     * @var array $casts
      */
-    protected $cast = [];
+    protected $casts = [];
 
     /**
      * Primary key tabelnya.
@@ -301,7 +301,7 @@ class Query
     }
 
     /**
-     * Cast attribute.
+     * Casts attribute.
      * 
      * @param string $type
      * @param mixed $data
@@ -309,7 +309,7 @@ class Query
      * 
      * @throws Exception
      */
-    private function cast(string $type, mixed $data): mixed
+    private function casts(string $type, mixed $data): mixed
     {
         $grammar = [
             'string' => fn (mixed $data): string => strval($data),
@@ -373,14 +373,14 @@ class Query
     }
 
     /**
-     * Set cast attribute.
+     * Set casts attribute.
      *
-     * @param array $cast
+     * @param array $casts
      * @return Query
      */
-    public function setCast(array $cast): Query
+    public function setCasts(array $casts): Query
     {
-        $this->cast = $cast;
+        $this->casts = $casts;
         return $this;
     }
 
@@ -838,8 +838,10 @@ class Query
                 }
             }
 
-            foreach ($this->cast as $attribute => $type) {
-                $record->{$attribute} = $this->cast($type, $record->{$attribute});
+            foreach ($this->casts as $attribute => $type) {
+                if (!empty($record->{$attribute})) {
+                    $record->{$attribute} = $this->casts($type, $record->{$attribute});
+                }
             }
 
             $sets[] = $record;
@@ -873,9 +875,9 @@ class Query
             }
         }
 
-        foreach ($this->cast as $attribute => $type) {
+        foreach ($this->casts as $attribute => $type) {
             if (!empty($set[$attribute])) {
-                $set[$attribute] = $this->cast($type, $set[$attribute]);
+                $set[$attribute] = $this->casts($type, $set[$attribute]);
             }
         }
 

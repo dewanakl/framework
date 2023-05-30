@@ -78,9 +78,9 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Casting a attribute.
      * 
-     * @var array $cast
+     * @var array $casts
      */
-    protected $cast = [];
+    protected $casts = [];
 
     /**
      * Attributes hasil query.
@@ -474,7 +474,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
             ->setTable($this->table)
             ->setDates($this->dates)
             ->setPrimaryKey($this->primaryKey)
-            ->setCast($this->cast)
+            ->setCasts($this->casts)
             ->setObject(get_called_class())
             ->{$method}(...$parameters);
     }
