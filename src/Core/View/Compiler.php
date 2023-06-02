@@ -15,7 +15,7 @@ class Compiler
 {
     /**
      * Pairing Tag kita syntax.
-     * 
+     *
      * @var array pairingTag
      */
     private const pairingTag = [
@@ -33,7 +33,7 @@ class Compiler
 
     /**
      * Self Close Tag kita syntax.
-     * 
+     *
      * @var array selfClosing
      */
     private const selfClosing = [
@@ -50,7 +50,7 @@ class Compiler
 
     /**
      * Echo tag kita syntax.
-     * 
+     *
      * @var array echoTag
      */
     private const echoTag = [
@@ -60,7 +60,7 @@ class Compiler
 
     /**
      * Comment tag kita syntax.
-     * 
+     *
      * @var array commentTag
      */
     private const commentTag = [
@@ -70,35 +70,35 @@ class Compiler
 
     /**
      * Temporary original blocks.
-     * 
+     *
      * @var array $originalBlocks
      */
     private $orignalBlocks;
 
     /**
      * UID from blocks.
-     * 
+     *
      * @var string $uid
      */
     private $uid;
 
     /**
      * Path file cache.
-     * 
+     *
      * @var string $cachePath
      */
     private $cachePath;
 
     /**
      * Original cache path.
-     * 
+     *
      * @var string $originCachePath
      */
     private $originCachePath;
 
     /**
      * Init object.
-     * 
+     *
      * @param string $path
      * @return void
      */
@@ -111,7 +111,7 @@ class Compiler
 
     /**
      * Dapatkan path file cache.
-     * 
+     *
      * @return string
      */
     public function getPathFileCache(): string
@@ -121,7 +121,7 @@ class Compiler
 
     /**
      * Compile file .kita
-     * 
+     *
      * @param string $file
      * @return Compiler
      */
@@ -164,7 +164,7 @@ class Compiler
 
     /**
      * Override function and extract index 1 of matches.
-     * 
+     *
      * @param string $pattern
      * @param Closure $callback
      * @param string $subject
@@ -183,10 +183,10 @@ class Compiler
 
     /**
      * Open a file.
-     * 
+     *
      * @param string $file
      * @return string
-     * 
+     *
      * @throws Exception
      */
     private function getContent(string $file): string
@@ -202,19 +202,22 @@ class Compiler
 
     /**
      * Save a file. If folder not exist, create it.
-     * 
+     *
      * @param string $content
      * @return void
      */
     private function putContent(string $content): void
     {
         $file = basepath() . $this->cachePath;
+        if (!is_dir(basepath() . $this->originCachePath)) {
+            mkdir(basepath() . $this->originCachePath, 0777, true);
+        }
 
         $arr = explode('/', $file);
         $depth = count($arr) - 1;
 
         $folder = implode('/', array_splice($arr, 0, -1));
-        if (!is_dir($folder) && $depth > 3) {
+        if (!is_dir($folder) && $depth > 2) {
             mkdir($folder, 0777, true);
         }
 
@@ -225,7 +228,7 @@ class Compiler
 
     /**
      * Save temporary orignal blocks.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -249,7 +252,7 @@ class Compiler
 
     /**
      * Tag untuk menampilkan hasil.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -276,7 +279,7 @@ class Compiler
 
     /**
      * Kembalikan lagi hasil yang original.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -299,7 +302,7 @@ class Compiler
 
     /**
      * Tag kondisi if.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -316,7 +319,7 @@ class Compiler
 
     /**
      * Tag kondisi jika ada.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -333,7 +336,7 @@ class Compiler
 
     /**
      * Tag kondisi jika kosong.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -350,7 +353,7 @@ class Compiler
 
     /**
      * Tag untuk menampilkan pesan error.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -367,7 +370,7 @@ class Compiler
 
     /**
      * Tag untuk perulangan.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -384,7 +387,7 @@ class Compiler
 
     /**
      * Tag untuk iterasi.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -401,7 +404,7 @@ class Compiler
 
     /**
      * Tag section beberapa part.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -418,7 +421,7 @@ class Compiler
 
     /**
      * Tag kondisi sudah login.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -435,7 +438,7 @@ class Compiler
 
     /**
      * Tag kondisi belum login.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -452,7 +455,7 @@ class Compiler
 
     /**
      * Tag raw php syntax.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -469,7 +472,7 @@ class Compiler
 
     /**
      * Tag penutup percabangan.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -486,7 +489,7 @@ class Compiler
 
     /**
      * Tag penutup jika ada.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -503,7 +506,7 @@ class Compiler
 
     /**
      * Tag penutup jika kosong.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -520,7 +523,7 @@ class Compiler
 
     /**
      * Tag penutup dari menampilkan error.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -537,7 +540,7 @@ class Compiler
 
     /**
      * Tag penutup dari perulangan.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -554,7 +557,7 @@ class Compiler
 
     /**
      * Tag penutup dari iterasi.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -571,7 +574,7 @@ class Compiler
 
     /**
      * Tag penutup dari section beberapa part.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -588,7 +591,7 @@ class Compiler
 
     /**
      * Tag penutup dari sudah login.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -605,7 +608,7 @@ class Compiler
 
     /**
      * Tag penutup dari belum login.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -622,7 +625,7 @@ class Compiler
 
     /**
      * Tag penutup raw php syntax.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -639,7 +642,7 @@ class Compiler
 
     /**
      * Tag untuk menambahkan parent.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -656,7 +659,7 @@ class Compiler
 
     /**
      * Tag import dari file lain.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -673,7 +676,7 @@ class Compiler
 
     /**
      * Tag isi dari section.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -690,7 +693,7 @@ class Compiler
 
     /**
      * Tag percabangan.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -707,7 +710,7 @@ class Compiler
 
     /**
      * Tag akhir percabangan.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -724,7 +727,7 @@ class Compiler
 
     /**
      * Tag continue dari loop.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -741,7 +744,7 @@ class Compiler
 
     /**
      * Tag break dari loop.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -758,7 +761,7 @@ class Compiler
 
     /**
      * Tag csrf token.
-     * 
+     *
      * @param string $content
      * @return string
      */
@@ -775,7 +778,7 @@ class Compiler
 
     /**
      * Tag optional method http.
-     * 
+     *
      * @param string $content
      * @return string
      */
