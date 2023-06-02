@@ -17,14 +17,14 @@ class DataBase
 {
     /**
      * Object PDO.
-     * 
+     *
      * @var object $pdo
      */
     private $pdo;
 
     /**
      * Statement dari query.
-     * 
+     *
      * @var object $stmt
      */
     private $stmt;
@@ -33,7 +33,7 @@ class DataBase
      * Buat objek database.
      *
      * @return void
-     * 
+     *
      * @throws PDOException
      */
     public function __construct()
@@ -62,7 +62,7 @@ class DataBase
 
     /**
      * Opsi untuk PDO ini.
-     * 
+     *
      * @return array
      */
     private function options(): array
@@ -72,6 +72,7 @@ class DataBase
             PDO::ATTR_CASE => PDO::CASE_NATURAL,
             PDO::ATTR_STRINGIFY_FETCHES => false,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_ORACLE_NULLS => PDO::NULL_NATURAL,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
         ];
 
@@ -87,7 +88,7 @@ class DataBase
      *
      * @param Throwable $e
      * @return void
-     * 
+     *
      * @throws Exception
      */
     public function catchException(Throwable $e): void
@@ -138,7 +139,7 @@ class DataBase
      *
      * @param string $command
      * @return int|bool
-     * 
+     *
      * @throws Throwable
      */
     public function exec(string $command): int|bool
@@ -163,7 +164,7 @@ class DataBase
      *
      * @param string $query
      * @return void
-     * 
+     *
      * @throws Exception
      */
     public function query(string $query): void
@@ -183,7 +184,7 @@ class DataBase
      * @param int|string $param
      * @param mixed $value
      * @return void
-     * 
+     *
      * @throws Exception
      */
     public function bind(int|string $param, mixed $value): void
@@ -209,7 +210,7 @@ class DataBase
      * Eksekusi juga.
      *
      * @return bool
-     * 
+     *
      * @throws Exception
      */
     public function execute(): bool
@@ -261,7 +262,7 @@ class DataBase
 
     /**
      * Dapatkan idnya.
-     * 
+     *
      * @param string|null $name
      * @return string|bool
      */

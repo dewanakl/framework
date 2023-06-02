@@ -21,14 +21,14 @@ class Service
 {
     /**
      * Objek request disini.
-     * 
+     *
      * @var Request $request
      */
     private $request;
 
     /**
      * Objek respond disini.
-     * 
+     *
      * @var Respond $respond
      */
     private $respond;
@@ -37,12 +37,13 @@ class Service
      * Buat objek service.
      *
      * @return void
-     * 
+     *
      * @throws Exception
      */
     public function __construct()
     {
         $this->request = App::get()->singleton(Request::class);
+        $this->respond = App::get()->singleton(Respond::class);
 
         $this->setDefaultEnv();
         $this->setExceptionHandler();
@@ -52,13 +53,12 @@ class Service
             throw new Exception('App Key gk ada !');
         }
 
-        $this->respond = App::get()->singleton(Respond::class);
         $this->bootingProviders();
     }
 
     /**
      * Handle this app exception.
-     * 
+     *
      * @return void
      */
     private function setExceptionHandler(): void
@@ -75,7 +75,7 @@ class Service
 
     /**
      * Set default env to function.
-     * 
+     *
      * @return void
      */
     private function setDefaultEnv(): void
@@ -174,7 +174,7 @@ class Service
 
     /**
      * Tangani permintaan yang diluar dari route.
-     * 
+     *
      * @return int
      */
     private function handleOutOfRoute(bool $routeMatch): int
@@ -204,7 +204,7 @@ class Service
 
     /**
      * Get valid url based on baseurl.
-     * 
+     *
      * @return string
      */
     private function getValidUrl(): string
