@@ -120,7 +120,7 @@ class Validator
                 break;
 
             case $rule == 'dns':
-                if (!checkdnsrr(explode('@', $value)[1])) {
+                if (!checkdnsrr(explode('@', $value ?? '')[1])) {
                     $this->setError($param, 'request.dns');
                 }
                 break;
@@ -158,7 +158,7 @@ class Validator
                 break;
 
             case $rule == 'slug':
-                $this->__set($param, preg_replace('/[^\w-]/', '', $value));
+                $this->__set($param, preg_replace('/[^\w-]/', '', $value ?? ''));
                 break;
 
             case $rule == 'html':
@@ -167,27 +167,27 @@ class Validator
 
             case $rule == 'safe':
                 $bad = [...array_map('chr', range(0, 31)), '\\', '/', ':', '*', '?', '"', '<', '>', '|'];
-                $this->__set($param, str_replace($bad, '', $value));
+                $this->__set($param, str_replace($bad, '', $value ?? ''));
                 break;
 
             case $rule == 'hash':
-                $this->__set($param, Hash::make($value));
+                $this->__set($param, Hash::make($value ?? ''));
                 break;
 
             case $rule == 'trim':
-                $this->__set($param, trim($value));
+                $this->__set($param, trim($value ?? ''));
                 break;
 
             case str_contains($rule, 'min'):
                 $min = intval(explode(':', $rule)[1] ?? 0);
-                if (strlen($value) < $min) {
+                if (strlen($value ?? '') < $min) {
                     $this->setError($param, 'request.min', $min);
                 }
                 break;
 
             case str_contains($rule, 'max'):
                 $max = intval(explode(':', $rule)[1] ?? 0);
-                if (strlen($value) > $max) {
+                if (strlen($value ?? '') > $max) {
                     $this->setError($param, 'request.max', $max);
                 }
                 break;
