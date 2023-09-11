@@ -14,31 +14,45 @@ abstract class Relational
 {
     /**
      * Object name model.
-     * 
+     *
      * @var string $model
      */
     protected $model;
 
     /**
      * Foreign dari model.
-     * 
+     *
      * @var string $foreign_key
      */
     protected $foreign_key;
 
     /**
      * local key dari object awal.
-     * 
+     *
      * @var string|array $local_key
      */
     protected $local_key;
 
     /**
      * Callback dari query relational.
-     * 
+     *
      * @var Closure|null $callback
      */
     protected $callback;
+
+    /**
+     * Alias of name relational.
+     *
+     * @var string $alias
+     */
+    protected $alias;
+
+    /**
+     * Recursive relational?
+     *
+     * @var bool $recursive
+     */
+    protected $recursive;
 
     /**
      * Init object.
@@ -99,6 +113,77 @@ abstract class Relational
             $data
         ];
 
+        return $this;
+    }
+
+    /**
+     * Set alias.
+     *
+     * @param string $alias
+     * @return Relational
+     */
+    public function as(string $alias): Relational
+    {
+        $this->alias = $alias;
+        return $this;
+    }
+
+    /**
+     * Get a alias relational name if empty add it.
+     *
+     * @param string $default
+     * @return string
+     */
+    public function getAlias(string $default = ''): string
+    {
+        if (!$this->alias) {
+            $this->alias = $default;
+        }
+
+        return $this->alias;
+    }
+
+    /**
+     * Loop a recursive.
+     *
+     * @param int|string $id
+     * @param int $fetch
+     * @param Closure $call
+     * @return Model
+     */
+    protected function loop(int|string $id, int $fetch, Closure $call): Model
+    {
+        $model = $call((new $this->model)->where($this->foreign_key, $id));
+
+        if ($fetch == Query::Fetch) {
+            if (is_null($model[$this->local_key])) {
+                return $model;
+            }
+
+            $model[$this->alias] = $this->loop($model[$this->local_key], $fetch, $call);
+            return $model;
+        }
+
+        return $model->map(
+            function (object $val) use ($fetch, $call): object {
+                if (is_null($val->{$this->local_key})) {
+                    return $val;
+                }
+
+                $val->{$this->alias} = $this->loop($val->{$this->local_key}, $fetch, $call);
+                return $val;
+            }
+        );
+    }
+
+    /**
+     * Set is recursive.
+     *
+     * @return Relational
+     */
+    public function recursive(): Relational
+    {
+        $this->recursive = true;
         return $this;
     }
 }

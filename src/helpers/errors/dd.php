@@ -28,7 +28,11 @@
         $res = ob_get_contents();
         ob_end_clean();
 
-        echo '<pre>' . e($res) . '</pre>';
+        if ($res === false) {
+            continue;
+        }
+
+        echo '<pre>' . htmlspecialchars(strval($res)) . '</pre>';
     }
     ?>
 </body>

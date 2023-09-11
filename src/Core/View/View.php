@@ -2,8 +2,10 @@
 
 namespace Core\View;
 
-use Exception;
+use ErrorException;
+use LogicException;
 use Stringable;
+use Throwable;
 
 /**
  * Template view dengan parent.
@@ -15,49 +17,49 @@ class View implements Stringable
 {
     /**
      * Data dari setiap section.
-     * 
+     *
      * @var array $section
      */
     private $section;
 
     /**
      * Variabel yang di inject.
-     * 
+     *
      * @var array $variables
      */
     private $variables;
 
     /**
      * Nama parentnya.
-     * 
+     *
      * @var string|null $parent
      */
     private $parent;
 
     /**
      * Content final.
-     * 
+     *
      * @var Render|null $content
      */
     private $content;
 
     /**
      * Object compiler.
-     * 
+     *
      * @var Compiler $compiler
      */
     private $compiler;
 
     /**
      * Pair section start and end.
-     * 
+     *
      * @var string|null $pairSection
      */
     private $pairSection;
 
     /**
      * Init object.
-     * 
+     *
      * @param Compiler $compiler
      * @return void
      */
@@ -68,7 +70,7 @@ class View implements Stringable
 
     /**
      * Magic to string.
-     * 
+     *
      * @return string
      */
     public function __toString(): string
@@ -76,6 +78,7 @@ class View implements Stringable
         $content = $this->content->__toString();
         @clear_ob();
 
+        $this->pairSection = null;
         $this->parent = null;
         $this->content = null;
         $this->section = [];
@@ -86,7 +89,7 @@ class View implements Stringable
 
     /**
      * Show html template.
-     * 
+     *
      * @param string $name
      * @return void
      */
@@ -103,7 +106,7 @@ class View implements Stringable
 
     /**
      * Insert variabel.
-     * 
+     *
      * @param array $variables
      * @return void
      */
@@ -114,7 +117,7 @@ class View implements Stringable
 
     /**
      * Set parent html.
-     * 
+     *
      * @param string $name
      * @param array $variables
      * @return void
@@ -127,27 +130,53 @@ class View implements Stringable
 
     /**
      * Masukan html opsional.
-     * 
+     *
      * @param string $name
      * @return Render
      */
     public function including(string $name): Render
     {
-        return render($this->compiler->compile($name)->getPathFileCache(), $this->variables ?? []);
+        $template = new Render($this->compiler->compile($name)->getPathFileCache());
+        $template->setData($this->variables ?? []);
+
+        try {
+            $template->show();
+
+            $error = error_get_last();
+            if ($error !== null) {
+                error_clear_last();
+                throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            }
+
+            return $template;
+        } catch (Throwable $th) {
+            if ($th instanceof LogicException) {
+                throw $th;
+            }
+
+            throw new ErrorException(
+                $th->getMessage(),
+                $th->getCode(),
+                E_ERROR,
+                base_path(sprintf('/resources/views/%s.kita.php', $name)),
+                $th->getLine(),
+                $th->getPrevious()
+            );
+        }
     }
 
     /**
      * Bagian awal dari section.
-     * 
+     *
      * @param string $name
      * @return void
-     * 
-     * @throws Exception
+     *
+     * @throws LogicException
      */
     public function section(string $name): void
     {
         if ($this->pairSection !== null) {
-            throw new Exception(sprintf('Unclose endsection %s', $this->pairSection));
+            throw new LogicException(sprintf('Unclose endsection "%s"', $this->pairSection));
         }
 
         $this->pairSection = $name;
@@ -157,7 +186,7 @@ class View implements Stringable
 
     /**
      * Tampilkan bagian dari html.
-     * 
+     *
      * @param string $name
      * @return string|null
      */
@@ -172,7 +201,7 @@ class View implements Stringable
 
     /**
      * Bagian akhir dari html.
-     * 
+     *
      * @return void
      */
     public function endsection(): void

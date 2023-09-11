@@ -4,9 +4,11 @@ namespace Core\Support;
 
 use Core\Database\Generator;
 use Core\Database\Migration;
-use Core\Facades\Kernel;
+use Core\Queue\Routine;
 use Core\Routing\Route;
+use Core\Valid\Hash;
 use Core\View\Compiler;
+use DirectoryIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -20,71 +22,71 @@ class Console
 {
     /**
      * Perintah untuk eksekusi.
-     * 
+     *
      * @var string|null $command
      */
     private $command;
 
     /**
      * Optional perintah untuk eksekusi.
-     * 
+     *
      * @var string|null $command
      */
     private $options;
 
     /**
+     * Optional args.
+     *
+     * @var array $args
+     */
+    private $args;
+
+    /**
      * Waktu yang dibutuhkan.
-     * 
+     *
      * @var float $timenow
      */
     private $timenow;
 
     /**
      * Apakah versi cmd dibawah 10?.
-     * 
-     * @var bool $version
+     *
+     * @var bool $supportColor
      */
-    private $version;
+    private $supportColor;
 
     /**
      * Buat objek console.
-     * 
+     *
      * @return void
      */
     public function __construct()
     {
-        Kernel::setTimezone();
-        $this->timenow = constant('SAYA_START');
-        $this->version = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
+        Env::initDefaultValue();
 
-        $argv = $_SERVER['argv'];
+        $this->timenow = request()->server->get('REQUEST_TIME_FLOAT');
+        $this->supportColor = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
+
+        $argv = request()->server->get('argv');
+
         array_shift($argv);
         $this->command = $argv[0] ?? null;
-        $this->options = $argv[1] ?? null;
+        array_shift($argv);
+        $this->options = $argv[0] ?? null;
+        array_shift($argv);
 
-        print($this->createColor('green', sprintf("Kamu PHP Framework %s\n", $this->getVersion())));
-        print($this->createColor('yellow', "Saya Console\n\n"));
-    }
-
-    /**
-     * Print spasi ketika selesai.
-     *
-     * @return void
-     */
-    public function __destruct()
-    {
-        print(PHP_EOL);
+        $this->args = $argv;
     }
 
     /**
      * Get version the Framework.
-     * 
-     * @return string
+     *
+     * @return string|null
      */
-    private function getVersion(): string
+    private function getVersion(): string|null
     {
         $composerLock = json_decode(
-            file_get_contents(basepath() . '/composer.lock', true),
+            strval(file_get_contents(base_path('/composer.lock'))),
             false,
             1024
         );
@@ -96,12 +98,13 @@ class Console
         }
 
         $this->exception('File composer.lock tidak ada !');
-        return '';
+
+        return null;
     }
 
     /**
-     * Buat dan tulis file.
-     * 
+     * Buat dan tulis file dalam folder.
+     *
      * @param string $file
      * @param string $content
      * @return bool
@@ -110,6 +113,7 @@ class Console
     {
         $arr = explode('/', $file);
         $folder = implode('/', array_splice($arr, 0, -1));
+
         if (!is_dir($folder)) {
             mkdir($folder, 0777, true);
         }
@@ -127,7 +131,7 @@ class Console
      */
     private function createColor(string $name, string $value): string
     {
-        if (!$this->version) {
+        if (!$this->supportColor) {
             return $value;
         }
 
@@ -159,7 +163,7 @@ class Console
     {
         if ($fail) {
             print($this->createColor('red', $message . "\n"));
-            exit;
+            exit(1);
         }
 
         if ($options) {
@@ -175,7 +179,7 @@ class Console
     private function executeTime(): string
     {
         $now = microtime(true);
-        $result = strval(diffTime($this->timenow, $now));
+        $result = strval(diff_time($this->timenow, $now));
         $this->timenow = $now;
 
         return $this->createColor('cyan', '(' . $result . ' ms)');
@@ -189,7 +193,7 @@ class Console
      */
     private function migrasi(bool $up): void
     {
-        $baseFile = basepath() . '/database/schema/';
+        $baseFile = base_path('/database/schema/');
 
         $files = scandir($baseFile, ($up) ? 0 : 1);
         $files = array_diff($files, array('..', '.'));
@@ -213,7 +217,7 @@ class Console
      */
     private function generator(): void
     {
-        $arg = require basepath() . '/database/generator.php';
+        $arg = require base_path('/database/generator/generator.php');
         if (!($arg instanceof Generator)) {
             $this->exception('File ' . $file . ' bukan generator !');
         }
@@ -233,6 +237,7 @@ class Console
     {
         $this->exception('Butuh Nama file !', !$name);
         $type = '';
+
         switch ($tipe) {
             case 1:
                 $type = 'templateMigrasi';
@@ -243,12 +248,15 @@ class Console
             case 3:
                 $type = 'templateController';
                 break;
-            default:
+            case 4:
                 $type = 'templateModel';
+                break;
+            case 5:
+                $type = 'templateJob';
                 break;
         }
 
-        return require_once __DIR__ . '/../../helpers/templates/' . $type . '.php';
+        return require_once base_path(helper_path('/templates/' . $type . '.php'));
     }
 
     /**
@@ -263,6 +271,7 @@ class Console
     {
         $type = '';
         $optional = '';
+
         switch ($tipe) {
             case 1:
                 $type = 'database/schema';
@@ -274,12 +283,15 @@ class Console
             case 3:
                 $type = 'app/Controllers';
                 break;
-            default:
+            case 4:
                 $type = 'app/Models';
+                break;
+            case 5:
+                $type = 'app/Jobs';
                 break;
         }
 
-        $result = $this->writeFileContent(basepath() . '/' . $type . '/' . $optional . $name . '.php', $data);
+        $result = $this->writeFileContent(base_path('/' . $type . '/' . $optional . $name . '.php'), $data);
         $this->exception('Gagal membuat ' . $type . '/' . $name, !$result, 'Berhasil membuat ' . $type . '/' . $name . '.php');
     }
 
@@ -338,6 +350,19 @@ class Console
     }
 
     /**
+     * Buat file job.
+     *
+     * @param mixed $name
+     * @return void
+     */
+    private function createJob(mixed $name): void
+    {
+        $data = $this->loadTemplate($name, 5);
+        $data = str_replace('NAME', $name, $data);
+        $this->saveTemplate($name, $data, 5);
+    }
+
+    /**
      * Buat file mail.
      *
      * @param mixed $name
@@ -347,12 +372,12 @@ class Console
     {
         $this->exception('Butuh Nama file !', !$name);
 
-        $folder =  basepath() . '/resources/views/email/';
+        $folder = base_path('/resources/views/email/');
         if (!is_dir($folder)) {
             mkdir($folder, 0777, true);
         }
 
-        $result = copy(__DIR__ . '/../../helpers/templates/templateMail.php', $folder . $name . '.php');
+        $result = copy(base_path(helper_path('/templates/templateMail.php')), $folder . $name . '.php');
         $this->exception('Gagal membuat email ' . $name, !$result, 'Berhasil membuat email ' . $name);
     }
 
@@ -363,15 +388,15 @@ class Console
      */
     private function createKey(): void
     {
-        $env = basepath() . '/.env';
+        $env = base_path('/.env');
         if (!file_exists($env)) {
-            $this->exception('env tidak ada !');
+            $this->exception('.env file tidak ada !');
         }
 
         $lines = file($env, FILE_IGNORE_NEW_LINES);
         foreach ($lines as $id => $line) {
             if (str_contains($line, 'APP_KEY=')) {
-                $lines[$id] = 'APP_KEY=' . base64_encode(openssl_random_pseudo_bytes(32)) . ':' . base64_encode(openssl_random_pseudo_bytes(32));
+                $lines[$id] = 'APP_KEY=' . base64_encode(openssl_random_pseudo_bytes(32)) . Hash::SPTR . base64_encode(openssl_random_pseudo_bytes(32));
                 break;
             }
         }
@@ -388,18 +413,18 @@ class Console
     private function createCache(): void
     {
         $env = [];
-        if (!is_file(basepath() . '/.env')) {
+        if (!is_file(base_path('/.env'))) {
             $this->exception('File env tidak ada !');
         }
 
-        $lines = file(basepath() . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $lines = file(base_path('/.env'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($lines as $line) {
             $line = trim($line);
             if (strpos($line, '#') === 0) {
                 continue;
             }
 
-            [$name, $value] = explode('=', $line, 2);
+            list($name, $value) = explode('=', $line, 2);
             $env[trim($name)] = trim($value);
         }
 
@@ -407,9 +432,9 @@ class Console
         $routes = '<?php return ' . var_export(Route::router()->routes(), true) . ';';
         $envs = '<?php return ' . var_export($env, true) . ';';
 
-        $folder = basepath() . '/cache';
-        $this->writeFileContent($folder . '/routes.php', $routes);
-        $this->writeFileContent($folder . '/env.php', $envs);
+        $folder = base_path('/cache');
+        $this->writeFileContent($folder . '/routes/routes.php', $routes);
+        $this->writeFileContent($folder . '/env/env.php', $envs);
 
         print("\nCache siap !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
     }
@@ -421,8 +446,8 @@ class Console
      */
     private function deleteCache(): void
     {
-        $routes = @unlink(basepath() . '/cache/routes.php');
-        $env = @unlink(basepath() . '/cache/env.php');
+        $routes = @unlink(base_path('/cache/routes/routes.php'));
+        $env = @unlink(base_path('/cache/env/env.php'));
         if ($routes && $env) {
             print("\nCache dihapus !" . $this->createColor('green', ' berhasil ') . $this->executeTime());
         } else {
@@ -432,12 +457,12 @@ class Console
 
     /**
      * Cache views.
-     * 
+     *
      * @return void
      */
     private function viewCache(): void
     {
-        $views = basepath() . '/resources/views';
+        $views = base_path('/resources/views');
         $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($views));
         $compiler = new Compiler;
 
@@ -534,6 +559,10 @@ class Console
                 'command' => 'bikin:email',
                 'description' => 'Bikin file email [nama file]'
             ],
+            [
+                'command' => 'bikin:job',
+                'description' => 'Bikin file job [nama file]'
+            ],
         ];
 
         print("Penggunaan:\n perintah [options]\n\n");
@@ -545,16 +574,77 @@ class Console
     }
 
     /**
+     * Run queue loop.
+     *
+     * @return void
+     */
+    private function queue(): void
+    {
+        $files = [];
+
+        while (true) {
+            sleep(intval(explode('=', $this->options ?? '')[1] ?? 3));
+
+            foreach (new DirectoryIterator(base_path('/cache/queue/')) as $item) {
+                if ($item->isDot() && !$item->isFile()) {
+                    continue;
+                }
+
+                if ($item->getFilename() === '.gitignore') {
+                    continue;
+                }
+
+                $tmp = [];
+                foreach ($files as $value) {
+                    if ($value == $item->getFilename()) {
+                        continue 2;
+                    }
+
+                    if (is_file(base_path('/cache/queue/' . $value))) {
+                        $tmp[] = $value;
+                    }
+                }
+
+                $files = $tmp;
+                $files[] = $item->getFilename();
+
+                echo $this->createColor('yellow', 'Prepare process') . "\r\n";
+
+                if (Routine::execInBackground($item->getFilename())) {
+                    echo $this->createColor('green', 'Run ' . $item->getFilename() . ' in phproutine') . ' ' . $this->executeTime() . "\r\n";
+                    continue;
+                }
+
+                echo $this->createColor('red', 'Failed run phproutine') . ' ' . $this->executeTime() . "\r\n";
+            }
+
+            $tmp = [];
+            foreach ($files as $value) {
+                if (is_file(base_path('/cache/queue/' . $value))) {
+                    $tmp[] = $value;
+                }
+            }
+
+            $files = $tmp;
+        }
+    }
+
+    /**
      * Jalankan console.
      *
      * @return int
      */
     public function run(): int
     {
+        if (!in_array('--nooutput', $this->args)) {
+            print($this->createColor('green', sprintf("Kamu PHP Framework %s\n", $this->getVersion())));
+            print($this->createColor('yellow', "Saya Console\n\n"));
+        }
+
         switch ($this->command) {
             case 'coba':
                 $location = ($this->options) ? $this->options : 'localhost:8000';
-                shell_exec('php -S ' .  $location .  ' -t public');
+                pclose(popen('php -S ' .  $location .  ' -t public', 'r'));
                 break;
             case 'key':
                 $this->createKey();
@@ -601,6 +691,15 @@ class Console
                 break;
             case 'bikin:email':
                 $this->createMail($this->options);
+                break;
+            case 'bikin:job':
+                $this->createJob($this->options);
+                break;
+            case 'queue:run':
+                $this->queue();
+                break;
+            case 'queue:sync':
+                Routine::sync($this->options);
                 break;
             default:
                 $this->listMenu();

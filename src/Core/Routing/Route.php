@@ -3,6 +3,7 @@
 namespace Core\Routing;
 
 use Core\Facades\App;
+use Throwable;
 
 /**
  * Helper class untuk routing url.
@@ -130,7 +131,7 @@ final class Route
      */
     public static function setRouteFromFile(): void
     {
-        require_once basepath() . '/routes/routes.php';
+        require_once base_path('/routes/routes.php');
     }
 
     /**
@@ -140,12 +141,12 @@ final class Route
      */
     public static function setRouteFromCacheIfExist(): void
     {
-        $cache = basepath() . '/cache/routes.php';
-        if (!is_file($cache)) {
+        try {
+            $route = (array) @require_once base_path('/cache/routes/routes.php');
+            static::router()->setRoutes($route);
+        } catch (Throwable) {
+            error_clear_last();
             static::setRouteFromFile();
-        } else {
-            $cache = (array) require_once $cache;
-            static::router()->setRoutes($cache);
         }
     }
 

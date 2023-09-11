@@ -14,39 +14,39 @@ class Render implements Stringable
 {
     /**
      * Path file html.
-     * 
+     *
      * @var string $path
      */
     private $path;
 
     /**
      * Isi file html.
-     * 
+     *
      * @var string $path
      */
     private $content;
 
     /**
      * Injek variabel.
-     * 
+     *
      * @var array $variables
      */
     private $variables;
 
     /**
      * Init objek.
-     * 
+     *
      * @param string $path
      * @return void
      */
     public function __construct(string $path)
     {
-        $this->path = basepath() . $path . '.php';
+        $this->path = base_path($path . '.php');
     }
 
     /**
      * Magic to string.
-     * 
+     *
      * @return string
      */
     public function __toString(): string
@@ -62,7 +62,7 @@ class Render implements Stringable
 
     /**
      * Set variabel ke template html.
-     * 
+     *
      * @param array $variables
      * @return void
      */
@@ -73,14 +73,17 @@ class Render implements Stringable
 
     /**
      * Eksekusi template html.
-     * 
+     *
      * @return void
      */
     public function show(): void
     {
         $this->content = (function ($__path, $__data): string {
             ob_start();
-            extract($__data, EXTR_SKIP);
+
+            if ($__data) {
+                extract($__data, EXTR_SKIP);
+            }
 
             require_once $__path;
             $content = ob_get_contents();

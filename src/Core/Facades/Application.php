@@ -19,8 +19,8 @@ class Application
 {
     /**
      * Kumpulan objek ada disini.
-     * 
-     * @var array $objectPool
+     *
+     * @var array<int, object|string> $objectPool
      */
     private $objectPool;
 
@@ -40,20 +40,18 @@ class Application
      * Inject pada constructor yang akan di buat objek.
      *
      * @param string $name
-     * @param array $default
+     * @param array<int, mixed> $default
      * @return object
-     * 
+     *
      * @throws Exception
      */
     private function build(string $name, array $default = []): object
     {
         try {
-            $reflector = new ReflectionClass($name);
-
-            $constructor = $reflector->getConstructor();
-            $args = is_null($constructor) ? [] : $constructor->getParameters();
-
-            return new $name(...$this->getDependencies($args, $default));
+            return new $name(...$this->getDependencies(
+                (new ReflectionClass($name))->getConstructor()?->getParameters() ?? [],
+                $default
+            ));
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
@@ -62,9 +60,9 @@ class Application
     /**
      * Cek apa aja yang dibutuhkan untuk injek objek atau parameter.
      *
-     * @param array $parameters
-     * @param array $default
-     * @return array
+     * @param array<int, \ReflectionParameter> $parameters
+     * @param array<int, mixed> $default
+     * @return array<int, mixed>
      */
     private function getDependencies(array $parameters, array $default = []): array
     {
@@ -90,7 +88,7 @@ class Application
      * Bikin objek dari sebuah class lalu menyimpannya agar bisa dipake lagi.
      *
      * @param string $name
-     * @param array $default
+     * @param array<int, mixed> $default
      * @return object
      */
     public function &singleton(string $name, array $default = []): object
@@ -99,7 +97,7 @@ class Application
             $this->objectPool[$name] = $this->build($name, $default);
         }
 
-        if (!is_object($this->objectPool[$name])) {
+        if (is_string($this->objectPool[$name])) {
             $this->objectPool[$name] = $this->build($this->objectPool[$name]);
         }
 
@@ -110,7 +108,7 @@ class Application
      * Bikin objek dari sebuah class lalu gantikan dengan yang baru.
      *
      * @param string $name
-     * @param array $default
+     * @param array<int, mixed> $default
      * @return object
      */
     public function &make(string $name, array $default = []): object
@@ -124,22 +122,22 @@ class Application
      *
      * @param string|object $name
      * @param string $method
-     * @param array $default
+     * @param array<int, mixed> $default
      * @return mixed
-     * 
+     *
      * @throws Exception
      */
     public function invoke(string|object $name, string $method, array $default = []): mixed
     {
-        if (!is_object($name)) {
+        if (is_string($name)) {
             $name = $this->singleton($name);
         }
 
         try {
-            $reflector = new ReflectionClass($name);
-            $params = $this->getDependencies($reflector->getMethod($method)->getParameters(), $default);
-
-            return $name->{$method}(...$params);
+            return $name->{$method}(...$this->getDependencies(
+                (new ReflectionClass($name))->getMethod($method)->getParameters(),
+                $default
+            ));
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
@@ -147,34 +145,43 @@ class Application
 
     /**
      * Hapus dan dapatkan object itu terlebih dahulu.
-     * 
+     *
      * @param string $name
-     * @return object|null
+     * @return void
      */
-    public function clean(string $name): object|null
+    public function clean(string $name): void
     {
-        $object = $this->objectPool[$name] ?? null;
         $this->objectPool[$name] = null;
         unset($this->objectPool[$name]);
-        return $object;
+    }
+
+    /**
+     * Check if object exist.
+     *
+     * @param string $abstract
+     * @return bool
+     */
+    public function isset(string $abstract): bool
+    {
+        return !empty($this->objectPool[$abstract]);
     }
 
     /**
      * Inject objek pada suatu closure fungsi.
      *
-     * @param Closure $name
-     * @param array $default
+     * @param Closure:mixed $name
+     * @param array<int, mixed> $default
      * @return mixed
-     * 
+     *
      * @throws Exception
      */
     public function resolve(Closure $name, array $default = []): mixed
     {
         try {
-            $reflector = new ReflectionFunction($name);
-            $arg = $reflector->getParameters();
-
-            return $name(...$this->getDependencies($arg, $default));
+            return $name(...$this->getDependencies(
+                (new ReflectionFunction($name))->getParameters(),
+                $default
+            ));
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage());
         }
@@ -184,23 +191,23 @@ class Application
      * Binding class/interface dengan class object.
      *
      * @param string $abstract
-     * @param Closure|string $class
+     * @param Closure|string $bind
      * @return void
-     * 
+     *
      * @throws Exception
      */
-    public function bind(string $abstract, Closure|string $class): void
+    public function bind(string $abstract, Closure|string $bind): void
     {
-        if ($class instanceof Closure) {
-            $result = $this->resolve($class, array($this));
+        if ($bind instanceof Closure) {
+            $result = $this->resolve($bind, [$this]);
 
             if (!is_object($result)) {
-                throw new Exception('Return value harus sebuah object !');
+                throw new Exception('Return value must be object!, returned:' . gettype($result));
             }
 
-            $class = $result;
+            $bind = $result;
         }
 
-        $this->objectPool[$abstract] = $class;
+        $this->objectPool[$abstract] = $bind;
     }
 }

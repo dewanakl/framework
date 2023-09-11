@@ -2,7 +2,7 @@
 
 /**
  * Template untuk membuat file model dengan saya console.
- * 
+ *
  * @return string
  */
 

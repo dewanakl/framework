@@ -12,7 +12,7 @@ final class App
 {
     /**
      * Simpan jadi objek tunggal.
-     * 
+     *
      * @var Application $app
      */
     private static $app;

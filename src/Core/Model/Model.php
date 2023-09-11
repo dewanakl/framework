@@ -15,7 +15,7 @@ use Traversable;
 
 /**
  * Representasi table database.
- * 
+ *
  * @method static \Core\Model\Query with(string|array $relational)
  * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
@@ -43,7 +43,7 @@ use Traversable;
  * @method static int destroy(int $id)
  * @method static int update(array $data)
  * @method static int delete()
- * 
+ *
  * @see \Core\Model\Query
  *
  * @class Model
@@ -53,21 +53,28 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 {
     /**
      * Nama tabelnya.
-     * 
+     *
      * @var string $table
      */
     protected $table;
 
     /**
      * Nama dari primaryKey.
-     * 
+     *
      * @var string $primaryKey
      */
     protected $primaryKey = 'id';
 
     /**
+     * Tipe data dari primaryKey.
+     *
+     * @var string $typeKey
+     */
+    protected $typeKey = 'int';
+
+    /**
      * Tipe dari dates.
-     * 
+     *
      * @var array $dates
      */
     protected $dates = [
@@ -77,21 +84,35 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Casting a attribute.
-     * 
+     *
      * @var array $casts
      */
     protected $casts = [];
 
     /**
      * Attributes hasil query.
-     * 
-     * @var array $attributes
+     *
+     * @var array<string, mixed|array<int, mixed>> $attributes
      */
-    protected $attributes;
+    protected $attributes = [];
+
+    /**
+     * Fillable di database.
+     *
+     * @var array<int, string> $fillable
+     */
+    protected $fillable = [];
+
+    /**
+     * Date format default.
+     *
+     * @var string|null
+     */
+    protected $dateFormat;
 
     /**
      * Mempunyai satu dari.
-     * 
+     *
      * @param string $model
      * @param string $foreign_key
      * @param Closure|string|null $local_key
@@ -109,7 +130,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Mempunyai banyak dari.
-     * 
+     *
      * @param string $model
      * @param string $foreign_key
      * @param Closure|string|null $local_key
@@ -243,7 +264,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Hitung jumlah arraynya.
-     * 
+     *
      * @return int
      */
     public function count(): int
@@ -305,12 +326,12 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     }
 
     /**
-     * Error dengan fungsi.
+     * Pastikan attributenya ada.
      *
      * @param Closure|null $fn
      * @return mixed
      */
-    public function fail(Closure|null $fn = null): mixed
+    public function exist(Closure|null $fn = null): mixed
     {
         if ($this->attributes) {
             return $this;
@@ -337,7 +358,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
      * Save perubahan pada attribute dengan primarykey.
      *
      * @return int
-     * 
+     *
      * @throws Exception
      */
     public function save(): int
@@ -351,7 +372,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Iterasikan data dari attribute.
-     * 
+     *
      * @param Closure $fn
      * @return Model
      */
@@ -366,7 +387,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Ambil sebagian dari attribute.
-     * 
+     *
      * @param array|string $only
      * @return Model
      */
@@ -387,7 +408,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Ambil kecuali dari attribute.
-     * 
+     *
      * @param array|string $except
      * @return Model
      */
@@ -410,7 +431,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Ambil nilai dari attribute.
-     * 
+     *
      * @param string $name
      * @return mixed
      */
@@ -425,7 +446,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
      * @param string $name
      * @param mixed $value
      * @return void
-     * 
+     *
      * @throws Exception
      */
     public function __set(string $name, mixed $value): void
@@ -439,7 +460,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
 
     /**
      * Cek nilai dari attribute.
-     * 
+     *
      * @param string $name
      * @return bool
      */
@@ -457,7 +478,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
      */
     public static function __callStatic(string $method, array $parameters): mixed
     {
-        $class = get_called_class();
+        $class = static::class;
         return (new $class)->__call($method, $parameters);
     }
 
@@ -474,8 +495,11 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
             ->setTable($this->table)
             ->setDates($this->dates)
             ->setPrimaryKey($this->primaryKey)
+            ->setTypeKey($this->typeKey)
             ->setCasts($this->casts)
-            ->setObject(get_called_class())
-            ->{$method}(...$parameters);
+            ->setFillable($this->fillable)
+            ->setDateFormat($this->dateFormat)
+            ->setObject(static::class)
+            ->__call($method, $parameters);
     }
 }

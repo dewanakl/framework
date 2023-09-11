@@ -2,8 +2,8 @@
 
 namespace Core\Http;
 
-use Core\Facades\App;
-use Core\Model\Model;
+use Exception;
+use JsonSerializable;
 use Stringable;
 
 /**
@@ -15,40 +15,76 @@ use Stringable;
 class Respond
 {
     /**
-     * Session object.
-     * 
-     * @var Session $session
-     */
-    private $session;
-
-    /**
      * Url redirect.
-     * 
+     *
      * @var string|null $redirect
      */
     private $redirect;
 
     /**
      * Content to respond.
-     * 
+     *
      * @var string|null $content
      */
     private $content;
 
     /**
+     * Respond code.
+     *
+     * @var int $code
+     */
+    private $code;
+
+    /**
+     * Respond header.
+     *
+     * @var Header $header
+     */
+    private $header;
+
+    /**
+     * Parameter query string.
+     *
+     * @var array<int, string> $parameter
+     */
+    private $parameter;
+
+    /**
+     * Version header.
+     *
+     * @var string $version
+     */
+    private $version;
+
+    /**
+     * Http message.
+     *
+     * @var string $message
+     */
+    private $message;
+
+    /**
      * Init object.
-     * 
-     * @param Session $session
+     *
+     * @param string|null $content
+     * @param int $code
+     * @param array $header
+     * @param string $version
      * @return void
      */
-    public function __construct(Session $session)
+    public function __construct(string|null $content = null, int $code = 200, array $header = [], string $version = '1.1')
     {
-        $this->session = $session;
+        $this->code = $code;
+        $this->header = new Header($header);
+        $this->header->set('Content-Type', 'text/html; charset=utf-8');
+        $this->content = $content;
+        $this->version = $version;
+        $this->message = $this->codeHttpMessage($code);
     }
 
     /**
-     * Alihkan halaman.
-     * 
+     * Alihkan halaman ke url.
+     *
      * @param string $url
      * @return Respond
      */
@@ -59,44 +95,31 @@ class Respond
     }
 
     /**
-     * Isi dengan pesan.
-     * 
+     * Isi dengan pesan di session.
+     *
      * @param string $key
      * @param mixed $value
      * @return Respond
      */
     public function with(string $key, mixed $value): Respond
     {
-        $this->session->set($key, $value);
+        session()->set($key, $value);
         return $this;
     }
 
     /**
      * Kembali ke halaman yang dulu.
-     * 
+     *
      * @return Respond
      */
     public function back(): Respond
     {
-        return $this->to($this->session->get('__oldroute', '/'));
-    }
-
-    /**
-     * Respond sebagai json.
-     * 
-     * @param mixed $data
-     * @param int $code
-     * @return Respond
-     */
-    public function json(mixed $data, int $code = 200): Respond
-    {
-        $this->content = strval(json($data, $code));
-        return $this;
+        return $this->to(session()->get(Session::ROUTE, '/'));
     }
 
     /**
      * Redirect with route name.
-     * 
+     *
      * @param string $route
      * @param mixed ...$key
      * @return Respond
@@ -107,46 +130,309 @@ class Respond
     }
 
     /**
+     * Dengan query parameter.
+     *
+     * @param string $key
+     * @param string $value
+     * @return Respond
+     */
+    public function param(string $key, string $value): Respond
+    {
+        $this->parameter[$key] = $value;
+        return $this;
+    }
+
+    /**
      * Alihkan halaman sesuai url.
-     * 
+     *
      * @param string $uri
+     * @param bool $force
      * @return void
      */
-    public function redirect(string $uri): void
+    public function redirect(string $uri, bool $force = false): void
     {
-        $this->session->unset('_token');
-        $this->session->send();
+        session()->unset(Session::TOKEN);
 
-        $uri = str_contains($uri, baseurl()) ? $uri : baseurl() . $uri;
+        $uri = str_contains($uri, base_url()) ? $uri : base_url() . $uri;
 
-        http_response_code(302);
-        header('HTTP/1.1 302 Found', true, 302);
-        header('Location: ' . $uri, true, 302);
-        exit(0);
+        if (!empty($this->parameter)) {
+            $uri = $uri . '?' . http_build_query($this->parameter);
+        }
+
+        $this->setCode($force ? 301 : 302);
+        $this->header->set('Location', $uri);
+    }
+
+    /**
+     * Force redirect to url.
+     *
+     * @param string $uri
+     * @return Respond
+     */
+    public function forceRedirect(string $uri): Respond
+    {
+        $this->redirect($uri, true);
+        return $this;
+    }
+
+    /**
+     * Set a HTTP version.
+     *
+     * @param string $ver
+     * @return Respond
+     */
+    public function setVersionHeader(string $ver): Respond
+    {
+        $this->version = $ver;
+        return $this;
+    }
+
+    /**
+     * Get version header.
+     *
+     * @return string
+     */
+    public function getVersionHeader(): string
+    {
+        return $this->version;
+    }
+
+    /**
+     * Set a HTTP message.
+     *
+     * @param string $message
+     * @return Respond
+     */
+    public function setHttpMessage(string $message): Respond
+    {
+        $this->message = $message;
+        return $this;
+    }
+
+    /**
+     * Ubah code menjadi http message.
+     *
+     * @param int $code
+     * @return string|null
+     *
+     * @throws Exception
+     */
+    public function codeHttpMessage(int $code): string|null
+    {
+        switch ($code) {
+            case 100:
+                return 'Continue';
+            case 101:
+                return 'Switching Protocols';
+            case 200:
+                return 'OK';
+            case 201:
+                return 'Created';
+            case 202:
+                return 'Accepted';
+            case 203:
+                return 'Non-Authoritative Information';
+            case 204:
+                return 'No Content';
+            case 205:
+                return 'Reset Content';
+            case 206:
+                return 'Partial Content';
+            case 300:
+                return 'Multiple Choices';
+            case 301:
+                return 'Moved Permanently';
+            case 302:
+                return 'Moved Temporarily';
+            case 303:
+                return 'See Other';
+            case 304:
+                return 'Not Modified';
+            case 305:
+                return 'Use Proxy';
+            case 400:
+                return 'Bad Request';
+            case 401:
+                return 'Unauthorized';
+            case 402:
+                return 'Payment Required';
+            case 403:
+                return 'Forbidden';
+            case 404:
+                return 'Not Found';
+            case 405:
+                return 'Method Not Allowed';
+            case 406:
+                return 'Not Acceptable';
+            case 407:
+                return 'Proxy Authentication Required';
+            case 408:
+                return 'Request Time-out';
+            case 409:
+                return 'Conflict';
+            case 410:
+                return 'Gone';
+            case 411:
+                return 'Length Required';
+            case 412:
+                return 'Precondition Failed';
+            case 413:
+                return 'Request Entity Too Large';
+            case 414:
+                return 'Request-URI Too Large';
+            case 415:
+                return 'Unsupported Media Type';
+            case 416:
+                return 'Range Not Satisfiable';
+            case 500:
+                return 'Internal Server Error';
+            case 501:
+                return 'Not Implemented';
+            case 502:
+                return 'Bad Gateway';
+            case 503:
+                return 'Service Unavailable';
+            case 504:
+                return 'Gateway Time-out';
+            case 505:
+                return 'HTTP Version not supported';
+            default:
+                if ($this->message === null) {
+                    throw new Exception('This code: ' . $code . ' is no defined in http');
+                }
+                return null;
+        }
+    }
+
+    /**
+     * Get http header.
+     *
+     * @return Header
+     */
+    public function getHeader(): Header
+    {
+        return $this->header;
+    }
+
+    /**
+     * Set http status code.
+     *
+     * @param int $code
+     * @return Respond
+     */
+    public function setCode(int $code): Respond
+    {
+        $this->code = $code;
+        $this->message = $this->codeHttpMessage($code);
+        return $this;
+    }
+
+    /**
+     * Set content.
+     *
+     * @param string|int|bool|null $prm
+     * @return void
+     */
+    public function setContent(string|int|bool|null $prm): void
+    {
+        $prm = strval($prm);
+        if (!empty($prm)) {
+            if ($this->content !== null) {
+                $this->content = $this->content . $prm;
+            } else {
+                $this->content = $prm;
+            }
+        }
+    }
+
+    /**
+     * Dapatkan content.
+     *
+     * @return string|null
+     */
+    public function getContent(): string|null
+    {
+        return $this->content;
+    }
+
+    /**
+     * Clean all temporary respond.
+     *
+     * @return void
+     */
+    public function clean(): void
+    {
+        @clear_ob();
+        $this->content = null;
+        $this->header = new Header();
+        $this->code = 200;
+        $this->header->set('Content-Type', 'text/html; charset=utf-8');
+        $this->message = $this->codeHttpMessage($this->code);
+    }
+
+    /**
+     * Format json default.
+     *
+     * @param array|object|null $data
+     * @param array|object|null $error
+     * @param int $code
+     * @return string|false
+     */
+    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = 200): string|false
+    {
+        return json([
+            'code' => $code,
+            'data' => $data,
+            'error' => $error
+        ], $code);
+    }
+
+    /**
+     * Send all header queue.
+     *
+     * @return void
+     */
+    public function prepare()
+    {
+        session()->send();
+
+        http_response_code($this->code);
+        header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
+
+        foreach ($this->header->all() as $key => $value) {
+            if (!$value) {
+                header($key);
+                continue;
+            }
+
+            header($key . ': ' . $value);
+        }
+
+        foreach (cookie()->send() as $value) {
+            header('Set-Cookie: ' . $value, false, $this->code);
+        }
     }
 
     /**
      * Tampilkan responnya.
-     * 
+     *
      * @param mixed $respond
      * @return void
      */
     public function send(mixed $respond): void
     {
+        $content = null;
+
         if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
             if ($respond instanceof Stringable) {
-                $this->session->set('__oldroute', App::get()->singleton(Request::class)->get('REQUEST_URL'));
-                $this->session->unset('old');
-                $this->session->unset('error');
+                session()->set(Session::ROUTE, request()->server->get('REQUEST_URL'));
+                session()->unset(Session::OLD);
+                session()->unset(Session::ERROR);
             }
 
-            $this->session->send();
-            $this->echo($respond);
-        }
-
-        if (is_array($respond) || $respond instanceof Model) {
-            $this->session->send();
-            $this->echo(json($respond));
+            $content = $respond;
+        } else if (is_array($respond) || $respond instanceof JsonSerializable) {
+            $content = json($respond, $this->code);
         }
 
         if ($respond instanceof Respond) {
@@ -154,30 +440,19 @@ class Respond
                 $this->redirect($this->redirect);
             }
 
-            if ($this->content !== null) {
-                $this->session->send();
-                $this->echo($this->content);
+            if ($respond->getContent() !== null) {
+                $content = $respond->getContent();
             }
         }
 
-        if ($respond instanceof Stream) {
-            $respond->process();
-        }
-    }
+        $this->prepare();
 
-    /**
-     * Echo responnya.
-     * 
-     * @param mixed $prm
-     * @return void
-     */
-    public function echo(mixed $prm): void
-    {
-        if ($prm) {
-            @clear_ob();
-            echo $prm;
-            @ob_flush();
-            @flush();
+        if ($respond instanceof Stream) {
+            $respond->push();
+            $respond->terminate();
         }
+
+        echo $content;
+        flush();
     }
 }

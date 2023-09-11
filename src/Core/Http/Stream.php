@@ -2,6 +2,11 @@
 
 namespace Core\Http;
 
+use Closure;
+use Core\Http\Exception\NotFoundException;
+use Core\Http\Exception\RespondTerminate;
+use Core\Valid\Hash;
+
 /**
  * Stream sebuah file.
  *
@@ -13,178 +18,207 @@ class Stream
 {
     /**
      * Open file.
-     * 
+     *
      * @var resource|false $file
      */
     private $file;
 
     /**
      * Basename file.
-     * 
+     *
      * @var string $name
      */
     private $name;
 
     /**
      * Hash file.
-     * 
+     *
      * @var string $boundary
      */
     private $boundary;
 
     /**
      * Size file.
-     * 
+     *
      * @var int|false $size
      */
     private $size;
 
     /**
      * Type file.
-     * 
+     *
      * @var string $type
      */
     private $type;
 
     /**
      * Download file.
-     * 
+     *
      * @var bool $download
      */
     private $download;
 
     /**
      * Request object.
-     * 
+     *
      * @var Request $request
      */
     private $request;
 
     /**
+     * Respond object.
+     *
+     * @var Respond $respond
+     */
+    private $respond;
+
+    /**
+     * Callback to execute this stream.
+     *
+     * @var Closure|null $callback
+     */
+    private $callback;
+
+    /**
+     * Absolute path file.
+     *
+     * @var string $path
+     */
+    private $path;
+
+    /**
      * Init objek.
-     * 
+     *
      * @param Request $request
+     * @param Respond $respond
      * @return void
      */
-    public function __construct(Request $request)
+    public function __construct(Request $request, Respond $respond)
     {
         $this->request = $request;
+        $this->respond = $respond;
     }
 
     /**
      * Init file.
-     * 
-     * @param string $file
+     *
+     * @param bool $etag
      * @return void
      */
-    private function init(string $file): void
+    private function init(bool $etag): void
     {
-        if (!is_file($file)) {
-            notFound();
-        }
+        $hashFile = $etag ? @md5_file($this->path) : Hash::rand(5);
+        $type = $this->ftype($this->path);
 
-        $hashFile = @md5_file($file);
-        $type = $this->ftype($file);
-
-        if ($type != 'application/octet-stream') {
-            $timeFile = @filemtime($file);
-            $modified = @strtotime($this->request->server('HTTP_IF_MODIFIED_SINCE', ''));
-            $match = @trim($this->request->server('HTTP_IF_NONE_MATCH', ''));
-
-            if ($modified == $timeFile || $match == $hashFile) {
-                http_response_code(304);
-                header('HTTP/1.1 304 Not Modified', true, 304);
-                exit;
+        if ($type != 'application/octet-stream' && $etag) {
+            if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
+                $this->respond->setCode(304);
+                throw new RespondTerminate;
             }
 
-            header('Last-Modified: ' . @gmdate('D, d M Y H:i:s', $timeFile) . ' GMT');
-            header('Etag: ' . $hashFile);
+            $this->respond->getHeader()->set('Etag', $hashFile);
         }
 
         @set_time_limit(0);
-        @clear_ob();
+        @ignore_user_abort(true);
 
-        $this->file = @fopen($file, 'r', true);
-        $this->name = @basename($file);
+        $this->file = @fopen($this->path, 'r');
+        $this->name = @basename($this->path);
         $this->boundary = $hashFile;
-        $this->size = @filesize($file);
+        $this->size = @filesize($this->path);
         $this->download = false;
         $this->type = $type;
     }
 
     /**
      * Send single file.
-     * 
+     *
      * @param string $range
-     * @return void
+     * @return Closure
      */
-    private function pushSingle(string $range): void
+    private function pushSingle(string $range): Closure
     {
-        [$start, $end] = $this->getRange($range);
+        list($start, $end) = $this->getRange($range);
 
-        header('Content-Length: ' . strval($end - $start + 1));
-        header(sprintf('Content-Range: bytes %s-%s/%s', $start, $end, $this->size));
+        if ($start > 0 || $end < ($this->size - 1)) {
+            $this->respond->setCode(206);
+            $this->respond->getHeader()->set('Content-Length', strval($end - $start + 1));
+            $this->respond->getHeader()->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->size));
 
-        fseek($this->file, $start);
-        $this->readBuffer($end - $start + 1);
+            return function () use ($start, $end): void {
+                @fseek($this->file, $start);
+                $this->readBuffer($end - $start + 1);
+            };
+        }
+
+        return $this->readFile();
     }
 
     /**
      * Send multi file.
-     * 
+     *
      * @param array $ranges
-     * @return void
+     * @return Closure
      */
-    private function pushMulti(array $ranges): void
+    private function pushMulti(array $ranges): Closure
     {
         $length = 0;
-        $tl = 'Content-Type: ' . $this->type . "\r\n";
-        $formatRange = "Content-Range: bytes %s-%s/%s\r\n\r\n";
         $tmpRanges = [];
 
         foreach ($ranges as $id => $range) {
-            [$start, $end] = $this->getRange($range);
+            list($start, $end) = $this->getRange($range);
             $tmpRanges[$id] = [$start, $end];
             $length += strlen("\r\n--" . $this->boundary . "\r\n");
-            $length += strlen($tl);
-            $length += strlen(sprintf($formatRange, $start, $end, $this->size));
+            $length += strlen('Content-Type: ' . $this->type . "\r\n");
+            $length += strlen(sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size));
             $length += $end - $start + 1;
         }
 
         $length += strlen("\r\n--" . $this->boundary . "--\r\n");
 
-        header('Content-Type: multipart/byteranges; boundary=' . $this->boundary);
-        header('Content-Length: ' . strval($length));
+        $this->respond->setCode(206);
+        $this->respond->getHeader()->set('Content-Type', 'multipart/byteranges; boundary=' . $this->boundary);
+        $this->respond->getHeader()->set('Content-Length', strval($length));
 
-        foreach ($ranges as $id => $range) {
-            [$start, $end] = $tmpRanges[$id];
-            echo "\r\n--" . $this->boundary . "\r\n";
-            echo $tl;
-            echo sprintf($formatRange, $start, $end, $this->size);
-            fseek($this->file, $start);
-            $this->readBuffer($end - $start + 1);
-        }
+        return function () use ($ranges, $tmpRanges): void {
+            foreach ($ranges as $id => $range) {
+                list($start, $end) = $tmpRanges[$id];
 
-        echo "\r\n--" . $this->boundary . "--\r\n";
+                echo "\r\n--" . $this->boundary . "\r\n";
+                echo 'Content-Type: ' . $this->type . "\r\n";
+                echo sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size);
+
+                @fseek($this->file, $start);
+                $this->readBuffer($end - $start + 1);
+            }
+
+            echo "\r\n--" . $this->boundary . "--\r\n";
+            flush();
+        };
     }
 
     /**
      * Get range file.
-     * 
+     *
      * @param string $range
      * @return array
+     *
+     * @throws RespondTerminate
      */
     private function getRange(string $range): array
     {
-        [$start, $end] = explode('-', $range);
+        $raw = strpos($range, '-');
+
+        $start = substr($range, 0, $raw);
+        $end = substr($range, $raw + 1); // number 1 of separator length '-';
 
         $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
         $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
 
-        if ($start > $end) {
-            header('Status: 416 Requested Range Not Satisfiable');
-            header('Content-Range: */' . strval($this->size));
-            exit;
+        if ($start < 0 || $start > $end) {
+            $this->respond->setCode(416);
+            $this->respond->getHeader()->set('Content-Range', 'bytes */' . strval($this->size));
+            throw new RespondTerminate;
         }
 
         return [$start, $end];
@@ -192,36 +226,61 @@ class Stream
 
     /**
      * Read file.
-     * 
-     * @return void
+     *
+     * @return Closure
      */
-    private function readFile(): void
+    private function readFile(): Closure
     {
-        while (!feof($this->file)) {
-            echo fgets($this->file);
-        }
+        $this->respond->getHeader()->set('Content-Length', strval($this->size));
+        return function (): void {
+            while (!@feof($this->file)) {
+                if (@connection_aborted()) {
+                    break;
+                }
+
+                $read = @fgets($this->file);
+                if ($read === false) {
+                    break;
+                }
+
+                echo $read;
+                @flush();
+            }
+        };
     }
 
     /**
      * Read buffer file.
-     * 
+     *
      * @param int $bytes
      * @param int $size
      * @return void
      */
-    private function readBuffer(int $bytes, int $size = 10240): void
+    private function readBuffer(int $bytes, int $size = 1024): void
     {
         $bytesLeft = $bytes;
         while ($bytesLeft > 0 && !feof($this->file)) {
-            $bytesRead = ($bytesLeft > $size) ? $size : $bytesLeft;
-            echo fread($this->file, $bytesRead);
-            $bytesLeft -= $bytesRead;
+            if (@connection_aborted()) {
+                break;
+            }
+
+            $length = ($bytesLeft > $size) ? $size : $bytesLeft;
+
+            $read = @fread($this->file, $length);
+            if ($read === false) {
+                break;
+            }
+
+            echo $read;
+
+            $bytesLeft -= $length;
+            @flush();
         }
     }
 
     /**
      * Get type file.
-     * 
+     *
      * @param string|null $typeFile
      * @return string
      */
@@ -263,51 +322,72 @@ class Stream
 
     /**
      * Process file.
-     * 
-     * @return void
+     *
+     * @return Stream
      */
-    public function process(): void
+    public function process(): Stream
     {
         $range = '';
         $ranges = [];
         $t = 0;
 
-        if ($this->request->method() == 'GET' && ($this->request->server('HTTP_RANGE') !== null)) {
-            $range = substr(stristr(trim($this->request->server('HTTP_RANGE')), 'bytes='), 6);
-            $ranges = explode(',', $range);
+        if ($this->request->method(Request::GET) && $this->request->server->get('HTTP_RANGE') !== null) {
+            $range = substr(stristr(trim($this->request->server->get('HTTP_RANGE')), 'bytes='), 6);
+            $raw = strpos($range, ',');
+            $ranges = $raw !== false ? explode(',', $range) : [$range];
             $t = count($ranges);
         }
 
-        header('Accept-Ranges: 0-' . strval($this->size - 1));
-        header('Content-Type: ' . $this->type);
-        header('Content-Transfer-Encoding: binary');
+        $this->respond->getHeader()->set('Accept-Ranges', 'bytes');
+        $this->respond->getHeader()->set('Content-Type',  $this->type);
+        $this->respond->getHeader()->set('Last-Modified', @gmdate('D, d M Y H:i:s', @filemtime($this->path)) . ' GMT');
 
         if ($this->type == 'application/octet-stream') {
-            header(sprintf('Content-Disposition: attachment; filename="%s"', $this->name));
+            $this->respond->getHeader()->set('Content-Disposition', sprintf('attachment; filename="%s"', $this->name));
         } else {
-            header('Content-Disposition: inline');
+            $this->respond->getHeader()->set('Content-Disposition', 'inline');
         }
 
         if ($t > 0) {
-            header('HTTP/1.1 206 Partial Content', true, 206);
             if ($t === 1) {
-                $this->pushSingle($range);
+                $this->callback = $this->pushSingle($range);
             } else {
-                $this->pushMulti($ranges);
+                $this->callback = $this->pushMulti($ranges);
             }
         } else {
-            header('Content-Length: ' . strval($this->size));
-            $this->readFile();
+            $this->callback = $this->readFile();
         }
 
-        @ob_flush();
-        @flush();
-        @fclose($this->file);
+        return $this;
+    }
+
+    /**
+     * Push to echo.
+     *
+     * @return void
+     */
+    public function push(): void
+    {
+        ($this->callback)();
+    }
+
+    /**
+     * End of stream.
+     *
+     * @return void
+     */
+    public function terminate(): void
+    {
+        if (is_resource($this->file)) {
+            @fclose($this->file);
+            $this->file = null;
+            $this->callback = null;
+        }
     }
 
     /**
      * Download file.
-     * 
+     *
      * @return Stream
      */
     public function download(): Stream
@@ -319,13 +399,22 @@ class Stream
 
     /**
      * Send file.
-     * 
+     *
      * @param string $filename
      * @return Stream
+     *
+     * @throws NotFoundException
      */
     public function send(string $filename): Stream
     {
-        $this->init($filename);
+        if (!is_file($filename)) {
+            throw new NotFoundException;
+        }
+
+        $this->path = $filename;
+        $this->respond->clean();
+        $this->init(false);
+
         return $this;
     }
 }

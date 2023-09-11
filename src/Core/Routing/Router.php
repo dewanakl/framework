@@ -3,6 +3,7 @@
 namespace Core\Routing;
 
 use Closure;
+use Core\Http\Request;
 
 /**
  * Class untuk routing dan mengelompokan url.
@@ -14,35 +15,35 @@ class Router
 {
     /**
      * Simpan semua routenya disini.
-     * 
+     *
      * @var array $routes
      */
     private $routes;
 
     /**
      * Jika ada controller group.
-     * 
+     *
      * @var string|null $controller
      */
     private $controller;
 
     /**
      * Jika ada prefix group.
-     * 
+     *
      * @var string|null $prefix
      */
     private $prefix;
 
     /**
      * Untuk middleware group.
-     * 
+     *
      * @var array $middleware
      */
     private $middleware;
 
     /**
      * Init object.
-     * 
+     *
      * @return void
      */
     public function __construct()
@@ -95,7 +96,7 @@ class Router
      */
     public function get(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('GET', $path, $action, $middleware);
+        return $this->add(Request::GET, $path, $action, $middleware);
     }
 
     /**
@@ -108,7 +109,7 @@ class Router
      */
     public function post(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('POST', $path, $action, $middleware);
+        return $this->add(Request::POST, $path, $action, $middleware);
     }
 
     /**
@@ -121,7 +122,7 @@ class Router
      */
     public function put(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('PUT', $path, $action, $middleware);
+        return $this->add(Request::POST, $path, $action, $middleware);
     }
 
     /**
@@ -134,7 +135,7 @@ class Router
      */
     public function patch(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('PATCH', $path, $action, $middleware);
+        return $this->add(Request::PATCH, $path, $action, $middleware);
     }
 
     /**
@@ -147,7 +148,7 @@ class Router
      */
     public function delete(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('DELETE', $path, $action, $middleware);
+        return $this->add(Request::DELETE, $path, $action, $middleware);
     }
 
     /**
@@ -160,7 +161,7 @@ class Router
      */
     public function options(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add('OPTIONS', $path, $action, $middleware);
+        return $this->add(Request::OPTIONS, $path, $action, $middleware);
     }
 
     /**

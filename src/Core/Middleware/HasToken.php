@@ -2,8 +2,15 @@
 
 namespace Core\Middleware;
 
+use Core\Http\Session;
 use Core\Valid\Hash;
 
+/**
+ * Check pada request apakah ada csrf?.
+ *
+ * @trait HasToken
+ * @package \Core\Middleware
+ */
 trait HasToken
 {
     /**
@@ -11,23 +18,28 @@ trait HasToken
      *
      * @param string $token
      * @param bool $ajax
-     * @return void
+     * @return string|null
      */
-    protected function checkToken(string $token, bool $ajax = false): void
+    protected function checkToken(string $token, bool $ajax = false): string|null
     {
-        if (!hash_equals(session()->get('_token', Hash::rand(10)), $token)) {
-            session()->unset('_token');
+        if (!hash_equals(session()->get(Session::TOKEN, Hash::rand(10)), $token)) {
+            session()->unset(Session::TOKEN);
 
             if (!$ajax) {
-                pageExpired();
+                page_expired();
             }
 
-            respond()->send(json(['token' => false], 400));
-            exit(0);
+            return respond()->formatJson(
+                null,
+                ['Csrf token not found'],
+                400
+            );
         }
 
         if (!$ajax) {
-            session()->unset('_token');
+            session()->unset(Session::TOKEN);
         }
+
+        return null;
     }
 }

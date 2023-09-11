@@ -16,15 +16,15 @@ class Middleware
 {
     /**
      * Kumpulan objek middleware ada disini.
-     * 
-     * @var array $layers
+     *
+     * @var array<int, MiddlewareInterface> $layers
      */
     private $layers;
 
     /**
      * Buat objek middleware.
      *
-     * @param array $layers
+     * @param array<int, MiddlewareInterface> $layers
      * @return void
      */
     public function __construct(array $layers = [])

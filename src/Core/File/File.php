@@ -2,115 +2,55 @@
 
 namespace Core\File;
 
-use Core\Http\Request;
-use Core\Valid\Hash;
+use SplFileInfo;
 
 /**
- * File uploaded.
+ * Representation of file.
  *
  * @class File
  * @package \Core\File
  */
-class File
+class File extends SplFileInfo
 {
     /**
-     * Request object.
-     * 
-     * @var Request $request
-     */
-    private $request;
-
-    /**
-     * File object.
-     * 
-     * @var object $file
-     */
-    private $file;
-
-    /**
-     * Init objek.
-     * 
-     * @param Request $request
-     * @return void
-     */
-    public function __construct(Request $request)
-    {
-        $this->request = $request;
-    }
-
-    /**
-     * Dapatkan file dari request.
-     * 
+     * Create a new file.
+     *
      * @param string $name
-     * @return void
-     */
-    public function getFromRequest(string $name): void
-    {
-        $this->file = (object) $this->request->get($name);
-    }
-
-    /**
-     * Dapatkan nama aslinya.
-     * 
-     * @return string
-     */
-    public function getClientOriginalName(): string
-    {
-        return pathinfo($this->file->name, PATHINFO_FILENAME);
-    }
-
-    /**
-     * Dapatkan extensi aslinya.
-     * 
-     * @return string
-     */
-    public function getClientOriginalExtension(): string
-    {
-        return pathinfo($this->file->name, PATHINFO_EXTENSION);
-    }
-
-    /**
-     * Apakah ada file yang di upload?.
-     * 
+     * @param string $data
+     * @param int $perms
+     * @param int|null $flag
      * @return bool
      */
-    public function exists(): bool
+    public static function create(string $name, string $data, int $perms = 0755, int|null $flag = null): bool
     {
-        return $this->file->error === 0;
+        $result = file_put_contents($name, $data, $flag);
+        if (!$result) {
+            return false;
+        }
+
+        return chmod($name, $perms);
     }
 
     /**
-     * Dapatkan extensi aslinya dengan mime.
-     * 
-     * @return string
-     */
-    public function extension(): string
-    {
-        return $this->file->type;
-    }
-
-    /**
-     * Bikin namanya unik.
-     * 
-     * @return string
-     */
-    public function hashName(): string
-    {
-        return Hash::rand(10);
-    }
-
-    /**
-     * Simpan filenya.
-     * 
-     * @param string $name
-     * @param string $folder
+     * Copy filenya.
+     *
+     * @param string $from
+     * @param string $to
      * @return bool
      */
-    public function store(string $name, string $folder = 'shared'): bool
+    public static function copy(string $from, string $to): bool
     {
-        return move_uploaded_file(
-            $this->file->tmp_name,
-            basepath() . '/' . $folder . '/' . $name . '.' . $this->getClientOriginalExtension()
-        );
+        return copy($from, $to);
+    }
+
+    /**
+     * Hapus filenya.
+     *
+     * @param string $name
+     * @return bool
+     */
+    public static function delete(string $name): bool
+    {
+        return unlink($name);
     }
 }

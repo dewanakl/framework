@@ -2,36 +2,46 @@
 
 namespace Core\Valid;
 
+use Core\File\UploadedFile;
+use Exception;
+
 /**
  * Validasi sebuah nilai.
- * 
+ *
  * @class Validator
  * @package \Core\Valid
  */
 class Validator
 {
     /**
+     * Nama dari class ini untuk translate.
+     *
+     * @var string NAME
+     */
+    public const NAME = 'validator';
+
+    /**
      * Data yang akan di validasi.
-     * 
+     *
      * @var array $data
      */
     private $data;
 
     /**
      * Error tampung disini.
-     * 
+     *
      * @var array $errors
      */
     private $errors;
 
     /**
      * Init object.
-     * 
+     *
      * @param array $data
      * @param array $rule
      * @return void
      */
-    public function __construct(array $data, array $rule)
+    public function __construct(array $data = [], array $rule = [])
     {
         $this->setData($data);
         $this->validate($rule);
@@ -39,7 +49,7 @@ class Validator
 
     /**
      * Set datanya.
-     * 
+     *
      * @return void
      */
     private function setData(array $data): void
@@ -50,7 +60,7 @@ class Validator
 
     /**
      * Validasi rule yang masuk.
-     * 
+     *
      * @param string $param
      * @param array $rules
      * @return void
@@ -64,18 +74,29 @@ class Validator
 
             $value = $this->__get($param);
 
-            if (is_array($value)) {
-                $this->validateFile($param, $value, $rule);
+            if (!($value instanceof UploadedFile) && !is_array($value)) {
+                $this->validateRequest($param, $value, $rule);
                 continue;
             }
 
-            $this->validateRequest($param, $value, $rule);
+            if ($value instanceof UploadedFile) {
+                $this->checkUploadedFile($value, $param, $rule);
+                continue;
+            }
+
+            foreach ($value as $file) {
+                if (!empty($this->errors[$param])) {
+                    continue;
+                }
+
+                $this->checkUploadedFile($file, $param, $rule);
+            }
         }
     }
 
     /**
      * Validasi rule request yang masuk.
-     * 
+     *
      * @param string $param
      * @param mixed $value
      * @param string $rules
@@ -86,7 +107,7 @@ class Validator
         switch (true) {
             case $rule == 'required':
                 if (!$this->__isset($param) || empty(trim(strval($value)))) {
-                    $this->setError($param, 'dibutuhkan !');
+                    $this->setError($param, 'request.required');
                 }
                 break;
 
@@ -94,13 +115,13 @@ class Validator
                 if (filter_var($value, FILTER_VALIDATE_EMAIL)) {
                     $this->__set($param, filter_var($value, FILTER_SANITIZE_EMAIL));
                 } else {
-                    $this->setError($param, 'ilegal atau tidak sah !');
+                    $this->setError($param, 'request.email');
                 }
                 break;
 
             case $rule == 'dns':
                 if (!checkdnsrr(explode('@', $value)[1])) {
-                    $this->setError($param, 'ilegal atau tidak sah !');
+                    $this->setError($param, 'request.dns');
                 }
                 break;
 
@@ -108,7 +129,7 @@ class Validator
                 if (filter_var($value, FILTER_VALIDATE_URL)) {
                     $this->__set($param, filter_var($value, FILTER_SANITIZE_URL));
                 } else {
-                    $this->setError($param, 'ilegal atau tidak sah !');
+                    $this->setError($param, 'request.url');
                 }
                 break;
 
@@ -116,7 +137,7 @@ class Validator
                 if (is_numeric($value)) {
                     $this->__set($param, intval($value));
                 } else {
-                    $this->setError($param, 'harus angka !');
+                    $this->setError($param, 'request.int');
                 }
                 break;
 
@@ -124,7 +145,7 @@ class Validator
                 if (is_numeric($value)) {
                     $this->__set($param, floatval($value));
                 } else {
-                    $this->setError($param, 'harus desimal !');
+                    $this->setError($param, 'request.float');
                 }
                 break;
 
@@ -145,7 +166,7 @@ class Validator
                 break;
 
             case $rule == 'safe':
-                $bad = [...array_map('chr', range(0, 31)), ...['\\', '/', ':', '*', '?', '"', '<', '>', '|']];
+                $bad = [...array_map('chr', range(0, 31)), '\\', '/', ':', '*', '?', '"', '<', '>', '|'];
                 $this->__set($param, str_replace($bad, '', $value));
                 break;
 
@@ -158,23 +179,23 @@ class Validator
                 break;
 
             case str_contains($rule, 'min'):
-                $min = intval(explode(':', $rule)[1]);
+                $min = intval(explode(':', $rule)[1] ?? 0);
                 if (strlen($value) < $min) {
-                    $this->setError($param, 'panjang minimal', $min);
+                    $this->setError($param, 'request.min', $min);
                 }
                 break;
 
             case str_contains($rule, 'max'):
-                $max = intval(explode(':', $rule)[1]);
+                $max = intval(explode(':', $rule)[1] ?? 0);
                 if (strlen($value) > $max) {
-                    $this->setError($param, 'panjang maximal', $max);
+                    $this->setError($param, 'request.max', $max);
                 }
                 break;
 
             case str_contains($rule, 'sama'):
                 $target = explode(':', $rule)[1];
-                if ($this->__get($target) != $value) {
-                    $this->setError($param, 'tidak sama dengan', $target);
+                if ($this->__get($target) !== $value) {
+                    $this->setError($param, 'request.sama', $target);
                 }
                 break;
 
@@ -186,7 +207,7 @@ class Validator
 
                 $data = (new $model)->find($value, $column);
                 if ($data->{$column}) {
-                    $this->setError($param, 'sudah ada !');
+                    $this->setError($param, 'request.unik');
                 }
 
                 $data = null;
@@ -197,7 +218,7 @@ class Validator
 
     /**
      * Cek apakah file ini berbahaya?
-     * 
+     *
      * @param string $file
      * @return bool
      */
@@ -224,18 +245,41 @@ class Validator
             'shell_exec',
             'PHPShell',
             'exec',
+            'proc_open',
+            'popen',
         ]);
 
-        return (bool) preg_match(sprintf('/(%s)/im', $malicious), strval(file_get_contents($file, true)));
+        return (bool) preg_match(sprintf('/(%s)/im', $malicious), strval(file_get_contents($file)));
+    }
+
+    /**
+     * Check file successfully uploaded.
+     *
+     * @param UploadedFile $value
+     * @param string $param
+     * @param string $rule
+     * @return void
+     */
+    private function checkUploadedFile(UploadedFile $value, string $param, string $rule): void
+    {
+        $file = $value->getFile();
+
+        if (!is_uploaded_file($file['tmp_name'])) {
+            $this->setError($param, 'file.corrupt');
+        } else {
+            $this->validateFile($param, $file, $rule);
+        }
     }
 
     /**
      * Validasi rule file yang masuk.
-     * 
+     *
      * @param string $param
      * @param array $value
      * @param string $rules
      * @return void
+     *
+     * @throws Exception
      */
     private function validateFile(string $param, array $value, string $rule): void
     {
@@ -253,55 +297,55 @@ class Validator
         $err = $error[$value['error']];
         if ($err) {
             @unlink($value['tmp_name']);
-            $this->setError($param, $err);
-        } else {
-            switch (true) {
-                case $rule == 'required':
-                    if ($value['error'] === 4 || $value['size'] === 0 || empty($value['name'])) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'dibutuhkan !');
-                    }
-                    break;
+            throw new Exception($err);
+        }
 
-                case str_contains($rule, 'min'):
-                    $min = intval(explode(':', $rule)[1]) * 1024;
-                    if ($value['size'] < $min) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'ukuran minimal', formatBytes($min));
-                    }
-                    break;
+        switch (true) {
+            case $rule == 'required':
+                if ($value['error'] === 4 || $value['size'] === 0 || empty($value['name'])) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.required');
+                }
+                break;
 
-                case str_contains($rule, 'max'):
-                    $max = intval(explode(':', $rule)[1]) * 1024;
-                    if ($value['size'] > $max) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'ukuran maximal', formatBytes($max));
-                    }
-                    break;
+            case str_contains($rule, 'min'):
+                $min = intval(explode(':', $rule)[1]) * 1024;
+                if ($value['size'] < $min) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.min', format_bytes($min));
+                }
+                break;
 
-                case str_contains($rule, 'mimetypes'):
-                    $mime = explode(':', $rule)[1];
-                    if (!in_array($value['type'], explode(',', $mime))) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'diperbolehkan', $mime);
-                    }
-                    break;
+            case str_contains($rule, 'max'):
+                $max = intval(explode(':', $rule)[1]) * 1024;
+                if ($value['size'] > $max) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.max', format_bytes($max));
+                }
+                break;
 
-                case str_contains($rule, 'mimes'):
-                    $mime = explode(':', $rule)[1];
-                    if (!in_array(pathinfo($value['full_path'], PATHINFO_EXTENSION), explode(',', $mime))) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'diperbolehkan', $mime);
-                    }
-                    break;
+            case str_contains($rule, 'mimetypes'):
+                $mime = explode(':', $rule)[1];
+                if (!in_array($value['type'], explode(',', $mime))) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.mimetypes', $mime);
+                }
+                break;
 
-                case $rule == 'safe':
-                    if ($this->maliciousKeywords($value['tmp_name'])) {
-                        @unlink($value['tmp_name']);
-                        $this->setError($param, 'file berbahaya !');
-                    }
-                    break;
-            }
+            case str_contains($rule, 'mimes'):
+                $mime = explode(':', $rule)[1];
+                if (!in_array(pathinfo($value['full_path'], PATHINFO_EXTENSION), explode(',', $mime))) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.mimes', $mime);
+                }
+                break;
+
+            case $rule == 'safe':
+                if ($this->maliciousKeywords($value['tmp_name'])) {
+                    @unlink($value['tmp_name']);
+                    $this->setError($param, 'file.unsafe');
+                }
+                break;
         }
     }
 
@@ -309,20 +353,23 @@ class Validator
      * Set error to array errors.
      *
      * @param string $param
-     * @param string $alert
-     * @param mixed $optional
+     * @param string $key
+     * @param mixed $attribute
      * @return void
      */
-    private function setError(string $param, string $alert, mixed $optional = null): void
+    private function setError(string $param, string $key, mixed $attribute = null): void
     {
         if (empty($this->errors[$param])) {
-            $this->errors[$param] = $param . ' ' . $alert . ($optional ? ' ' . strval($optional) : '');
+            $this->errors[$param] = translate()->trans($key, [
+                'field' => $param,
+                'attribute' => strval($attribute)
+            ]);
         }
     }
 
     /**
      * Buat validasinya.
-     * 
+     *
      * @param array $data
      * @param array $rules
      * @return Validator
@@ -334,7 +381,7 @@ class Validator
 
     /**
      * Tambahkan validasi lagi jika perlu.
-     * 
+     *
      * @param array $rules
      * @return void
      */
@@ -347,7 +394,7 @@ class Validator
 
     /**
      * Cek apakah gagal?.
-     * 
+     *
      * @return bool
      */
     public function fails(): bool
@@ -357,7 +404,7 @@ class Validator
 
     /**
      * Ambil data gagal validasi.
-     * 
+     *
      * @return array
      */
     public function failed(): array
@@ -367,7 +414,7 @@ class Validator
 
     /**
      * Ambil data gagal validasi hanya nilainya.
-     * 
+     *
      * @return array
      */
     public function messages(): array
@@ -377,7 +424,7 @@ class Validator
 
     /**
      * Set error manual.
-     * 
+     *
      * @param array $error
      * @return void
      */
@@ -388,7 +435,7 @@ class Validator
 
     /**
      * Ambil sebagian dari validasi.
-     * 
+     *
      * @param array $only
      * @return array
      */
@@ -404,7 +451,7 @@ class Validator
 
     /**
      * Ambil kecuali dari validasi.
-     * 
+     *
      * @param array $except
      * @return array
      */

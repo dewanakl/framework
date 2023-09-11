@@ -13,112 +13,112 @@ class Mail
 {
     /**
      * Carriage Return Line Feed.
-     * 
+     *
      * @var string CRLF
      */
     private const CRLF = "\r\n";
 
-    /** 
+    /**
      * Nama servernya.
-     * 
+     *
      * @var string $server
      */
     private $server;
 
     /**
      * Hostnamenya.
-     * 
+     *
      * @var string $hostname
      */
     private $hostname;
 
     /**
      * Email port.
-     * 
-     * @var int $port 
+     *
+     * @var int $port
      */
     private $port;
 
     /**
      * Email socket.
-     * 
+     *
      * @var resource $socket
      */
     private $socket;
 
     /**
      * Email username.
-     * 
-     * @var string $username 
+     *
+     * @var string $username
      */
     private $username;
 
     /**
      * Email password.
-     * 
+     *
      * @var string $password
      */
     private $password;
 
     /**
      * Email subject.
-     * 
+     *
      * @var string $subject
      */
     private $subject;
 
     /**
      * Kepada siapa.
-     * 
+     *
      * @var array $to
      */
     private $to;
 
     /**
      * Dari siapa.
-     * 
+     *
      * @var array $from
      */
     private $from;
 
     /**
      * Protokolnya.
-     * 
+     *
      * @var string|null $protocol
      */
     private $protocol;
 
     /**
      * Pesannya.
-     * 
+     *
      * @var string|null $htmlMessage
      */
     private $htmlMessage;
 
     /**
      * Apakah tls?.
-     * 
+     *
      * @var bool $isTLS
      */
     private $isTLS;
 
     /**
      * Email headers.
-     * 
+     *
      * @var array $headers
      */
     private $headers;
 
     /**
      * Init semua config dari env.
-     * 
+     *
      * @return void
      */
     public function __construct()
     {
         $this->server = env('MAIL_HOST');
         $this->port = intval(env('MAIL_PORT'));
-        $this->hostname = parse_url(baseurl(), PHP_URL_HOST);
+        $this->hostname = parse_url(base_url(), PHP_URL_HOST);
         $this->username = env('MAIL_USERNAME');
         $this->password = env('MAIL_PASSWORD');
         $this->from = array(env('MAIL_FROM_ADDRESS'), env('MAIL_FROM_NAME'));
@@ -128,7 +128,7 @@ class Mail
 
     /**
      * Tambahkan header.
-     * 
+     *
      * @param string $key
      * @param mixed $value
      * @return void
@@ -150,7 +150,7 @@ class Mail
 
     /**
      * Dapatkan balasannya.
-     * 
+     *
      * @return string
      */
     private function getResponse(): string
@@ -306,6 +306,12 @@ class Mail
         $result = $this->sendCommand($headers . self::CRLF . $message . self::CRLF . '.');
         $this->sendCommand('QUIT');
         fclose($this->socket);
+
+        $this->socket = null;
+        $this->htmlMessage = null;
+        $this->headers = [];
+        $this->to = [];
+        unset($message, $headers);
 
         return intval(substr($result, 0, 3)) === 250;
     }

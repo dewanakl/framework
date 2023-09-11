@@ -14,43 +14,92 @@ class Session
 {
     /**
      * Data session.
-     * 
-     * @var array $data
+     *
+     * @var Header $data
      */
     private $data;
 
     /**
      * Name session.
-     * 
+     *
      * @var string $name
      */
     private $name;
 
     /**
      * Expires session.
-     * 
+     *
      * @var int $expires
      */
     private $expires;
 
     /**
+     * Object cookie.
+     *
+     * @var Cookie $cookie
+     */
+    private $cookie;
+
+    /**
+     * Csrf token key.
+     *
+     * @var string TOKEN
+     */
+    public const TOKEN = '__token';
+
+    /**
+     * Old route.
+     *
+     * @var string TOKEN
+     */
+    public const ROUTE = '__route';
+
+    /**
+     * Old session key.
+     *
+     * @var string OLD
+     */
+    public const OLD = '__old';
+
+    /**
+     * Error session key.
+     *
+     * @var string ERROR
+     */
+    public const ERROR = '__error';
+
+    /**
+     * Session id.
+     *
+     * @var string SESSID
+     */
+    public const SESSID = '__sessid';
+
+    /**
      * Buat objek session.
      *
+     * @param Cookie $cookie
      * @return void
      */
-    public function __construct()
+    public function __construct(Cookie $cookie)
     {
-        $this->name = (https() ? '__Secure-' : '') . env('APP_NAME', 'kamu') . '_sessid';
-        $this->expires = intval(env('COOKIE_LIFETIME', 86400)) + time();
-        $this->data = [];
+        $this->cookie = $cookie;
+        $this->data = new Header();
+
+        $this->name = env('APP_NAME', 'kamu') . static::SESSID;
+        $this->expires = intval(env('COOKIE_LIFETIME', 120));
 
         if (env('COOKIE', 'true') == 'true') {
-            if (@$_COOKIE[$this->name]) {
-                $this->data = @unserialize(Hash::decrypt(rawurldecode($_COOKIE[$this->name])));
+            $rawCookie = $cookie->get($this->name);
+            if ($rawCookie) {
+                $data = @unserialize(Hash::decrypt(rawurldecode($rawCookie)));
+                if ($data) {
+                    $this->data = new Header($data);
+                }
             }
 
-            if (is_null($this->get('_token'))) {
-                $this->set('_token', Hash::rand(20));
+            if (is_null($this->get(static::TOKEN))) {
+                $this->set(static::TOKEN, Hash::rand(20));
             }
         }
     }
@@ -72,25 +121,11 @@ class Session
      */
     public function send(): void
     {
-        if (env('COOKIE', 'true') == 'true') {
-            $header = 'Set-Cookie: ' . $this->name . '=' . rawurlencode(Hash::encrypt(serialize($this->data)));
-
-            $header .= '; Expires=' . date('D, d-M-Y H:i:s', $this->expires) . ' GMT';
-            $header .= '; Max-Age=' . strval($this->expires - time());
-            $header .= '; Path=/';
-            $header .= '; Domain=' . parse_url(baseurl(), PHP_URL_HOST);
-
-            if (https()) {
-                $header .= '; Secure';
-            }
-
-            $header .= '; HttpOnly';
-            $header .= '; SameSite=Lax';
-
-            header($header);
-        } else {
-            $this->data = [];
-        }
+        $this->cookie->set(
+            $this->name,
+            rawurlencode(Hash::encrypt(serialize($this->data->all()))),
+            $this->expires
+        );
     }
 
     /**
@@ -103,7 +138,7 @@ class Session
     public function get(string|null $name = null, mixed $defaultValue = null): mixed
     {
         if ($name === null) {
-            return $this->data;
+            return $this->data->all();
         }
 
         return $this->__get($name) ?? $defaultValue;
@@ -118,7 +153,7 @@ class Session
      */
     public function set(string $name, mixed $value): void
     {
-        @$this->data[$name] = $value;
+        $this->data->set($name, $value);
     }
 
     /**
@@ -129,8 +164,7 @@ class Session
      */
     public function unset(string $name): void
     {
-        $this->data[$name] = null;
-        unset($this->data[$name]);
+        $this->data->unset($name);
     }
 
     /**
@@ -141,17 +175,6 @@ class Session
      */
     public function __get(string $name): mixed
     {
-        return $this->__isset($name) ? $this->data[$name] : null;
-    }
-
-    /**
-     * Cek nilai dari sesi ini.
-     *
-     * @param string $name
-     * @return bool
-     */
-    public function __isset(string $name): bool
-    {
-        return isset($this->data[$name]);
+        return $this->data->get($name);
     }
 }

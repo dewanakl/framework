@@ -4,11 +4,8 @@ namespace Core\Model;
 
 use Core\Database\DataBase;
 use Core\Facades\App;
-use DateTime;
+use Core\Support\Time;
 use Exception;
-use JsonSerializable;
-use ReturnTypeWillChange;
-use Stringable;
 
 /**
  * Create raw query sql.
@@ -20,98 +17,119 @@ class Query
 {
     /**
      * String query sql.
-     * 
+     *
      * @var string|null $query
      */
     private $query;
 
     /**
      * Nilai yang akan dimasukan.
-     * 
+     *
      * @var array $param
      */
     private $param;
 
     /**
      * Nama tabelnya.
-     * 
+     *
      * @var string $table
      */
     private $table;
 
     /**
      * Waktu bikin dan update.
-     * 
+     *
      * @var array $dates
      */
     private $dates;
 
     /**
      * Castsing a attribute.
-     * 
+     *
      * @var array $casts
      */
     protected $casts = [];
 
     /**
      * Primary key tabelnya.
-     * 
+     *
      * @var string|null $primaryKey
      */
     private $primaryKey;
 
     /**
+     * Primary key tabelnya.
+     *
+     * @var string|null $typeKey
+     */
+    private $typeKey;
+
+    /**
      * Set Target Object.
-     * 
+     *
      * @var string $targetObject
      */
     private $targetObject;
 
     /**
      * Set Target relasinya.
-     * 
+     *
      * @var array $relational
      */
     private $relational;
 
     /**
      * Object database.
-     * 
+     *
      * @var DataBase $db
      */
     private $db;
 
     /**
      * Log query.
-     * 
+     *
      * @var array $queryLog
      */
     private $queryLog;
 
     /**
      * Waktu query.
-     * 
+     *
      * @var float $queryDuration
      */
     private $queryDuration;
 
     /**
+     * Fillable di database.
+     *
+     * @var array<int, string> $fillable
+     */
+    private $fillable;
+
+    /**
+     * Date format default.
+     *
+     * @var string|null
+     */
+    private $dateFormat;
+
+    /**
      * Data tunggal.
-     * 
+     *
      * @var int Fetch
      */
-    private const Fetch = 1;
+    public const Fetch = 1;
 
     /**
      * Data banyak.
-     * 
+     *
      * @var int FetchAll
      */
-    private const FetchAll = 2;
+    public const FetchAll = 2;
 
     /**
      * Status dari fetch.
-     * 
+     *
      * @var int|null $status
      */
     private $status;
@@ -130,16 +148,18 @@ class Query
 
     /**
      * Record query yang terlah dimuat.
-     * 
+     *
      * @return void
      */
     private function recordQueryLog(): void
     {
-        $this->queryLog[] = [
-            $this->query,
-            round((microtime(true) - $this->queryDuration) * 1000, 2),
-            $this->targetObject
-        ];
+        if (debug()) {
+            $this->queryLog[] = [
+                'query' => $this->query,
+                'time' => round((microtime(true) - $this->queryDuration) * 1000, 2),
+                'model' => $this->targetObject
+            ];
+        }
 
         $this->db->close();
         $this->query = null;
@@ -148,7 +168,7 @@ class Query
 
     /**
      * Bind antara query dengan param.
-     * 
+     *
      * @param string $query
      * @param array $data
      * @return void
@@ -167,7 +187,7 @@ class Query
 
     /**
      * Cek select syntax query.
-     * 
+     *
      * @return void
      */
     private function checkSelect(): void
@@ -179,7 +199,7 @@ class Query
 
     /**
      * Check query if empty.
-     * 
+     *
      * @return void
      */
     private function checkQuery(): void
@@ -190,84 +210,11 @@ class Query
     }
 
     /**
-     * Datetime created_at and updated_at.
-     * 
-     * @param string $datetime
-     * @return DateTime
-     */
-    private function dateTime(string $datetime = 'now'): DateTime
-    {
-        return new class($datetime) extends DateTime implements Stringable, JsonSerializable
-        {
-            /**
-             * Ubah objek ke json secara langsung.
-             *
-             * @return mixed
-             */
-            #[ReturnTypeWillChange]
-            public function jsonSerialize(): mixed
-            {
-                return $this->__toString();
-            }
-
-            /**
-             * Magic to string.
-             * 
-             * @return string
-             */
-            public function __toString(): string
-            {
-                return $this->format('Y-m-d H:i:s');
-            }
-
-            /**
-             * Agar bisa dibaca oleh kita.
-             * 
-             * @param int $depth
-             * @return string
-             */
-            public function diffForHumans(int $depth = 1): string
-            {
-                $interval = $this->diff(new DateTime);
-                $grammar = [
-                    'y' => 'tahun',
-                    'm' => 'bulan',
-                    'd' => 'hari',
-                    'h' => 'jam',
-                    'i' => 'menit',
-                    's' => 'detik'
-                ];
-
-                $result = [];
-                $isEmpty = true;
-
-                foreach ($grammar as $short => $long) {
-                    if ($depth <= 0) {
-                        break;
-                    }
-
-                    if ($interval->{$short}) {
-                        $result[] = strval($interval->{$short}) . ' ' . $long;
-                        $depth--;
-                        $isEmpty = false;
-                    }
-                }
-
-                if ($isEmpty) {
-                    return 'baru saja';
-                }
-
-                return join(', ', $result) . ' yang lalu';
-            }
-        };
-    }
-
-    /**
      * Build ke target object.
-     * 
+     *
      * @param array $data
      * @return Model
-     * 
+     *
      * @throws Exception
      */
     private function build(array $data): Model
@@ -281,16 +228,16 @@ class Query
                 throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
-            $relational = $model->{$method}();
+            $relational = App::get()->invoke($model, $method);
 
             if ($status == static::Fetch) {
-                $data[$method] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
+                $data[$relational->getAlias($method)] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
                 continue;
             }
 
             if ($status == static::FetchAll) {
                 foreach ($data as $key => $value) {
-                    $value->{$method} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+                    $value->{$relational->getAlias($method)} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
                     $data[$key] = $value;
                 }
             }
@@ -302,29 +249,30 @@ class Query
 
     /**
      * Casts attribute.
-     * 
+     *
      * @param string $type
      * @param mixed $data
      * @return mixed
-     * 
+     *
      * @throws Exception
      */
     private function casts(string $type, mixed $data): mixed
     {
         $grammar = [
-            'string' => fn (mixed $data): string => strval($data),
-            'int' => fn (mixed $data): int => intval($data),
-            'float' => fn (mixed $data): float => floatval($data),
-            'bool' => fn (mixed $data): bool => boolval($data)
+            'string' => fn (mixed $data, string|null $arg): string => strval($data),
+            'int' => fn (mixed $data, string|null $arg): int => intval($data),
+            'float' => fn (mixed $data, string|null $arg): float => floatval($data),
+            'bool' => fn (mixed $data, string|null $arg): bool => boolval($data),
+            'datetime' => fn (Time $data, string|null $arg): Time => $data->setFormat($arg)
         ];
 
         foreach ($grammar as $key => $value) {
-            if ($key == $type) {
-                return $value($data);
+            if (str_contains($type, $key)) {
+                return $value($data, explode(':', $type)[1] ?? null);
             }
         }
 
-        throw new Exception('Undefined cast type: ' . $type);
+        throw new Exception(sprintf('Undefined cast type: %s available [%s]', $type, implode(', ', array_keys($grammar))));
     }
 
     /**
@@ -339,13 +287,37 @@ class Query
     }
 
     /**
+     * Set fillable.
+     *
+     * @param string|null $dateFormat
+     * @return Query
+     */
+    public function setFillable(array $fillable): Query
+    {
+        $this->fillable = $fillable;
+        return $this;
+    }
+
+    /**
+     * Set date format.
+     *
+     * @param string|null $dateFormat
+     * @return Query
+     */
+    public function setDateFormat(string|null $dateFormat = null): Query
+    {
+        $this->dateFormat = $dateFormat;
+        return $this;
+    }
+
+    /**
      * Dapatkan log dari semua query.
-     * 
+     *
      * @return array
      */
     public function getRecordQueryLog(): array
     {
-        return $this->queryLog;
+        return $this->queryLog ?? [];
     }
 
     /**
@@ -390,9 +362,21 @@ class Query
      * @param string|null $primaryKey
      * @return Query
      */
-    public function setPrimaryKey(string|null $primaryKey): Query
+    public function setPrimaryKey(string|null $primaryKey = null): Query
     {
         $this->primaryKey = $primaryKey;
+        return $this;
+    }
+
+    /**
+     * Set typeKey.
+     *
+     * @param string|null $typeKey
+     * @return Query
+     */
+    public function setTypeKey(string $typeKey): Query
+    {
+        $this->typeKey = $typeKey;
         return $this;
     }
 
@@ -770,13 +754,13 @@ class Query
      * @param mixed $id
      * @param string|null $where
      * @return Query
-     * 
+     *
      * @throws Exception
      */
     public function id(mixed $id, string|null $where = null): Query
     {
-        if (empty($this->primaryKey)) {
-            throw new Exception('Primary key tidak terdefinisi !');
+        if (empty($this->primaryKey) && $where === null) {
+            throw new Exception('Primary key is\'n defined !');
         }
 
         return $this->where($where ? $where : $this->primaryKey, $id);
@@ -833,7 +817,7 @@ class Query
             if ($isDates) {
                 foreach ($this->dates as $value) {
                     if (!empty($record->{$value})) {
-                        $record->{$value} = $this->dateTime($record->{$value});
+                        $record->{$value} = Time::factory($record->{$value})->setFormat($this->dateFormat);
                     }
                 }
             }
@@ -870,7 +854,7 @@ class Query
         if (count($this->dates) > 0) {
             foreach ($this->dates as $value) {
                 if (!empty($set[$value])) {
-                    $set[$value] = $this->dateTime($set[$value]);
+                    $set[$value] = Time::factory($set[$value])->setFormat($this->dateFormat);
                 }
             }
         }
@@ -887,17 +871,23 @@ class Query
 
     /**
      * Isi datanya.
-     * 
+     *
      * @param array $data
      * @return Model
      */
     public function create(array $data): Model
     {
-        $isDates = false;
-        if (count($this->dates) > 0) {
-            $isDates = true;
+        if ($this->fillable) {
+            $temp = [];
+            foreach ($data as $key => $value) {
+                if (in_array($key, $this->fillable, true)) {
+                    $temp[$key] = $value;
+                }
+            }
+            $data = $temp;
         }
 
+        $isDates = count($this->dates) > 0;
         if ($isDates) {
             $now = now('Y-m-d H:i:s.u');
             $data = [...$data, ...array_combine($this->dates, array($now, $now))];
@@ -909,22 +899,28 @@ class Query
             'INSERT INTO %s (%s) VALUES (%s)',
             $this->table,
             implode(', ', $keys),
-            implode(', ', array_map(fn ($field) => ':' . $field, $keys))
+            implode(', ', array_map(fn (string $field): string => ':' . $field, $keys))
         );
 
         $this->bind($query, $data);
         $this->db->execute();
 
-        if ($this->primaryKey) {
-            $id = $this->db->lastInsertId();
+        if ($this->primaryKey && $this->typeKey) {
+            $id = $this->db->lastInsertId($this->primaryKey);
             if ($id) {
-                $data[$this->primaryKey] = $id;
+                $data[$this->primaryKey] = $this->casts($this->typeKey, $id);
             }
         }
 
         if ($isDates) {
             foreach ($this->dates as $value) {
-                $data[$value] = $this->dateTime($data[$value]);
+                $data[$value] = Time::factory($data[$value])->setFormat($this->dateFormat);
+            }
+        }
+
+        foreach ($this->casts as $attribute => $type) {
+            if (!empty($set[$attribute])) {
+                $set[$attribute] = $this->casts($type, $set[$attribute]);
             }
         }
 
@@ -934,7 +930,7 @@ class Query
 
     /**
      * Update datanya.
-     * 
+     *
      * @param array $data
      * @return int
      */
@@ -955,7 +951,7 @@ class Query
 
     /**
      * Hapus datanya.
-     * 
+     *
      * @return int
      */
     public function delete(): int
@@ -966,5 +962,17 @@ class Query
         $this->db->execute();
         $this->recordQueryLog();
         return $this->db->rowCount();
+    }
+
+    /**
+     * Call this method.
+     *
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        return $this->{$name}(...$arguments);
     }
 }

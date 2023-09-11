@@ -1,74 +1,100 @@
 <?php
 
-use App\Kernel;
-use Core\Facades\App;
-use Core\Auth\AuthManager;
-use Core\View\Render;
-use Core\Http\Request;
-use Core\Http\Respond;
-use Core\Routing\Route;
-use Core\Http\Session;
-use Core\View\View;
-
 if (!function_exists('context')) {
     /**
-     * Simple context dengan stdClass
-     * 
-     * @return stdClass
+     * Simple context dengan stdClass.
+     *
+     * @return \stdClass
      */
-    function context(): stdClass
+    function &context(): \stdClass
     {
-        return App::get()->singleton(stdClass::class);
+        return \Core\Facades\App::get()->singleton(\stdClass::class);
     }
 }
 
 if (!function_exists('session')) {
     /**
      * Helper method untuk membuat objek session.
-     * 
-     * @return Session
+     *
+     * @return \Core\Http\Session
      */
-    function session(): Session
+    function &session(): \Core\Http\Session
     {
-        return App::get()->singleton(Session::class);
+        return \Core\Facades\App::get()->singleton(\Core\Http\Session::class);
+    }
+}
+
+if (!function_exists('cookie')) {
+    /**
+     * Helper method untuk membuat objek cookie.
+     *
+     * @return \Core\Http\Cookie
+     */
+    function &cookie(): \Core\Http\Cookie
+    {
+        return \Core\Facades\App::get()->singleton(\Core\Http\Cookie::class);
     }
 }
 
 if (!function_exists('respond')) {
     /**
      * Helper method untuk membuat objek respond.
-     * 
-     * @return Respond
+     *
+     * @return \Core\Http\Respond
      */
-    function respond(): Respond
+    function &respond(): \Core\Http\Respond
     {
-        return App::get()->singleton(Respond::class);
+        return \Core\Facades\App::get()->singleton(\Core\Http\Respond::class);
+    }
+}
+
+if (!function_exists('request')) {
+    /**
+     * Helper method untuk membuat objek request.
+     *
+     * @return \Core\Http\Request
+     */
+    function &request(): \Core\Http\Request
+    {
+        return \Core\Facades\App::get()->singleton(\Core\Http\Request::class);
     }
 }
 
 if (!function_exists('auth')) {
     /**
      * Helper method untuk membuat objek AuthManager.
-     * 
-     * @return AuthManager
+     *
+     * @return \Core\Auth\AuthManager
      */
-    function auth(): AuthManager
+    function &auth(): \Core\Auth\AuthManager
     {
-        return App::get()->singleton(AuthManager::class);
+        return \Core\Facades\App::get()->singleton(\Core\Auth\AuthManager::class);
+    }
+}
+
+if (!function_exists('translate')) {
+    /**
+     * Helper method untuk membuat objek trans.
+     *
+     * @return \Core\Valid\Trans
+     */
+    function &translate(): \Core\Valid\Trans
+    {
+        return \Core\Facades\App::get()->singleton(\Core\Valid\Trans::class);
     }
 }
 
 if (!function_exists('render')) {
     /**
-     * Baca dari html serta masih bentuk object.
-     * 
+     * Baca dari file .kita serta masih bentuk object.
+     *
      * @param string $path
      * @param array $data
-     * @return Render
+     * @return \Core\View\Render
      */
-    function render(string $path, array $data = []): Render
+    function render(string $path, array $data = []): \Core\View\Render
     {
-        $template = new Render($path);
+        $template = new \Core\View\Render($path);
         $template->setData($data);
         $template->show();
 
@@ -79,39 +105,43 @@ if (!function_exists('render')) {
 if (!function_exists('clear_ob')) {
     /**
      * Hapus cache ob.
-     * 
+     *
      * @return void
      */
     function clear_ob(): void
     {
         while (ob_get_level() > 0) {
-            @ob_end_clean();
+            if (!@ob_end_clean()) {
+                break;
+            }
         }
     }
 }
 
 if (!function_exists('json')) {
     /**
-     * Ubah ke json.
+     * Wrapper json_encode.
      *
      * @param mixed $data
-     * @param int $statusCode
+     * @param int $code
      * @return string|bool
      */
-    function json(mixed $data, int $statusCode = 200): string|bool
+    function json(mixed $data, int $code = 200): string|bool
     {
-        http_response_code($statusCode);
-        header('Content-Type: application/json', true, $statusCode);
-        return json_encode($data, 0, 1024);
+        respond()->setCode($code);
+        respond()->getHeader()->set('Content-Type', 'application/json');
+        return json_encode($data, JSON_THROW_ON_ERROR, 1024);
     }
 }
 
 if (!function_exists('e')) {
     /**
      * Tampikan hasil secara aman.
-     * 
+     *
      * @param mixed $var
      * @return string|null
+     *
+     * @throws ErrorException
      */
     function e(mixed $var): string|null
     {
@@ -119,196 +149,190 @@ if (!function_exists('e')) {
             return null;
         }
 
-        return htmlspecialchars(strval($var));
+        try {
+            $str = strval($var);
+
+            $error = error_get_last();
+            if ($error !== null) {
+                error_clear_last();
+                throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            }
+
+            return htmlspecialchars($str);
+        } catch (Throwable $th) {
+            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            throw new ErrorException($th->getMessage(), 0, E_ERROR, $trace['file'], $trace['line']);
+        }
     }
 }
 
-if (!function_exists('basepath')) {
+if (!function_exists('base_path')) {
     /**
      * Lokasi dari aplikasi.
-     * 
+     *
+     * @param string|null $path
      * @return string
      */
-    function basepath(): string
+    function base_path(string|null $path = null): string
     {
-        return App::get()->singleton(Kernel::class)->getPath();
+        $base = \Core\Facades\App::get()->singleton(\Core\Kernel\KernelContract::class)->path();
+        if (!$path) {
+            return $base;
+        }
+
+        return $base . $path;
     }
 }
 
-if (!function_exists('trace')) {
+if (!function_exists('helper_path')) {
     /**
-     * Lacak erornya.
-     * 
-     * @param mixed $error
-     * @return void
+     * Lokasi dari helper aplikasi.
+     *
+     * @param string|null $path
+     * @return string
      */
-    function trace(mixed $error): void
+    function helper_path(string|null $path = null): string
     {
-        @clear_ob();
-        http_response_code(500);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 500 Internal Server Error', true, 500);
-        $path = str_replace(basepath(), '', __DIR__);
-        echo render($path . '/errors/trace', ['error' => $error]);
-        exit(0);
+        $base = str_replace(base_path(), '', __DIR__);
+        if (!$path) {
+            return $base;
+        }
+
+        return $base . $path;
     }
 }
 
 if (!function_exists('dd')) {
     /**
      * Tampikan hasil debugging.
-     * 
+     *
      * @param mixed $param
      * @return void
      */
     function dd(mixed ...$param): void
     {
-        @clear_ob();
-        http_response_code(500);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 500 Internal Server Error', true, 500);
-        $path = str_replace(basepath(), '', __DIR__);
-        echo render($path . '/errors/dd', ['param' => $param]);
-        exit(0);
+        // In Console Application.
+        if (php_sapi_name() == 'cli') {
+            var_dump(...$param);
+            exit(1);
+        }
+
+        // Clean all temp respond.
+        respond()->clean();
+
+        // Show output manualy without respond class.
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: ' . (request()->ajax() ? 'application/json' : 'text/html'));
+            header('HTTP/1.1 500 Internal Server Error', true, 500);
+        }
+
+        if (request()->ajax()) {
+            echo json_encode($param, JSON_THROW_ON_ERROR, 1024);
+        } else {
+            echo render(helper_path('/errors/dd'), ['param' => $param])->__toString();
+        }
+
+        exit(1);
     }
 }
 
 if (!function_exists('abort')) {
     /**
      * Tampikan hasil error 403.
-     * 
+     *
      * @return void
+     *
+     * @throws \Core\Http\Exception\ForbiddenException
      */
     function abort(): void
     {
-        @clear_ob();
-        http_response_code(403);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 403 Forbidden', true, 403);
-        $path = str_replace(basepath(), '', __DIR__);
-        respond()->send(render($path . '/errors/error', ['pesan' => 'Forbidden 403']));
-        exit(0);
+        throw new \Core\Http\Exception\ForbiddenException();
     }
 }
 
-if (!function_exists('notFound')) {
+if (!function_exists('not_found')) {
     /**
      * Tampikan hasil error 404.
-     * 
+     *
      * @return void
+     *
+     * @throws \Core\Http\Exception\NotFoundException
      */
-    function notFound(): void
+    function not_found(): void
     {
-        @clear_ob();
-        http_response_code(404);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 404 Not Found', true, 404);
-        $path = str_replace(basepath(), '', __DIR__);
-        respond()->send(render($path . '/errors/error', ['pesan' => 'Not Found 404']));
-        exit(0);
+        throw new \Core\Http\Exception\NotFoundException();
     }
 }
 
-if (!function_exists('notAllowed')) {
+if (!function_exists('not_allowed')) {
     /**
      * Tampikan hasil error 405.
-     * 
+     *
      * @return void
+     *
+     * @throws \Core\Http\Exception\NotAllowedException
      */
-    function notAllowed(): void
+    function not_allowed(): void
     {
-        @clear_ob();
-        http_response_code(405);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 405 Method Not Allowed', true, 405);
-        $path = str_replace(basepath(), '', __DIR__);
-        respond()->send(render($path . '/errors/error', ['pesan' => 'Method Not Allowed 405']));
-        exit(0);
+        throw new \Core\Http\Exception\NotAllowedException();
     }
 }
 
-if (!function_exists('pageExpired')) {
+if (!function_exists('page_expired')) {
     /**
-     * Tampikan hasil error 400.
-     * 
+     * Tampikan hasil page expired.
+     *
      * @return void
+     *
+     * @throws \Core\Http\Exception\ExpiredException
      */
-    function pageExpired(): void
+    function page_expired(): void
     {
-        @clear_ob();
-        http_response_code(400);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 400 Bad Request', true, 400);
-        $path = str_replace(basepath(), '', __DIR__);
-        respond()->send(render($path . '/errors/error', ['pesan' => 'Page Expired !']));
-        exit(0);
+        throw new \Core\Http\Exception\ExpiredException();
     }
 }
 
 if (!function_exists('unavailable')) {
     /**
      * Tampikan hasil error 503.
-     * 
-     * @return void
+     *
+     * @return \Core\View\Render
      */
-    function unavailable(): void
+    function unavailable(): \Core\View\Render
     {
-        @clear_ob();
-        http_response_code(503);
-        header('Content-Type: text/html');
-        header('HTTP/1.1 503 Service Unavailable', true, 503);
-        $path = str_replace(basepath(), '', __DIR__);
-        respond()->send(render($path . '/errors/error', ['pesan' => 'Service Unavailable !']));
-        exit(0);
+        $respond = respond();
+        $respond->clean();
+        $respond->setCode(503);
+        $respond->getHeader()->set('Content-Type', 'text/html');
+
+        return render(helper_path('/errors/error'), ['pesan' => 'Service Unavailable']);
     }
 }
 
 if (!function_exists('csrf_token')) {
     /**
      * Ambil csrf token dari session.
-     * 
+     *
      * @return string
      */
     function csrf_token(): string
     {
-        return session()->get('_token') ?? '';
-    }
-}
-
-if (!function_exists('csrf')) {
-    /**
-     * Jadikan html form input.
-     * 
-     * @return string
-     */
-    function csrf(): string
-    {
-        return '<input type="hidden" name="_token" value="' . csrf_token() . '">' . PHP_EOL;
-    }
-}
-
-if (!function_exists('method')) {
-    /**
-     * Method untuk html.
-     * 
-     * @return string
-     */
-    function method(string $type): string
-    {
-        return '<input type="hidden" name="_method" value="' . strtoupper($type) . '">' . PHP_EOL;
+        return session()->get(\Core\Http\Session::TOKEN, '');
     }
 }
 
 if (!function_exists('flash')) {
     /**
      * Ambil pesan dari session.
-     * 
+     *
      * @param string $key
+     * @param string|int|null $optional
      * @return mixed
      */
-    function flash(string $key): mixed
+    function flash(string $key, string|int|null $optional = null): mixed
     {
-        $result = session()->get($key);
+        $result = session()->get($key, $optional);
         session()->unset($key);
         return $result;
     }
@@ -317,14 +341,14 @@ if (!function_exists('flash')) {
 if (!function_exists('env')) {
     /**
      * Dapatkan nilai dari env.
-     * 
+     *
      * @param string $key
      * @param mixed $optional
      * @return mixed
      */
     function env(string $key, mixed $optional = null): mixed
     {
-        $res = $_ENV[$key] ?? $optional;
+        $res = \Core\Support\Env::get($key, $optional);
 
         if ($res === 'null') {
             return $optional;
@@ -334,46 +358,51 @@ if (!function_exists('env')) {
     }
 }
 
-if (!function_exists('baseurl')) {
+if (!function_exists('base_url')) {
     /**
      * URL dari aplikasi.
-     * 
+     *
+     * @param string|null $url
      * @return string
      */
-    function baseurl(): string
+    function base_url(string|null $url = null): string
     {
-        return env('_BASEURL');
+        if ($url) {
+            return env(\Core\Support\Env::BASEURL) . $url;
+        }
+
+        return env(\Core\Support\Env::BASEURL);
     }
 }
 
 if (!function_exists('https')) {
     /**
      * Apakah https?.
-     * 
+     *
      * @return bool
      */
     function https(): bool
     {
-        return env('_HTTPS', false);
+        return env(\Core\Support\Env::HTTPS, false);
     }
 }
 
 if (!function_exists('debug')) {
     /**
      * Apakah debug?.
-     * 
+     *
      * @return bool
      */
     function debug(): bool
     {
-        return env('_DEBUG', true);
+        return env(\Core\Support\Env::DEBUG, false);
     }
 }
 
 if (!function_exists('asset')) {
     /**
      * Gabungkan dengan baseurl.
-     * 
+     *
      * @param string $param
      * @return string
      */
@@ -383,45 +412,37 @@ if (!function_exists('asset')) {
             $param = '/' . $param;
         }
 
-        return baseurl() . $param;
-    }
-}
-
-if (!function_exists('getPathFromRoute')) {
-    /**
-     * Ambil url dalam route dengan nama.
-     *
-     * @param string $name
-     * @return string
-     * 
-     * @throws Exception
-     */
-    function getPathFromRoute(string $name): string
-    {
-        foreach (Route::router()->routes() as $route) {
-            if ($route['name'] == $name) {
-                return $route['path'];
-            }
-        }
-
-        throw new Exception('Route "' . $name . '" tidak ditemukan');
+        return base_url($param);
     }
 }
 
 if (!function_exists('route')) {
     /**
      * Dapatkan url dari route name dan masukan value.
-     * 
+     *
      * @param string $param
      * @param mixed $keys
      * @return string
-     * 
-     * @throws Exception
+     *
+     * @throws ErrorException
      */
     function route(string $param, mixed ...$keys): string
     {
+        $found = false;
+        foreach (\Core\Routing\Route::router()->routes() as $route) {
+            if ($route['name'] == $param) {
+                $param = $route['path'];
+                $found = true;
+                break;
+            }
+        }
+
+        if (!$found) {
+            $error = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2)[0];
+            throw new ErrorException('Route "' . $param . '" tidak ditemukan', 0, E_ERROR, $error['file'], $error['line']);
+        }
+
         $regex = '([\w-]*)';
-        $param = getPathFromRoute($param);
         $lenregex = strlen($regex);
 
         foreach ($keys as $key) {
@@ -430,7 +451,8 @@ if (!function_exists('route')) {
         }
 
         if (str_contains($param, $regex)) {
-            throw new Exception('Key kurang atau tidak ada di suatu fungsi route');
+            $error = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
+            throw new ErrorException('Key kurang atau tidak ada di suatu fungsi route', 0, E_ERROR, $error['file'], $error['line']);
         }
 
         return asset($param);
@@ -440,13 +462,17 @@ if (!function_exists('route')) {
 if (!function_exists('old')) {
     /**
      * Dapatkan nilai yang lama dari sebuah request.
-     * 
+     *
      * @param string $param
      * @return string|null
      */
     function old(string $param): string|null
     {
-        $old = session()->get('old');
+        $old = session()->get(\Core\Http\Session::OLD);
+        if (is_null($old)) {
+            return null;
+        }
+
         return e(@$old[$param]);
     }
 }
@@ -454,20 +480,20 @@ if (!function_exists('old')) {
 if (!function_exists('error')) {
     /**
      * Dapatkan pesan error dari request yang salah.
-     * 
+     *
      * @param string|null $key
      * @param mixed $optional
      * @return mixed
      */
     function error(string|null $key = null, mixed $optional = null): mixed
     {
-        $error = session()->get('error');
+        $error = session()->get(\Core\Http\Session::ERROR);
 
         if ($key === null) {
             return $error;
         }
 
-        $result = @$error[$key] ?? null;
+        $result = isset($error[$key]) ? $error[$key] : null;
 
         if ($result && $optional) {
             return $optional;
@@ -477,18 +503,18 @@ if (!function_exists('error')) {
     }
 }
 
-if (!function_exists('routeIs')) {
+if (!function_exists('route_is')) {
     /**
      * Cek apakah routenya sudah sesuai.
-     * 
+     *
      * @param string $param
      * @param mixed $optional
      * @param bool $notcontains
      * @return mixed
      */
-    function routeIs(string $param, mixed $optional = null, bool $notcontains = false): mixed
+    function route_is(string $param, mixed $optional = null, bool $notcontains = false): mixed
     {
-        $now = App::get()->singleton(Request::class)->server('REQUEST_URI');
+        $now = request()->server->get('REQUEST_URI');
         $route = $notcontains ? $now === $param : str_contains($now, $param);
 
         if ($route && $optional) {
@@ -502,120 +528,78 @@ if (!function_exists('routeIs')) {
 if (!function_exists('now')) {
     /**
      * Dapatkan waktu sekarang Y-m-d H:i:s.
-     * 
+     *
      * @param string $format
      * @return string
      */
     function now(string $format = 'Y-m-d H:i:s'): string
     {
-        return (new DateTime())->format($format);
+        return \Core\Support\Time::factory()->format($format);
     }
 }
 
-if (!function_exists('parents')) {
-    /**
-     * Set parent html.
-     * 
-     * @param string $name
-     * @param array $variables
-     * @return void
-     */
-    function parents(string $name, array $variables = []): void
-    {
-        App::get()->singleton(View::class)->parents($name, $variables);
-    }
-}
-
-if (!function_exists('section')) {
-    /**
-     * Bagian awal dari html.
-     * 
-     * @param string $name
-     * @return void
-     */
-    function section(string $name): void
-    {
-        App::get()->singleton(View::class)->section($name);
-    }
-}
-
-if (!function_exists('content')) {
-    /**
-     * Tampilkan bagian dari html.
-     * 
-     * @param string $name
-     * @return string|null
-     */
-    function content(string $name): string|null
-    {
-        return App::get()->singleton(View::class)->content($name);
-    }
-}
-
-if (!function_exists('endsection')) {
-    /**
-     * Bagian akhir dari html.
-     * 
-     * @return void
-     */
-    function endsection(): void
-    {
-        App::get()->singleton(View::class)->endsection();
-    }
-}
-
-if (!function_exists('including')) {
-    /**
-     * Masukan html opsional.
-     * 
-     * @param string $name
-     * @return Render
-     */
-    function including(string $name): Render
-    {
-        return App::get()->singleton(View::class)->including($name);
-    }
-}
-
-if (!function_exists('formatBytes')) {
+if (!function_exists('format_bytes')) {
     /**
      * Dapatkan format ukuran bytes yang mudah dibaca.
-     * 
-     * @param int $size
+     *
+     * @param float $size
      * @param int $precision
      * @return string
      */
-    function formatBytes(int $size, int $precision = 2): string
+    function format_bytes(float $size, int $precision = 2): string
     {
         $base = log($size, 1024);
         $suffixes = ['Byte', 'Kb', 'Mb', 'Gb', 'Tb'];
 
-        return strval(round(pow(1024, $base - floor($base)), $precision)) . $suffixes[floor($base)];
+        return strval(round(pow(1024, $base - floor($base)), $precision)) . $suffixes[intval(floor($base))];
     }
 }
 
-if (!function_exists('diffTime')) {
+if (!function_exists('diff_time')) {
     /**
      * Dapatkan selisih waktu dalam ms.
-     * 
+     *
      * @param float $start
      * @param float $end
      * @return float
      */
-    function diffTime(float $start, float $end): float
+    function diff_time(float $start, float $end): float
     {
         return round(($end - $start) * 1000, 2);
     }
 }
 
-if (!function_exists('getPageTime')) {
+if (!function_exists('execute_time')) {
     /**
      * Dapatkan waktu yang dibutuhkan untuk merender halaman dalam (ms).
-     * 
+     *
      * @return float
      */
-    function getPageTime(): float
+    function execute_time(): float
     {
-        return diffTime(constant('KAMU_START'), microtime(true));
+        return diff_time(request()->server->get('REQUEST_TIME_FLOAT'), microtime(true));
+    }
+}
+
+if (!function_exists('dispatch')) {
+    /**
+     * Kirimkan tugas baru pada phproutine.
+     *
+     * @param \Core\Queue\Job $job
+     *
+     * @throws Exception
+     */
+    function dispatch(\Core\Queue\Job $job): void
+    {
+        $file = base_path(sprintf('/cache/queue/%s.tmp', hrtime(true)));
+
+        $status = @file_put_contents(
+            $file,
+            serialize($job)
+        );
+
+        if ($status === false || !chmod($file, 0777)) {
+            throw new Exception('Cant save file in cache queue');
+        }
     }
 }

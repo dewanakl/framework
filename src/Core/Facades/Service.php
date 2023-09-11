@@ -2,12 +2,23 @@
 
 namespace Core\Facades;
 
-use App\Kernel as AppKernel;
 use Closure;
+use Core\Http\Exception\HttpException;
+use Core\Http\Exception\NotAllowedException;
+use Core\Http\Exception\NotFoundException;
+use Core\Http\Exception\RespondTerminate;
+use Core\Http\Cookie;
 use Core\Http\Request;
 use Core\Http\Respond;
+use Core\Http\Session;
+use Core\Kernel\KernelContract;
 use Core\Middleware\Middleware;
+use Core\Routing\Controller;
 use Core\Routing\Route;
+use Core\Support\Env;
+use Core\Support\Error;
+use Core\Valid\Exception\ValidationException;
+use ErrorException;
 use Exception;
 use Throwable;
 
@@ -34,55 +45,37 @@ class Service
     private $respond;
 
     /**
+     * Objek kernel disini.
+     *
+     * @var KernelContract $kernel
+     */
+    private $kernel;
+
+    /**
+     * Objek application disini.
+     *
+     * @var Application $app
+     */
+    private $app;
+
+    /**
      * Buat objek service.
      *
-     * @return void
-     *
-     * @throws Exception
-     */
-    public function __construct()
-    {
-        $this->request = App::get()->singleton(Request::class);
-        $this->respond = App::get()->singleton(Respond::class);
-
-        $this->setDefaultEnv();
-        $this->setExceptionHandler();
-
-        Kernel::setTimezone();
-        if (!env('APP_KEY')) {
-            throw new Exception('App Key gk ada !');
-        }
-
-        $this->bootingProviders();
-    }
-
-    /**
-     * Handle this app exception.
-     *
+     * @param Application $app
      * @return void
      */
-    private function setExceptionHandler(): void
+    public function __construct(Application $app)
     {
-        error_reporting(debug() ? E_ALL : 0);
-        set_exception_handler(function (Throwable $error): void {
-            if (debug()) {
-                trace($error);
-            }
+        $this->app = $app;
 
-            unavailable();
-        });
-    }
+        $this->kernel = $this->app->singleton(KernelContract::class);
+        $this->request = $this->app->singleton(Request::class);
+        $this->respond = $this->app->singleton(Respond::class);
 
-    /**
-     * Set default env to function.
-     *
-     * @return void
-     */
-    private function setDefaultEnv(): void
-    {
-        $_ENV['_HTTPS'] = env('HTTPS') == 'true' || $this->request->server('HTTPS', 'off') !== 'off' || $this->request->server('SERVER_PORT') == '443';
-        $_ENV['_BASEURL'] = env('BASEURL') ? rtrim(env('BASEURL'), '/') : (https() ? 'https://' : 'http://') . trim($this->request->server('HTTP_HOST'));
-        $_ENV['_DEBUG'] = env('DEBUG') == 'true';
+        $this->app->singleton(Cookie::class);
+        $this->app->singleton(Session::class);
+
+        Env::initDefaultValue();
     }
 
     /**
@@ -92,10 +85,14 @@ class Service
      */
     private function bootingProviders(): void
     {
-        $services = App::get()->singleton(AppKernel::class)->services();
+        foreach ($this->kernel->services() as $service) {
+            $servis = $this->app->make($service);
 
-        foreach ($services as $service) {
-            App::get()->make($service)->booting();
+            if (!($servis instanceof Provider)) {
+                throw new Exception(sprintf('Class "%s" is not part of the provider class', get_class($servis)));
+            }
+
+            $servis->booting();
         }
     }
 
@@ -106,18 +103,17 @@ class Service
      */
     private function registerProvider(): void
     {
-        $services = App::get()->singleton(AppKernel::class)->services();
-
-        foreach ($services as $service) {
-            App::get()->clean($service)->registrasi();
+        foreach ($this->kernel->services() as $service) {
+            $this->app->singleton($service)->registrasi();
+            $this->app->clean($service);
         }
     }
 
     /**
      * Eksekusi core middleware.
      *
-     * @param array $route
-     * @param array $variables
+     * @param array<string, mixed> $route
+     * @param array<int, mixed> $variables
      * @return Closure
      */
     private function coreMiddleware(array $route, array $variables): Closure
@@ -131,28 +127,38 @@ class Service
     /**
      * Process middleware, provider, and controller.
      *
-     * @param array $route
-     * @param array $variables
-     * @return int
+     * @param array<string, mixed> $route
+     * @param array<int, mixed> $variables
+     * @return mixed
+     *
+     * @throws ErrorException
      */
-    private function process(array $route, array $variables): int
+    private function process(array $route, array $variables): mixed
     {
         $middleware = new Middleware([
-            ...App::get()->singleton(AppKernel::class)->middlewares(),
+            ...$this->kernel->middlewares(),
             ...$route['middleware']
         ]);
 
-        $this->respond->send($middleware->handle($this->request, $this->coreMiddleware($route, $variables)));
+        $result = $middleware->handle($this->request, $this->coreMiddleware($route, $variables));
 
-        return 0;
+        $error = error_get_last();
+        if ($error !== null) {
+            error_clear_last();
+            throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+        }
+
+        return $result;
     }
 
     /**
      * Eksekusi controllernya.
      *
-     * @param array $route
-     * @param array $variables
+     * @param array<string, mixed> $route
+     * @param array<int, mixed> $variables
      * @return mixed
+     *
+     * @throws Exception
      */
     private function invokeController(array $route, array $variables): mixed
     {
@@ -168,38 +174,106 @@ class Service
             $function = '__invoke';
         }
 
-        array_shift($variables);
-        return App::get()->invoke($controller, $function, $variables);
+        $controller = $this->app->singleton($controller);
+        if (!($controller instanceof Controller)) {
+            throw new Exception(sprintf('Class "%s" is not extends BaseController.', get_class($controller)));
+        }
+
+        $parameters = [];
+        for ($i = 1; $i < count($variables); $i++) {
+            $parameters[] = $variables[$i];
+        }
+
+        return $this->app->invoke($controller, $function, $parameters);
     }
 
     /**
-     * Tangani permintaan yang diluar dari route.
+     * Handle error app.
      *
+     * @param Throwable $th
+     * @return mixed
+     */
+    private function handleError(Throwable $th): mixed
+    {
+        $error = $this->app->make($this->kernel->error());
+
+        try {
+            return $error->report($th)->render($this->request, $th);
+        } catch (Throwable $th) {
+            return (new Error())->setInformation($error->getInformation())->render($this->request, $th);
+        }
+    }
+
+    /**
+     * If throw HttpException handle it.
+     *
+     * @param HttpException $th
      * @return int
      */
-    private function handleOutOfRoute(bool $routeMatch): int
+    private function handleHttpException(HttpException $th): int
     {
-        if ($routeMatch) {
-            if (!$this->request->ajax()) {
-                notAllowed();
+        $result = null;
+
+        try {
+            $result = $th->__toString();
+        } catch (Throwable $th) {
+            $this->respond->clean();
+
+            $result = $this->handleError($th);
+
+            $this->respond->setCode(500);
+        } finally {
+            $this->respond->send($result);
+            return 1;
+        }
+    }
+
+    /**
+     * Run route list.
+     *
+     * @param string $path
+     * @param string $method
+     * @return mixed
+     *
+     * @throws HttpException
+     */
+    private function runRoute(string $path, string $method): mixed
+    {
+        $result = null;
+        $routeMatch = false;
+        $methodMatch = false;
+
+        foreach (Route::router()->routes() as $route) {
+            $pattern = '#^' . $route['path'] . '$#';
+            $variables = [];
+
+            if (preg_match($pattern, $path, $variables)) {
+                $routeMatch = true;
+
+                if ($route['method'] == $method) {
+                    $methodMatch = true;
+                    $result = $this->process($route, $variables);
+                }
+            }
+        }
+
+        if ($routeMatch && !$methodMatch) {
+            if ($this->request->ajax()) {
+                NotAllowedException::json();
             }
 
-            $this->respond->send(json([
-                'error' => 'Method Not Allowed 405'
-            ], 405));
-
-            return 0;
+            throw new NotAllowedException();
         }
 
-        if (!$this->request->ajax()) {
-            notFound();
+        if (!$routeMatch) {
+            if ($this->request->ajax()) {
+                NotFoundException::json();
+            }
+
+            throw new NotFoundException();
         }
 
-        $this->respond->send(json([
-            'error' => 'Not Found 404'
-        ], 404));
-
-        return 0;
+        return $result;
     }
 
     /**
@@ -209,17 +283,35 @@ class Service
      */
     private function getValidUrl(): string
     {
-        $sep = explode($this->request->server('HTTP_HOST'), baseurl(), 2)[1];
-        if (empty($sep)) {
-            return $this->request->server('REQUEST_URI');
+        $url = '/';
+        $host = $this->request->server->get('HTTP_HOST');
+        $uri = $this->request->server->get('REQUEST_URI');
+        $sep = strpos(base_url(), $host);
+
+        if ($sep === false) {
+            $url = $uri;
+        } else {
+            $sep = substr(base_url(), strlen($host) + $sep);
+            $raw = strpos($uri, $sep);
+            if ($raw !== false) {
+                $url = substr($uri, strlen($sep) + $raw);
+            }
         }
 
-        $raw = explode($sep, $this->request->server('REQUEST_URI'), 2)[1];
-        if (!empty($raw)) {
-            return $raw;
-        }
+        $this->request->server->set('REQUEST_URL', $url);
+        return parse_url($url, PHP_URL_PATH);
+    }
 
-        return '/';
+    /**
+     * Pastikan methodnya betul.
+     *
+     * @return string
+     */
+    private function getValidMethod(): string
+    {
+        return !$this->request->ajax() && $this->request->method(Request::POST)
+            ? strtoupper($this->request->get(Request::METHOD, $this->request->method()))
+            : $this->request->method();
     }
 
     /**
@@ -229,29 +321,37 @@ class Service
      */
     public function run(): int
     {
-        $url = $this->getValidUrl();
-        $path = parse_url($url, PHP_URL_PATH);
-        $this->request->__set('REQUEST_URL', $url);
+        $result = null;
 
-        $method = $this->request->method() === 'POST'
-            ? strtoupper($this->request->get('_method', 'POST'))
-            : $this->request->method();
-
-        $routeMatch = false;
-
-        foreach (Route::router()->routes() as $route) {
-            $pattern = '#^' . $route['path'] . '$#';
-            $variables = [];
-
-            if (preg_match($pattern, $path, $variables)) {
-                $routeMatch = true;
-
-                if ($route['method'] === $method) {
-                    return $this->process($route, $variables);
-                }
+        try {
+            if (!env('APP_KEY')) {
+                throw new Exception('App Key gk ada !');
             }
+
+            $this->bootingProviders();
+            $result = $this->runRoute($this->getValidUrl(), $this->getValidMethod());
+        } catch (Throwable $th) {
+            // Force respond exit.
+            if ($th instanceof RespondTerminate || $th instanceof ValidationException) {
+                $this->respond->prepare();
+                return 0;
+            }
+
+            // Ensure clean all output before send error message.
+            $this->respond->clean();
+
+            if ($th instanceof HttpException) {
+                return $this->handleHttpException($th);
+            }
+
+            $result = $this->handleError($th);
+
+            $this->respond->setCode(500);
+            $this->respond->send($result);
+            return 1;
         }
 
-        return $this->handleOutOfRoute($routeMatch);
+        $this->respond->send($result);
+        return 0;
     }
 }

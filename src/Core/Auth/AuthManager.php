@@ -15,29 +15,36 @@ use Core\Valid\Hash;
 class AuthManager
 {
     /**
+     * Nama dari class ini untuk translate.
+     *
+     * @var string NAME
+     */
+    public const NAME = 'auth';
+
+    /**
      * Object model.
-     * 
+     *
      * @var Model|null $user
      */
     private $user;
 
     /**
      * Object session.
-     * 
+     *
      * @var Session $session
      */
     private $session;
 
     /**
      * Nama dari session user.
-     * 
+     *
      * @var string SESSUSER
      */
     public const SESSUSER = '__sessuser';
 
     /**
      * Init obejct.
-     * 
+     *
      * @param Session $session
      * @return void
      */
@@ -48,12 +55,12 @@ class AuthManager
 
     /**
      * Check usernya.
-     * 
+     *
      * @return bool
      */
     public function check(): bool
     {
-        $check = empty($this->user()) ? false : !empty($this->user->fail());
+        $check = empty($this->user()) ? false : !empty($this->user->exist());
         if (!$check) {
             $this->logout();
         }
@@ -63,7 +70,7 @@ class AuthManager
 
     /**
      * Dapatkan id usernya.
-     * 
+     *
      * @return int|string|null
      */
     public function id(): int|string|null
@@ -73,7 +80,7 @@ class AuthManager
 
     /**
      * Dapatkan obejek usernya.
-     * 
+     *
      * @return Model|null
      */
     public function user(): Model|null
@@ -88,7 +95,7 @@ class AuthManager
 
     /**
      * Logoutkan usernya.
-     * 
+     *
      * @return void
      */
     public function logout(): void
@@ -99,7 +106,7 @@ class AuthManager
 
     /**
      * Loginkan usernya dengan Model.
-     * 
+     *
      * @param Model $user
      * @return void
      */
@@ -112,17 +119,17 @@ class AuthManager
 
     /**
      * Loginkan usernya.
-     * 
-     * @param array $credential
+     *
+     * @param array<string, string> $credential
      * @param string $model
      * @return bool
      */
-    public function attempt(array $credential, string $model = 'App\Models\User'): bool
+    public function attempt(array $credential, string $model = '\App\Models\User'): bool
     {
-        [$email, $password] = array_keys($credential);
+        list($email, $password) = array_keys($credential);
         $user = (new $model)->find($credential[$email], $email);
 
-        if ($user->fail()) {
+        if ($user->exist()) {
             if (Hash::check($credential[$password], $user->{$password})) {
                 $this->login($user);
                 return true;
@@ -130,8 +137,14 @@ class AuthManager
         }
 
         $this->logout();
-        $this->session->set('old', [$email => $credential[$email]]);
-        $this->session->set('error', [$email => sprintf('%s atau %s salah !', $email, $password)]);
+        $this->session->set(Session::OLD, [$email => $credential[$email]]);
+        $this->session->set(Session::ERROR, [
+            $email => translate()->trans(static::NAME . '.failed', [
+                $email => $email,
+                $password => $password
+            ])
+        ]);
+
         return false;
     }
 }

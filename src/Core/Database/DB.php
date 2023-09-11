@@ -5,6 +5,7 @@ namespace Core\Database;
 use Closure;
 use Core\Facades\App;
 use Core\Model\Model;
+use Core\Model\Query;
 use Exception;
 use Throwable;
 
@@ -55,6 +56,36 @@ final class DB extends Model
     public static function rollBack(): bool
     {
         return App::get()->singleton(DataBase::class)->rollBack();
+    }
+
+    /**
+     * Apakah masih ada transaction?.
+     *
+     * @return bool
+     */
+    public static function inTransaction(): bool
+    {
+        return App::get()->singleton(DataBase::class)->inTransaction();
+    }
+
+    /**
+     * Get information driver pdo.
+     *
+     * @return array<string, mixed>
+     */
+    public static function getInfoDriver(): array
+    {
+        return App::get()->singleton(DataBase::class)->getInfoDriver();
+    }
+
+    /**
+     * Dapatkan log dari semua query.
+     *
+     * @return array<string, mixed>
+     */
+    public static function getRecordQueryLog(): array
+    {
+        return App::get()->singleton(Query::class)->getRecordQueryLog();
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Core\Database;
 
+use Core\Database\Exception\DatabaseException;
 use Exception;
 use PDO;
 use PDOException;
@@ -38,15 +39,15 @@ class DataBase
      */
     public function __construct()
     {
-        $dsn = sprintf(
-            '%s:host=%s;dbname=%s;port=%s;',
-            env('DB_DRIV'),
-            env('DB_HOST'),
-            env('DB_NAME'),
-            env('DB_PORT')
-        );
-
         if ($this->pdo === null) {
+            $dsn = sprintf(
+                '%s:host=%s;dbname=%s;port=%s;',
+                env('DB_DRIV'),
+                env('DB_HOST'),
+                env('DB_NAME'),
+                env('DB_PORT')
+            );
+
             try {
                 $this->pdo = new PDO(
                     $dsn,
@@ -63,7 +64,7 @@ class DataBase
     /**
      * Opsi untuk PDO ini.
      *
-     * @return array
+     * @return array<int, mixed>
      */
     private function options(): array
     {
@@ -84,24 +85,63 @@ class DataBase
     }
 
     /**
+     * Get information this driver.
+     *
+     * @return array<string, mixed>
+     */
+    public function getInfoDriver(): array
+    {
+        $attributes = [
+            'AUTOCOMMIT',
+            'ERRMODE',
+            'CASE',
+            'CLIENT_VERSION',
+            'CONNECTION_STATUS',
+            'ORACLE_NULLS',
+            'PERSISTENT',
+            'PREFETCH',
+            'SERVER_INFO',
+            'SERVER_VERSION',
+            'TIMEOUT'
+        ];
+
+        $data = [];
+        foreach ($attributes as $val) {
+            $result = null;
+
+            try {
+                $result = $this->pdo?->getAttribute(constant('PDO::ATTR_' . $val));
+            } catch (PDOException) {
+                continue;
+            } finally {
+                $data[$val] = $result;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Get query now.
+     *
+     * @return string|null
+     */
+    public function getQueryString(): string|null
+    {
+        return $this->stmt?->queryString;
+    }
+
+    /**
      * Tangkap dan tampilkan errornya.
      *
-     * @param Throwable $e
+     * @param Throwable $throw
      * @return void
      *
-     * @throws Exception
+     * @throws DatabaseException
      */
-    public function catchException(Throwable $e): void
+    public function catchException(Throwable $throw): void
     {
-        if (!debug()) {
-            unavailable();
-        }
-
-        if (empty($this->stmt->queryString)) {
-            throw new Exception($e->getMessage());
-        }
-
-        throw new Exception($e->getMessage() . PHP_EOL . PHP_EOL . 'SQL: "' . $this->stmt->queryString . '"');
+        throw new DatabaseException($this, $throw);
     }
 
     /**
@@ -135,16 +175,26 @@ class DataBase
     }
 
     /**
+     * Apakah masih ada transaction?.
+     *
+     * @return bool
+     */
+    public function inTransaction(): bool
+    {
+        return $this->pdo->inTransaction();
+    }
+
+    /**
      * Eksekusi raw sql.
      *
      * @param string $command
-     * @return int|bool
+     * @return int
      *
      * @throws Throwable
      */
-    public function exec(string $command): int|bool
+    public function exec(string $command): int
     {
-        $result = null;
+        $result = 0;
 
         try {
             $result = $this->pdo->exec($command);
@@ -224,6 +274,7 @@ class DataBase
                 throw new Exception('Error saat mengeksekusi');
             }
         } catch (Exception $e) {
+            $result = false;
             $this->catchException($e);
         }
 

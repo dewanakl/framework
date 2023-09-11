@@ -19,7 +19,7 @@
     <hr />
 
     <p>Salam hangat dari <?= env('APP_NAME') ?></p>
-    <p><a href="<?= asset('/') ?>" style="color: #126dff;"><?= e(parse_url(baseurl(), PHP_URL_HOST)) ?></a></p>
+    <p><a href="<?= asset('/') ?>" style="color: #126dff;"><?= e(parse_url(base_url(), PHP_URL_HOST)) ?></a></p>
 </body>
 
 </html>

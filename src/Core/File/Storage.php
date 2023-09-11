@@ -15,14 +15,14 @@ final class Storage
 {
     /**
      * Folder name.
-     * 
+     *
      * @var string $folderName
      */
     private static string $folderName = 'shared';
 
     /**
      * Set folder name.
-     * 
+     *
      * @param string $name
      * @return void
      */
@@ -33,79 +33,79 @@ final class Storage
 
     /**
      * Get name location.
-     * 
+     *
      * @return string
      */
     public static function getLocation(): string
     {
-        return basepath() . '/' . static::$folderName . '/';
+        return base_path('/' . static::$folderName . '/');
     }
 
     /**
      * Tampilkan filenya.
-     * 
+     *
      * @param string $filename
      * @return Stream
      */
     public static function stream(string $filename): Stream
     {
-        return App::get()->singleton(Stream::class)->send(static::getLocation() . $filename);
+        return App::get()->singleton(Stream::class)->send(realpath(static::getLocation() . $filename))->process();
     }
 
     /**
      * Download filenya.
-     * 
+     *
      * @param string $filename
      * @return Stream
      */
     public static function download(string $filename): Stream
     {
-        return static::stream($filename)->download();
+        return static::stream($filename)->download()->process();
     }
 
     /**
      * Ukuran filenya.
-     * 
+     *
      * @param string $filename
      * @return int|false
      */
     public static function size(string $filename): int|false
     {
-        return filesize(static::getLocation() . $filename);
+        return filesize(realpath(static::getLocation() . $filename));
     }
 
     /**
      * Filenya ada?.
-     * 
+     *
      * @param string $filename
      * @return bool
      */
     public static function exists(string $filename): bool
     {
-        return file_exists(static::getLocation() . $filename);
+        return file_exists(realpath(static::getLocation() . $filename));
     }
 
     /**
      * Terakhir diubah.
-     * 
+     *
      * @param string $filename
      * @return int|false
      */
     public static function lastModified(string $filename): int|false
     {
-        return filemtime(static::getLocation() .  $filename);
+        return filemtime(realpath(static::getLocation() . $filename));
     }
 
     /**
      * Get extension.
-     * 
+     *
      * @param string $filename
      * @return string|false
      */
     public static function extension(string $filename): string|false
     {
         if (static::exists($filename)) {
-            return pathinfo(static::getLocation() . $filename, PATHINFO_EXTENSION);
+            return pathinfo(realpath(static::getLocation() . $filename), PATHINFO_EXTENSION);
         }
 
         return false;
@@ -113,14 +113,14 @@ final class Storage
 
     /**
      * Get name.
-     * 
+     *
      * @param string $filename
      * @return string|false
      */
     public static function name(string $filename): string|false
     {
         if (static::exists($filename)) {
-            return pathinfo(static::getLocation() . $filename, PATHINFO_FILENAME);
+            return pathinfo(realpath(static::getLocation() . $filename), PATHINFO_FILENAME);
         }
 
         return false;
@@ -128,53 +128,53 @@ final class Storage
 
     /**
      * Get mimeType.
-     * 
+     *
      * @param string $filename
      * @return string|false
      */
     public static function mimeType(string $filename): string|false
     {
-        return mime_content_type(static::getLocation() . $filename);
+        return mime_content_type(realpath(static::getLocation() . $filename));
     }
 
     /**
      * Copy filenya?.
-     * 
+     *
      * @param string $from
      * @param string $to
      * @return bool
      */
     public static function copy(string $from, string $to): bool
     {
-        return copy(static::getLocation() . $from, static::getLocation() . $to);
+        return copy(realpath(static::getLocation() . $from), realpath(static::getLocation() . $to));
     }
 
     /**
      * Ganti namanya.
-     * 
+     *
      * @param string $from
      * @param string $to
      * @return bool
      */
     public static function rename(string $from, string $to): bool
     {
-        return rename(static::getLocation() . $from, static::getLocation() . $to);
+        return rename(realpath(static::getLocation() . $from), realpath(static::getLocation() . $to));
     }
 
     /**
      * Hapus filenya.
-     * 
+     *
      * @param string $filename
      * @return bool
      */
     public static function delete(string $filename): bool
     {
-        return unlink(static::getLocation() . $filename);
+        return unlink(realpath(static::getLocation() . $filename));
     }
 
     /**
      * Baca file dalam folder.
-     * 
+     *
      * @return array
      */
     public static function files(): array
@@ -185,13 +185,13 @@ final class Storage
 
     /**
      * Pindahkan file.
-     * 
+     *
      * @param string $from
      * @param string $to
      * @return bool
      */
     public static function move(string $from, string $to): bool
     {
-        return rename(static::getLocation() . $from, basepath() . '/' . $to . '/' . $from);
+        return rename(realpath(static::getLocation() . $from), realpath(base_path('/' . $to . '/' . $from)));
     }
 }

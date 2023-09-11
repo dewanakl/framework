@@ -4,7 +4,7 @@ namespace Core\Valid;
 
 /**
  * Encrypt decrypt string.
- * 
+ *
  * @class Hash
  * @package \Core\Valid
  */
@@ -12,17 +12,24 @@ final class Hash
 {
     /**
      * Algo Ciphering.
-     * 
+     *
      * @var string CIPHERING
      */
     public const CIPHERING = 'aes-256-cbc';
 
     /**
      * Algo Hash.
-     * 
+     *
      * @var string HASH
      */
     public const HASH = 'sha3-512';
+
+    /**
+     * Seperator key.
+     *
+     * @var string SPTR
+     */
+    public const SPTR = '::';
 
     /**
      * Encrypt dengan app key.
@@ -32,7 +39,7 @@ final class Hash
      */
     public static function encrypt(string $str): string
     {
-        $key = explode(':', env('APP_KEY'), 2);
+        $key = explode(static::SPTR, env('APP_KEY', static::SPTR), 2);
         $iv = openssl_random_pseudo_bytes(intval(openssl_cipher_iv_length(static::CIPHERING)));
         $encrypted = openssl_encrypt($str, static::CIPHERING, base64_decode($key[1]), OPENSSL_RAW_DATA, $iv);
 
@@ -47,7 +54,7 @@ final class Hash
      */
     public static function decrypt(string $str): string|null
     {
-        $key = explode(':', env('APP_KEY'), 2);
+        $key = explode(static::SPTR, env('APP_KEY', static::SPTR), 2);
         $raw = base64_decode($str, true);
 
         if ($raw === false) {

@@ -16,7 +16,7 @@ class Compiler
     /**
      * Pairing Tag kita syntax.
      *
-     * @var array pairingTag
+     * @var array<int, string> pairingTag
      */
     private const pairingTag = [
         'if',
@@ -28,13 +28,14 @@ class Compiler
         'auth',
         'guest',
         'error',
+        'flash',
         'php'
     ];
 
     /**
      * Self Close Tag kita syntax.
      *
-     * @var array selfClosing
+     * @var array<int, string> selfClosing
      */
     private const selfClosing = [
         'extend',
@@ -51,7 +52,7 @@ class Compiler
     /**
      * Echo tag kita syntax.
      *
-     * @var array echoTag
+     * @var array<string, string> echoTag
      */
     private const echoTag = [
         '{{' => '}}',
@@ -61,7 +62,7 @@ class Compiler
     /**
      * Comment tag kita syntax.
      *
-     * @var array commentTag
+     * @var array<string, string> commentTag
      */
     private const commentTag = [
         '{{--' => '--}}',
@@ -71,7 +72,7 @@ class Compiler
     /**
      * Temporary original blocks.
      *
-     * @var array $originalBlocks
+     * @var array<int, string> $originalBlocks
      */
     private $orignalBlocks;
 
@@ -97,6 +98,13 @@ class Compiler
     private $originCachePath;
 
     /**
+     * Origin view folder.
+     *
+     * @var string|null $originView
+     */
+    private static $originView;
+
+    /**
      * Init object.
      *
      * @param string $path
@@ -104,9 +112,29 @@ class Compiler
      */
     public function __construct(string $path = '/cache/views')
     {
+        $this->orignalBlocks = [];
         $this->originCachePath = $path;
         $this->uid = md5(random_bytes(5));
-        $this->orignalBlocks = [];
+    }
+
+    /**
+     * Get origin view folder.
+     *
+     * @return string|null
+     */
+    public static function getOriginView(): string|null
+    {
+        return static::$originView;
+    }
+
+    /**
+     * Set origin view folder.
+     *
+     * @param string $originView
+     */
+    public static function setOriginView(string $originView): void
+    {
+        static::$originView = $originView;
     }
 
     /**
@@ -137,9 +165,9 @@ class Compiler
         $content = $this->orignalBlocks($content);
 
         // Comment Tag
-        foreach (self::commentTag as $key => $value) {
+        foreach (self::commentTag as $first => $second) {
             $content = strval(preg_replace(
-                sprintf('/%s(.*?)%s/s', $key, $value),
+                sprintf('/%s(.*?)%s/s', $first, $second),
                 '',
                 strval($content)
             ));
@@ -191,7 +219,7 @@ class Compiler
      */
     private function getContent(string $file): string
     {
-        $content = file_get_contents(sprintf(basepath() . '/resources/views/%s.kita.php', $file), true);
+        $content = @file_get_contents(sprintf(base_path('%s/%s.kita.php'), static::$originView ?? '/resources/views', $file));
 
         if (!(bool) $content) {
             throw new Exception(sprintf('Can\'t open file [%s.kita.php]', $file));
@@ -208,20 +236,18 @@ class Compiler
      */
     private function putContent(string $content): void
     {
-        $file = basepath() . $this->cachePath;
-        if (!is_dir(basepath() . $this->originCachePath)) {
-            mkdir(basepath() . $this->originCachePath, 0777, true);
-        }
-
+        $file = base_path($this->cachePath);
         $arr = explode('/', $file);
         $depth = count($arr) - 1;
 
         $folder = implode('/', array_splice($arr, 0, -1));
-        if (!is_dir($folder) && $depth > 2) {
-            mkdir($folder, 0777, true);
+        if (!is_dir($folder) && $depth > 3) {
+            @mkdir($folder, 0777, true);
+        } else if (!is_dir(base_path($this->originCachePath))) {
+            @mkdir(base_path($this->originCachePath), 0777, true);
         }
 
-        if (!(bool) file_put_contents($file . '.php', $content)) {
+        if (!(bool) @file_put_contents($file . '.php', $content)) {
             throw new Exception(sprintf('Can\'t save file [%s.kita.php]', $this->cachePath));
         }
     }
@@ -258,13 +284,13 @@ class Compiler
      */
     private function echoTag(string $content): string
     {
-        foreach (self::echoTag as $key => $value) {
+        foreach (self::echoTag as $first => $second) {
             $content = $this->pregReplaceCallback(
-                sprintf('/%s\s*(.+?)\s*%s/s', $key, $value),
-                function (string $matches) use ($key, $value): string {
+                sprintf('/%s\s*(.+?)\s*%s/s', $first, $second),
+                function (string $matches) use ($first, $second): string {
 
                     // Safe echo tag
-                    if ($key == '{{' && $value == '}}') {
+                    if ($first == '{{' && $second == '}}') {
                         $matches = sprintf('e(%s)', $matches);
                     }
 
@@ -362,7 +388,24 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@error\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php if ($pesan = error(%s)) : ?>', $matches);
+                return sprintf('<?php $pesan = error(%s); if ($pesan) : ?>', $matches);
+            },
+            $content
+        );
+    }
+
+    /**
+     * Tag untuk menampilkan flash.
+     *
+     * @param string $content
+     * @return string
+     */
+    private function flashOpenTag(string $content): string
+    {
+        return $this->pregReplaceCallback(
+            '/(?<!@)@flash\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            function (string $matches): string {
+                return sprintf('<?php $pesan = flash(%s); if ($pesan) : ?>', $matches);
             },
             $content
         );
@@ -413,7 +456,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@section\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php section(%s) ?>', $matches);
+                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->section(%s) ?>', $matches);
             },
             $content
         );
@@ -532,7 +575,24 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@enderror(?(?=\w|)(?!\w)|)/s',
             function (): string {
-                return '<?php endif ?>';
+                return '<?php unset($pesan); endif; ?>';
+            },
+            $content
+        );
+    }
+
+    /**
+     * Tag penutup dari flash.
+     *
+     * @param string $content
+     * @return string
+     */
+    private function flashCloseTag(string $content): string
+    {
+        return $this->pregReplaceCallback(
+            '/(?<!@)@endflash(?(?=\w|)(?!\w)|)/s',
+            function (): string {
+                return '<?php unset($pesan); endif; ?>';
             },
             $content
         );
@@ -583,7 +643,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@endsection(?(?=\w|)(?!\w)|)/s',
             function (): string {
-                return '<?php endsection() ?>';
+                return '<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->endsection() ?>';
             },
             $content
         );
@@ -651,7 +711,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@extend\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php parents(%s) ?>', $matches);
+                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->parents(%s); ?>', $matches);
             },
             $content
         );
@@ -668,7 +728,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@include\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php echo including(%s) ?>', $matches);
+                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->including(%s) ?>', $matches);
             },
             $content
         );
@@ -685,7 +745,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@content\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php echo content(%s) ?>', $matches);
+                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->content(%s) ?>', $matches);
             },
             $content
         );
@@ -734,8 +794,15 @@ class Compiler
     private function continueTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@continue(?(?=\w|)(?!\w)|)/s',
-            function (): string {
+            '/(?<!@)@continue(\s*\((\d+?)\))?(?(?=\w|)(?!\w)|)/s',
+            function (string $num): string {
+                $result = [];
+                preg_match('/(\d)/s', $num, $result);
+
+                if ($result) {
+                    return sprintf('<?php continue %s ?>', is_numeric($result[1]) ? $result[1] : 1);
+                }
+
                 return '<?php continue ?>';
             },
             $content
@@ -770,7 +837,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@csrf(?(?=\w|)(?!\w)|)/s',
             function (): string {
-                return '<?php echo csrf() ?>';
+                return '<?php echo \'<input type="hidden" name="\' . \Core\Http\Session::TOKEN . \'" value="\' . csrf_token() . \'">\' . PHP_EOL ?>';
             },
             $content
         );
@@ -787,7 +854,7 @@ class Compiler
         return $this->pregReplaceCallback(
             '/(?<!@)@method\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php echo method(%s) ?>', $matches);
+                return sprintf('<?php echo \'<input type="hidden" name="\' . \Core\Http\Request::METHOD . \'" value="\' . strtoupper(%s) . \'">\' . PHP_EOL ?>', $matches);
             },
             $content
         );

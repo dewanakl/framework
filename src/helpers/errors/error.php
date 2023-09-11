@@ -2,7 +2,8 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kamu - <?= e($pesan) ?></title>
     <style>
@@ -19,11 +20,11 @@
             align-items: center;
         }
 
-        .fof {
+        .information {
             text-align: center;
         }
 
-        .fof h1 {
+        .information h1 {
             font-size: 2.5rem;
             display: inline-block;
             padding-right: 1rem;
@@ -44,7 +45,7 @@
 
 <body>
     <div id="main">
-        <div class="fof">
+        <div class="information">
             <h1><?= e($pesan) ?></h1>
         </div>
     </div>
