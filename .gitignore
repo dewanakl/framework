@@ -1,6 +1,7 @@
 /.idea
 /.vscode
 /vendor
+/.phpunit.cache
 composer.phar
 composer.lock
 .DS_Store
