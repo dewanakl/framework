@@ -229,15 +229,30 @@ class Query
             }
 
             $relational = App::get()->invoke($model, $method);
+            $with = $relational->getWith();
 
             if ($status == static::Fetch) {
                 $data[$relational->getAlias($method)] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
+
+                if (isset($with)) {
+                    foreach ($with as $loop) {
+                        $data[$loop->getAlias($method)] = $loop->setLocalKey($data[$loop->getLocalKey()])->relational();
+                    }
+                }
+
                 continue;
             }
 
             if ($status == static::FetchAll) {
                 foreach ($data as $key => $value) {
                     $value->{$relational->getAlias($method)} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
+
+                    if (isset($with)) {
+                        foreach ($with as $loop) {
+                            $value->{$loop->getAlias($method)} = $loop->setLocalKey($value->{$loop->getLocalKey()})->relational();
+                        }
+                    }
+
                     $data[$key] = $value;
                 }
             }
@@ -268,7 +283,7 @@ class Query
 
         foreach ($grammar as $key => $value) {
             if (str_contains($type, $key)) {
-                return $value($data, explode(':', $type)[1] ?? null);
+                return $value($data, explode(':', $type, 2)[1] ?? null);
             }
         }
 
@@ -283,7 +298,19 @@ class Query
     public function dd(): void
     {
         $this->checkSelect();
-        dd($this->query, $this->param);
+        dd(
+            $this->query,
+            $this->param,
+            $this->casts,
+            $this->dateFormat,
+            $this->dates,
+            $this->fillable,
+            $this->primaryKey,
+            $this->queryLog,
+            $this->table,
+            $this->targetObject,
+            $this->typeKey,
+        );
     }
 
     /**

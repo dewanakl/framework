@@ -20,10 +20,27 @@ final class HasMany extends Relational
     {
         if (!is_null($this->callback)) {
             $callback = $this->callback;
-            return $callback($query)->get();
+            $result = $callback($query);
+        } else {
+            $result = $query;
         }
 
-        return $query->get();
+        if ($result instanceof Query) {
+            $result = $result->get();
+        }
+
+        $with = $this->getWith();
+        if (isset($with)) {
+            $result->map(function (object $data) use ($with): object {
+                foreach ($with as $value) {
+                    $data->{$value->getAlias()} = $value->setLocalKey($data->{$value->getLocalKey()})->relational();
+                }
+
+                return $data;
+            });
+        }
+
+        return $result;
     }
 
     /**

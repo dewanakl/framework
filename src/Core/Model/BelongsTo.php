@@ -20,10 +20,23 @@ final class BelongsTo extends Relational
     {
         if (!is_null($this->callback)) {
             $callback = $this->callback;
-            return $callback($query)->first();
+            $result = $callback($query);
+        } else {
+            $result = $query;
         }
 
-        return $query->first();
+        if ($result instanceof Query) {
+            $result = $result->first();
+        }
+
+        $with = $this->getWith();
+        if (isset($with)) {
+            foreach ($with as $loop) {
+                $result[$loop->getAlias()] = $loop->setLocalKey($result[$loop->getLocalKey()])->relational();
+            }
+        }
+
+        return $result;
     }
 
     /**

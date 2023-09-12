@@ -360,7 +360,7 @@ class Validator
     private function setError(string $param, string $key, mixed $attribute = null): void
     {
         if (empty($this->errors[$param])) {
-            $this->errors[$param] = translate()->trans($key, [
+            $this->errors[$param] = translate()->trans(static::NAME . '.' . $key, [
                 'field' => $param,
                 'attribute' => strval($attribute)
             ]);

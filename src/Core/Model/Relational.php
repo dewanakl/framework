@@ -55,6 +55,13 @@ abstract class Relational
     protected $recursive;
 
     /**
+     * Object ini dalam array.
+     *
+     * @var array<int, Relational> $with
+     */
+    private $with;
+
+    /**
      * Init object.
      *
      * @param string $model
@@ -174,6 +181,28 @@ abstract class Relational
                 return $val;
             }
         );
+    }
+
+    /**
+     * Set tambahan relational.
+     *
+     * @param Relational $with
+     * @return Relational
+     */
+    public function with(Relational $with): Relational
+    {
+        $this->with[] = $with;
+        return $this;
+    }
+
+    /**
+     * Dapatkan tambahannya.
+     *
+     * @return array<int, Relational>
+     */
+    public function getWith(): array
+    {
+        return $this->with ?? [];
     }
 
     /**

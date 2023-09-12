@@ -117,6 +117,10 @@ class Time extends DateTime implements Stringable, JsonSerializable
      */
     public function __toString(): string
     {
+        if ($this->format === 'diff') {
+            return $this->diffForHumans();
+        }
+
         return $this->format($this->format ? $this->format : 'Y-m-d H:i:s');
     }
 
