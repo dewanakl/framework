@@ -943,8 +943,8 @@ class Query
         }
 
         foreach ($this->casts as $attribute => $type) {
-            if (!empty($set[$attribute])) {
-                $set[$attribute] = $this->casts($type, $set[$attribute]);
+            if (!empty($data[$attribute])) {
+                $data[$attribute] = $this->casts($type, $data[$attribute]);
             }
         }
 
