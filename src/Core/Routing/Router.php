@@ -122,7 +122,7 @@ class Router
      */
     public function put(string $path, array|string|null $action = null, array|string|null $middleware = null): Router
     {
-        return $this->add(Request::POST, $path, $action, $middleware);
+        return $this->add(Request::PUT, $path, $action, $middleware);
     }
 
     /**

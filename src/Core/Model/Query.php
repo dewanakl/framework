@@ -829,10 +829,7 @@ class Query
         $this->bind($this->query, $this->param ?? []);
         $this->db->execute();
 
-        $isDates = false;
-        if (count($this->dates) > 0) {
-            $isDates = true;
-        }
+        $isDates = count($this->dates) > 0;
 
         $sets = array();
         do {
