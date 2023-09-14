@@ -2,9 +2,10 @@
 
 namespace Core\Support;
 
-use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
 use JsonSerializable;
+use Psr\Clock\ClockInterface;
 use ReturnTypeWillChange;
 use Stringable;
 use Throwable;
@@ -15,7 +16,7 @@ use Throwable;
  * @class Time
  * @package \Core\Support
  */
-class Time extends DateTime implements Stringable, JsonSerializable
+class Time extends DateTimeImmutable implements Stringable, JsonSerializable, ClockInterface
 {
     /**
      * Nama dari class ini untuk translate.
@@ -51,6 +52,16 @@ class Time extends DateTime implements Stringable, JsonSerializable
         } catch (Throwable) {
             return new Time($time, new DateTimeZone('UTC'));
         }
+    }
+
+    /**
+     * Dapatkan waktu sekarang.
+     *
+     * @return DateTimeImmutable
+     */
+    public function now(): DateTimeImmutable
+    {
+        return $this->factory();
     }
 
     /**
@@ -133,7 +144,7 @@ class Time extends DateTime implements Stringable, JsonSerializable
     public function diffForHumans(int $depth = 1): string
     {
         $translate = translate();
-        $interval = $this->diff(Time::factory());
+        $interval = $this->diff($this->now());
 
         $result = [];
         foreach (['y', 'm', 'd', 'h', 'i', 's'] as $short) {

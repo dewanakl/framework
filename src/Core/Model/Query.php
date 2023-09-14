@@ -299,17 +299,19 @@ class Query
     {
         $this->checkSelect();
         dd(
-            $this->query,
-            $this->param,
-            $this->casts,
-            $this->dateFormat,
-            $this->dates,
-            $this->fillable,
-            $this->primaryKey,
-            $this->queryLog,
-            $this->table,
-            $this->targetObject,
-            $this->typeKey,
+            [
+                'query' => $this->query,
+                'param' => $this->param,
+                'casts' => $this->casts,
+                'dateFormat' => $this->dateFormat,
+                'dates' => $this->dates,
+                'fillable' => $this->fillable,
+                'primaryKey' => $this->primaryKey,
+                'queryLog' => $this->queryLog,
+                'table' => $this->table,
+                'targetObject' => $this->targetObject,
+                'typeKey' => $this->typeKey,
+            ]
         );
     }
 
@@ -576,6 +578,7 @@ class Query
      */
     public function join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER'): Query
     {
+        $this->checkQuery();
         $this->query = $this->query . sprintf(' %s JOIN %s ON %s %s %s', $type, $table, $column, $param, $refers);
         return $this;
     }
@@ -631,6 +634,8 @@ class Query
      */
     public function orderBy(string $name, string $order = 'ASC'): Query
     {
+        $this->checkQuery();
+
         $agr = str_contains($this->query, 'ORDER BY') ? ', ' : ' ORDER BY ';
         $this->query = $this->query . $agr . $name . ' ' . ($order === 'ASC' || $order === 'asc' ? 'ASC' : 'DESC');
 
@@ -673,6 +678,7 @@ class Query
      */
     public function limit(int $param): Query
     {
+        $this->checkSelect();
         $this->query = $this->query . ' LIMIT ' . strval(intval($param));
         return $this;
     }
@@ -714,55 +720,60 @@ class Query
      * Count sql aggregate.
      *
      * @param string $name
+     * @param string|null $as
      * @return Query
      */
-    public function count(string $name = '*'): Query
+    public function count(string $name = '*', string|null $as = null): Query
     {
-        return $this->select('COUNT(' . $name . ')' . ($name == '*' ? '' : ' AS ' . $name));
+        return $this->select('COUNT(' . $name . ')' . ($name == '*' ? '' : ' AS ' . ($as ? $as : $name)));
     }
 
     /**
      * Max sql aggregate.
      *
      * @param string $name
+     * @param string|null $as
      * @return Query
      */
-    public function max(string $name): Query
+    public function max(string $name, string|null $as = null): Query
     {
-        return $this->select('MAX(' . $name . ') AS ' . $name);
+        return $this->select('MAX(' . $name . ') AS ' . ($as ? $as : $name));
     }
 
     /**
      * Min sql aggregate.
      *
      * @param string $name
+     * @param string|null $as
      * @return Query
      */
-    public function min(string $name): Query
+    public function min(string $name, string|null $as = null): Query
     {
-        return $this->select('MIN(' . $name . ') AS ' . $name);
+        return $this->select('MIN(' . $name . ') AS ' . ($as ? $as : $name));
     }
 
     /**
      * Avg sql aggregate.
      *
      * @param string $name
+     * @param string|null $as
      * @return Query
      */
-    public function avg(string $name): Query
+    public function avg(string $name, string|null $as = null): Query
     {
-        return $this->select('AVG(' . $name . ') AS ' . $name);
+        return $this->select('AVG(' . $name . ') AS ' . ($as ? $as : $name));
     }
 
     /**
      * Sum sql aggregate.
      *
      * @param string $name
+     * @param string|null $as
      * @return Query
      */
-    public function sum(string $name): Query
+    public function sum(string $name, string|null $as = null): Query
     {
-        return $this->select('SUM(' . $name . ') AS ' . $name);
+        return $this->select('SUM(' . $name . ') AS ' . ($as ? $as : $name));
     }
 
     /**
