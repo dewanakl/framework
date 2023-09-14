@@ -74,7 +74,9 @@ class Router
         $path = preg_replace('/{(\w+)}/', '([\w-]*)', $path);
         $middleware = is_null($middleware) ? [] : (is_string($middleware) ? array($middleware) : $middleware);
 
+        $idroute = count($this->routes);
         $this->routes[] = [
+            'id' => $idroute == 0 ? 0 : $this->routes[$idroute - 1]['id'] + 1,
             'method' => $method,
             'path' => $path,
             'controller' => $controller,
@@ -257,7 +259,7 @@ class Router
         $group();
 
         foreach ($this->routes as $id => $route) {
-            if (!in_array($route, $tempRoutes)) {
+            if (!in_array($route, $tempRoutes, true)) {
 
                 if (!is_null($tempController)) {
                     $old = $this->routes[$id]['controller'];

@@ -51,6 +51,17 @@ class Header
     }
 
     /**
+     * Check apakah ada?.
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function has(string $key): bool
+    {
+        return $this->__isset($key);
+    }
+
+    /**
      * Set data.
      *
      * @param string $key

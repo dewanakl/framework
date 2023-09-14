@@ -253,6 +253,7 @@ class Service
                 if ($route['method'] == $method) {
                     $methodMatch = true;
                     $result = $this->process($route, $variables);
+                    break;
                 }
             }
         }

@@ -3,10 +3,13 @@
 namespace Core\Facades;
 
 use Closure;
-use Exception;
+use Core\Facades\Exception\NotFoundException;
+use Core\Facades\Exception\ContainerException;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
+use Throwable;
 
 /**
  * Aplikasi untuk menampung kumpulan objek yang bisa digunakan kembali serta
@@ -15,7 +18,7 @@ use ReflectionFunction;
  * @class Application
  * @package \Core\Facades
  */
-class Application
+class Application implements ContainerInterface
 {
     /**
      * Kumpulan objek ada disini.
@@ -43,7 +46,7 @@ class Application
      * @param array<int, mixed> $default
      * @return object
      *
-     * @throws Exception
+     * @throws ContainerException
      */
     private function build(string $name, array $default = []): object
     {
@@ -53,7 +56,7 @@ class Application
                 $default
             ));
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new ContainerException($e->getMessage());
         }
     }
 
@@ -125,7 +128,7 @@ class Application
      * @param array<int, mixed> $default
      * @return mixed
      *
-     * @throws Exception
+     * @throws ContainerException
      */
     public function invoke(string|object $name, string $method, array $default = []): mixed
     {
@@ -139,7 +142,7 @@ class Application
                 $default
             ));
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new ContainerException($e->getMessage());
         }
     }
 
@@ -156,12 +159,25 @@ class Application
     }
 
     /**
-     * Check if object exist.
-     *
-     * @param string $abstract
-     * @return bool
+     * @inheritDoc
      */
-    public function isset(string $abstract): bool
+    public function get(string $id): mixed
+    {
+        if (!$this->has($id)) {
+            throw new NotFoundException;
+        }
+
+        try {
+            return $this->objectPool[$id];
+        } catch (Throwable $th) {
+            throw new ContainerException($th->getMessage());
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function has(string $abstract): bool
     {
         return !empty($this->objectPool[$abstract]);
     }
@@ -173,7 +189,7 @@ class Application
      * @param array<int, mixed> $default
      * @return mixed
      *
-     * @throws Exception
+     * @throws ContainerException
      */
     public function resolve(Closure $name, array $default = []): mixed
     {
@@ -183,7 +199,7 @@ class Application
                 $default
             ));
         } catch (ReflectionException $e) {
-            throw new Exception($e->getMessage());
+            throw new ContainerException($e->getMessage());
         }
     }
 
@@ -194,7 +210,7 @@ class Application
      * @param Closure|string $bind
      * @return void
      *
-     * @throws Exception
+     * @throws ContainerException
      */
     public function bind(string $abstract, Closure|string $bind): void
     {
@@ -202,7 +218,7 @@ class Application
             $result = $this->resolve($bind, [$this]);
 
             if (!is_object($result)) {
-                throw new Exception('Return value must be object!, returned:' . gettype($result));
+                throw new ContainerException('Return value must be object!, returned:' . gettype($result));
             }
 
             $bind = $result;
