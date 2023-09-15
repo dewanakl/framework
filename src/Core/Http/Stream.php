@@ -19,7 +19,7 @@ class Stream
     /**
      * Open file.
      *
-     * @var resource|false $file
+     * @var resource|false|null $file
      */
     private $file;
 
@@ -215,6 +215,7 @@ class Stream
         $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
         $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
 
+        // @phpstan-ignore-next-line
         if ($start < 0 || $start > $end) {
             $this->respond->setCode(416);
             $this->respond->getHeader()->set('Content-Range', 'bytes */' . strval($this->size));

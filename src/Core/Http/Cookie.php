@@ -81,7 +81,7 @@ class Cookie
         $header = sprintf('%s=%s', $name, $value);
 
         $expires = $minutes * 60;
-        $header .= '; Expires=' . gmdate(DateTimeInterface::COOKIE, $expires + time());
+        $header .= '; Expires=' . gmdate(DateTimeInterface::RFC7231, $expires + time());
         $header .= '; Max-Age=' . strval($expires);
         $header .= '; Path=' . ($path ? $path : '/');
         $header .= '; Domain=' . ($domain ? $domain : parse_url(base_url(), PHP_URL_HOST));

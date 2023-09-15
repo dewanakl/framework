@@ -19,14 +19,14 @@ class DataBase
     /**
      * Object PDO.
      *
-     * @var object $pdo
+     * @var object|null $pdo
      */
     private $pdo;
 
     /**
      * Statement dari query.
      *
-     * @var object $stmt
+     * @var object|null $stmt
      */
     private $stmt;
 

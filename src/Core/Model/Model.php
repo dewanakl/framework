@@ -61,7 +61,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Nama dari primaryKey.
      *
-     * @var string $primaryKey
+     * @var string|null $primaryKey
      */
     protected $primaryKey = 'id';
 
@@ -92,7 +92,7 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Attributes hasil query.
      *
-     * @var array<string, mixed|array<int, mixed>> $attributes
+     * @var array<string, mixed|array<int, mixed>>|null $attributes
      */
     protected $attributes = [];
 

@@ -24,6 +24,7 @@
         "ext-openssl": "*"
     },
     "require-dev": {
+        "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^10"
     },
     "autoload": {

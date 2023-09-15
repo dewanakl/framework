@@ -92,9 +92,9 @@ class Session
         if (env('COOKIE', 'true') == 'true') {
             $rawCookie = $cookie->get($this->name);
             if ($rawCookie) {
-                $data = @unserialize(Hash::decrypt(rawurldecode($rawCookie)));
+                $data = Hash::decrypt(rawurldecode($rawCookie));
                 if ($data) {
-                    $this->data = new Header($data);
+                    $this->data = new Header((array) @unserialize($data));
                 }
             }
 

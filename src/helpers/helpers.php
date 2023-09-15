@@ -124,9 +124,9 @@ if (!function_exists('json')) {
      *
      * @param mixed $data
      * @param int $code
-     * @return string|bool
+     * @return string
      */
-    function json(mixed $data, int $code = 200): string|bool
+    function json(mixed $data, int $code = 200): string
     {
         respond()->setCode($code);
         respond()->getHeader()->set('Content-Type', 'application/json');

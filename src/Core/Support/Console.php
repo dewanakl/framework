@@ -219,7 +219,7 @@ class Console
     {
         $arg = require base_path('/database/generator/generator.php');
         if (!($arg instanceof Generator)) {
-            $this->exception('File ' . $file . ' bukan generator !');
+            $this->exception('File bukan generator !');
         }
 
         $arg->run();
@@ -582,6 +582,7 @@ class Console
     {
         $files = [];
 
+        // @phpstan-ignore-next-line
         while (true) {
             sleep(intval(explode('=', $this->options ?? '')[1] ?? 3));
 

@@ -30,7 +30,7 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
      *
      * @var float $benchmarkTime
      */
-    private static $benchmarkTIme;
+    public static $benchmarkTIme;
 
     /**
      * Format time.

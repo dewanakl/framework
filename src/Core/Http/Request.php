@@ -170,8 +170,9 @@ class Request
     public function throw(array|Validator $error): void
     {
         $validator = null;
+
         if ($error instanceof Validator) {
-            if (App::get()->isset(Validator::class)) {
+            if (App::get()->has(Validator::class)) {
                 throw new Exception('Terdapat 2 object validator !');
             }
 

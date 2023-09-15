@@ -24,21 +24,21 @@ abstract class HttpException extends ErrorException implements Stringable
     /**
      * Path view file.
      *
-     * @var string $path
+     * @var string|null $path
      */
     protected static $path;
 
     /**
      * Http message.
      *
-     * @var string $pesan
+     * @var string|null $pesan
      */
     protected static $pesan;
 
     /**
      * Json respond.
      *
-     * @var array<int|string, mixed>|string $json
+     * @var array<int|string, mixed>|string|null $json
      */
     protected static $json;
 

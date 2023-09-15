@@ -43,9 +43,9 @@ class Error
      * Ubah ke JSON.
      *
      * @param Throwable $th
-     * @return string|false
+     * @return string
      */
-    private function transformToJson(Throwable $th): string|false
+    private function transformToJson(Throwable $th): string
     {
         return json_encode([
             'message' => $th->getMessage(),

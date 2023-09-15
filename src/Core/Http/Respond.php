@@ -2,6 +2,7 @@
 
 namespace Core\Http;
 
+use DateTimeInterface;
 use Exception;
 use JsonSerializable;
 use Stringable;
@@ -45,7 +46,7 @@ class Respond
     /**
      * Parameter query string.
      *
-     * @var array<int, string> $parameter
+     * @var array<string, string> $parameter
      */
     private $parameter;
 
@@ -59,7 +60,7 @@ class Respond
     /**
      * Http message.
      *
-     * @var string $message
+     * @var string|null $message
      */
     private $message;
 
@@ -77,9 +78,11 @@ class Respond
         $this->code = $code;
         $this->header = new Header($header);
         $this->header->set('Content-Type', 'text/html; charset=utf-8');
+        $this->header->set('Date', gmdate(DateTimeInterface::RFC7231));
         $this->content = $content;
         $this->version = $version;
         $this->message = $this->codeHttpMessage($code);
+        $this->parameter = [];
     }
 
     /**
@@ -363,11 +366,13 @@ class Respond
     public function clean(): void
     {
         @clear_ob();
-        $this->content = null;
-        $this->header = new Header();
         $this->code = 200;
+        $this->header = new Header();
         $this->header->set('Content-Type', 'text/html; charset=utf-8');
+        $this->header->set('Date', gmdate(DateTimeInterface::RFC7231));
+        $this->content = null;
         $this->message = $this->codeHttpMessage($this->code);
+        $this->parameter = [];
     }
 
     /**
@@ -376,9 +381,9 @@ class Respond
      * @param array|object|null $data
      * @param array|object|null $error
      * @param int $code
-     * @return string|false
+     * @return string
      */
-    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = 200): string|false
+    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = 200): string
     {
         return json([
             'code' => $code,
@@ -397,7 +402,9 @@ class Respond
         session()->send();
 
         http_response_code($this->code);
-        header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
+        if ($this->version && $this->code && $this->message) {
+            header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
+        }
 
         foreach ($this->header->all() as $key => $value) {
             if (!$value) {
@@ -452,7 +459,14 @@ class Respond
             $respond->terminate();
         }
 
-        echo $content;
+        if ($content) {
+            echo $content;
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+
         flush();
     }
 }
