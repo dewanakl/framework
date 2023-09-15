@@ -278,12 +278,15 @@ class Query
             'int' => fn (mixed $data, string|null $arg): int => intval($data),
             'float' => fn (mixed $data, string|null $arg): float => floatval($data),
             'bool' => fn (mixed $data, string|null $arg): bool => boolval($data),
-            'datetime' => fn (Time $data, string|null $arg): Time => $data->setFormat($arg)
+            'datetime' => fn (Time $data, string|null $arg): Time => $data->setFormat(empty($arg) ? null : $arg)
         ];
 
         foreach ($grammar as $key => $value) {
             if (str_contains($type, $key)) {
-                return $value($data, explode(':', $type, 2)[1] ?? null);
+                return $value(
+                    $data,
+                    $key == 'datetime' ? substr($type, strlen($key) + 1) : null
+                );
             }
         }
 
