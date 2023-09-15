@@ -25,7 +25,7 @@ class Query
     /**
      * Nilai yang akan dimasukan.
      *
-     * @var array $param
+     * @var array|null $param
      */
     private $param;
 
@@ -88,7 +88,7 @@ class Query
     /**
      * Log query.
      *
-     * @var array $queryLog
+     * @var array|null $queryLog
      */
     private $queryLog;
 
@@ -318,7 +318,7 @@ class Query
     /**
      * Set fillable.
      *
-     * @param string|null $dateFormat
+     * @param array $fillable
      * @return Query
      */
     public function setFillable(array $fillable): Query
@@ -403,7 +403,7 @@ class Query
      * @param string|null $typeKey
      * @return Query
      */
-    public function setTypeKey(string $typeKey): Query
+    public function setTypeKey(string|null $typeKey): Query
     {
         $this->typeKey = $typeKey;
         return $this;
@@ -941,7 +941,7 @@ class Query
         $this->db->execute();
 
         if ($this->primaryKey && $this->typeKey) {
-            $id = $this->db->lastInsertId($this->primaryKey);
+            $id = $this->db->lastInsertId(sprintf('%s_%s_seq', $this->table, $this->primaryKey));
             if ($id) {
                 $data[$this->primaryKey] = $this->casts($this->typeKey, $id);
             }
