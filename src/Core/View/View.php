@@ -25,7 +25,7 @@ class View implements Stringable
     /**
      * Variabel yang di inject.
      *
-     * @var array $variables
+     * @var array|null $variables
      */
     private $variables;
 
@@ -192,9 +192,13 @@ class View implements Stringable
      */
     public function content(string $name): string|null
     {
-        $content = @$this->section[$name] ?? null;
-        $this->section[$name] = null;
-        unset($this->section[$name]);
+        $content = null;
+
+        if (isset($this->section[$name])) {
+            $content = $this->section[$name];
+            $this->section[$name] = null;
+            unset($this->section[$name]);
+        }
 
         return $content;
     }

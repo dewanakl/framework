@@ -15,7 +15,7 @@ class Render implements Stringable
     /**
      * Path file html.
      *
-     * @var string $path
+     * @var string|null $path
      */
     private $path;
 
