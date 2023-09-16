@@ -2,7 +2,8 @@
 
 namespace Core\Http\Exception;
 
-use Core\View\Compiler;
+use Core\Facades\App;
+use Core\View\View;
 use ErrorException;
 use Stringable;
 
@@ -95,10 +96,14 @@ abstract class HttpException extends ErrorException implements Stringable
             return strval(is_string(static::$json) ? respond()->formatJson(null, [static::$json], $this->code) : json(static::$json, $this->code));
         }
 
-        $path = isset(static::$path)
-            ? (new Compiler)->compile(static::$path)->getPathFileCache()
-            : helper_path('/errors/error');
+        if (isset(static::$path)) {
+            $view = App::get()->singleton(View::class);
+            $view->variables(isset(static::$pesan) ? ['pesan' =>  static::$pesan] : []);
+            $view->show(static::$path);
 
-        return render($path, isset(static::$pesan) ? ['pesan' =>  static::$pesan] : [])->__toString();
+            return $view->__toString();
+        }
+
+        return render(helper_path('/errors/error'), isset(static::$pesan) ? ['pesan' =>  static::$pesan] : [])->__toString();
     }
 }
