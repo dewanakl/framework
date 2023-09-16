@@ -5,7 +5,7 @@ namespace Core\Valid\Exception;
 use Core\Http\Request;
 use Core\Http\Session;
 use Core\Valid\Validator;
-use ErrorException;
+use Exception;
 
 /**
  * Validator exception class.
@@ -13,7 +13,7 @@ use ErrorException;
  * @class ValidationException
  * @package \Core\Valid\Exception
  */
-class ValidationException extends ErrorException
+class ValidationException extends Exception
 {
     /**
      * Init object.
@@ -27,6 +27,5 @@ class ValidationException extends ErrorException
         session()->set(Session::OLD, $request->all());
         session()->set(Session::ERROR, $validator->failed());
         respond()->redirect(session()->get(Session::ROUTE, '/'));
-        parent::__construct();
     }
 }

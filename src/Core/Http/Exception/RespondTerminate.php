@@ -7,10 +7,10 @@ use ErrorException;
 /**
  * Terminate exception class.
  *
- * @class RespondTerminate
+ * @class StreamTerminate
  * @package \Core\Http\Exception
  */
-class RespondTerminate extends ErrorException
+class StreamTerminate extends ErrorException
 {
     //
 }

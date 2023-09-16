@@ -156,7 +156,7 @@ class Respond
     {
         session()->unset(Session::TOKEN);
 
-        $uri = str_contains($uri, base_url()) ? $uri : base_url() . $uri;
+        $uri = str_contains($uri, base_url()) ? $uri : base_url($uri);
 
         if (!empty($this->parameter)) {
             $uri = $uri . '?' . http_build_query($this->parameter);
@@ -408,15 +408,15 @@ class Respond
 
         foreach ($this->header->all() as $key => $value) {
             if (!$value) {
-                header($key);
+                header($key, true, $this->code);
                 continue;
             }
 
-            header($key . ': ' . $value);
+            header($key . ': ' . strval($value), true, $this->code);
         }
 
         foreach (cookie()->send() as $value) {
-            header('Set-Cookie: ' . $value, false, $this->code);
+            header('Set-Cookie: ' . strval($value), false, $this->code);
         }
     }
 
@@ -445,9 +445,7 @@ class Respond
         if ($respond instanceof Respond) {
             if ($this->redirect !== null) {
                 $this->redirect($this->redirect);
-            }
-
-            if ($respond->getContent() !== null) {
+            } else if ($respond->getContent() !== null) {
                 $content = $respond->getContent();
             }
         }
@@ -464,9 +462,9 @@ class Respond
         }
 
         while (ob_get_level() > 0) {
-            ob_end_flush();
+            @ob_end_flush();
         }
 
-        flush();
+        @flush();
     }
 }

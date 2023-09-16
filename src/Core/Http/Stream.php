@@ -4,8 +4,9 @@ namespace Core\Http;
 
 use Closure;
 use Core\Http\Exception\NotFoundException;
-use Core\Http\Exception\RespondTerminate;
+use Core\Http\Exception\StreamTerminate;
 use Core\Valid\Hash;
+use DateTimeInterface;
 
 /**
  * Stream sebuah file.
@@ -110,10 +111,10 @@ class Stream
         $hashFile = $etag ? @md5_file($this->path) : Hash::rand(5);
         $type = $this->ftype($this->path);
 
-        if ($type != 'application/octet-stream' && $etag) {
+        if ($type != $this->ftype() && $etag) {
             if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
                 $this->respond->setCode(304);
-                throw new RespondTerminate;
+                throw new StreamTerminate;
             }
 
             $this->respond->getHeader()->set('Etag', $hashFile);
@@ -165,9 +166,9 @@ class Stream
         $length = 0;
         $tmpRanges = [];
 
-        foreach ($ranges as $id => $range) {
+        foreach ($ranges as $range) {
             list($start, $end) = $this->getRange($range);
-            $tmpRanges[$id] = [$start, $end];
+            $tmpRanges[] = [$start, $end];
             $length += strlen("\r\n--" . $this->boundary . "\r\n");
             $length += strlen('Content-Type: ' . $this->type . "\r\n");
             $length += strlen(sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size));
@@ -180,9 +181,9 @@ class Stream
         $this->respond->getHeader()->set('Content-Type', 'multipart/byteranges; boundary=' . $this->boundary);
         $this->respond->getHeader()->set('Content-Length', strval($length));
 
-        return function () use ($ranges, $tmpRanges): void {
-            foreach ($ranges as $id => $range) {
-                list($start, $end) = $tmpRanges[$id];
+        return function () use ($tmpRanges): void {
+            foreach ($tmpRanges as $range) {
+                list($start, $end) = $range;
 
                 echo "\r\n--" . $this->boundary . "\r\n";
                 echo 'Content-Type: ' . $this->type . "\r\n";
@@ -193,7 +194,6 @@ class Stream
             }
 
             echo "\r\n--" . $this->boundary . "--\r\n";
-            flush();
         };
     }
 
@@ -203,7 +203,7 @@ class Stream
      * @param string $range
      * @return array
      *
-     * @throws RespondTerminate
+     * @throws StreamTerminate
      */
     private function getRange(string $range): array
     {
@@ -219,7 +219,7 @@ class Stream
         if ($start < 0 || $start > $end) {
             $this->respond->setCode(416);
             $this->respond->getHeader()->set('Content-Range', 'bytes */' . strval($this->size));
-            throw new RespondTerminate;
+            throw new StreamTerminate;
         }
 
         return [$start, $end];
@@ -234,19 +234,7 @@ class Stream
     {
         $this->respond->getHeader()->set('Content-Length', strval($this->size));
         return function (): void {
-            while (!@feof($this->file)) {
-                if (@connection_aborted()) {
-                    break;
-                }
-
-                $read = @fgets($this->file);
-                if ($read === false) {
-                    break;
-                }
-
-                echo $read;
-                @flush();
-            }
+            $this->readBuffer($this->size);
         };
     }
 
@@ -341,13 +329,14 @@ class Stream
 
         $this->respond->getHeader()->set('Accept-Ranges', 'bytes');
         $this->respond->getHeader()->set('Content-Type',  $this->type);
-        $this->respond->getHeader()->set('Last-Modified', @gmdate('D, d M Y H:i:s', @filemtime($this->path)) . ' GMT');
+        $this->respond->getHeader()->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)));
 
-        if ($this->type == 'application/octet-stream') {
-            $this->respond->getHeader()->set('Content-Disposition', sprintf('attachment; filename="%s"', $this->name));
-        } else {
-            $this->respond->getHeader()->set('Content-Disposition', 'inline');
-        }
+        $this->respond->getHeader()->set(
+            'Content-Disposition',
+            $this->type == $this->ftype()
+                ? sprintf('attachment; filename="%s"', $this->name)
+                : 'inline'
+        );
 
         if ($t > 0) {
             if ($t === 1) {
@@ -381,9 +370,10 @@ class Stream
     {
         if (is_resource($this->file)) {
             @fclose($this->file);
-            $this->file = null;
-            $this->callback = null;
         }
+
+        $this->file = null;
+        $this->callback = null;
     }
 
     /**

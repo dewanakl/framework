@@ -6,7 +6,7 @@ use Closure;
 use Core\Http\Exception\HttpException;
 use Core\Http\Exception\NotAllowedException;
 use Core\Http\Exception\NotFoundException;
-use Core\Http\Exception\RespondTerminate;
+use Core\Http\Exception\StreamTerminate;
 use Core\Http\Cookie;
 use Core\Http\Request;
 use Core\Http\Respond;
@@ -333,7 +333,7 @@ class Service
             $result = $this->runRoute($this->getValidUrl(), $this->getValidMethod());
         } catch (Throwable $th) {
             // Force respond exit.
-            if ($th instanceof RespondTerminate || $th instanceof ValidationException) {
+            if ($th instanceof StreamTerminate || $th instanceof ValidationException) {
                 $this->respond->prepare();
                 return 0;
             }

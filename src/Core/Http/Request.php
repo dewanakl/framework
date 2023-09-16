@@ -55,10 +55,13 @@ class Request
         $this->server = new Header($_SERVER);
 
         if ($this->ajax()) {
-            $_REQUEST = [
-                ...$_REQUEST,
-                ...@json_decode(strval(file_get_contents('php://input')), true, 1024) ?? []
-            ];
+            $raw = @file_get_contents('php://input');
+            if ($raw) {
+                $json = @json_decode($raw, true, 1024) ?? [];
+                if ($json) {
+                    $_REQUEST = [...$_REQUEST, ...$json];
+                }
+            }
         }
 
         $this->request = new Header($_REQUEST);
@@ -162,7 +165,7 @@ class Request
     /**
      * Tampilkan error secara manual.
      *
-     * @param array|Validator $error
+     * @param array<string, string>|Validator $error
      * @return void
      *
      * @throws Exception
@@ -199,7 +202,11 @@ class Request
 
         $data = [];
         foreach ($key as $value) {
-            $data[$value] = ($this->__isset($value)) ? $this->__get($value) : $this->file->__get($value);
+            if ($this->request->has($value)) {
+                $data[$value] = $this->request->get($value);
+            } elseif ($this->file->has($value)) {
+                $data[$value] = $this->file->get($value);
+            }
         }
 
         $validator = App::get()->make(Validator::class, [$data, $params]);
