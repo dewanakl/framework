@@ -14,6 +14,41 @@ use Core\Facades\App;
 final class Schema
 {
     /**
+     * Dump to sql file.
+     *
+     * @var bool $dump
+     */
+    public static $dump = false;
+
+    /**
+     * Data dari dump.
+     *
+     * @var array|null $dumpSql
+     */
+    public static $dumpSql;
+
+    /**
+     * Indicate is dump file.
+     *
+     * @param bool $dump
+     * @return void
+     */
+    public static function setDump(bool $dump): void
+    {
+        static::$dump = $dump;
+    }
+
+    /**
+     * Get dump file sql.
+     *
+     * @return array
+     */
+    public static function getDump(): array
+    {
+        return static::$dumpSql ?? [];
+    }
+
+    /**
      * Bikin tabel baru.
      *
      * @param string $name
@@ -24,7 +59,12 @@ final class Schema
     {
         $table = App::get()->singleton(Table::class)->table($name);
         App::get()->resolve($attribute);
-        App::get()->singleton(DataBase::class)->exec($table->create());
+
+        if (static::$dump) {
+            static::$dumpSql[] = $table->create();
+        } else {
+            App::get()->singleton(DataBase::class)->exec($table->create());
+        }
     }
 
     /**
@@ -41,7 +81,11 @@ final class Schema
 
         $export = $table->export();
         if ($export) {
-            App::get()->singleton(DataBase::class)->exec($export);
+            if (static::$dump) {
+                static::$dumpSql[] = $export;
+            } else {
+                App::get()->singleton(DataBase::class)->exec($export);
+            }
         }
     }
 
@@ -53,7 +97,11 @@ final class Schema
      */
     public static function drop(string $name): void
     {
-        App::get()->singleton(DataBase::class)->exec(sprintf('DROP TABLE IF EXISTS %s;', $name));
+        if (static::$dump) {
+            static::$dumpSql[] = sprintf('DROP TABLE IF EXISTS %s;', $name);
+        } else {
+            App::get()->singleton(DataBase::class)->exec(sprintf('DROP TABLE IF EXISTS %s;', $name));
+        }
     }
 
     /**
@@ -65,6 +113,10 @@ final class Schema
      */
     public static function rename(string $from, string $to): void
     {
-        App::get()->singleton(DataBase::class)->exec(sprintf('ALTER TABLE %s RENAME TO %s;', $from, $to));
+        if (static::$dump) {
+            static::$dumpSql[] = sprintf('ALTER TABLE %s RENAME TO %s;', $from, $to);
+        } else {
+            App::get()->singleton(DataBase::class)->exec(sprintf('ALTER TABLE %s RENAME TO %s;', $from, $to));
+        }
     }
 }

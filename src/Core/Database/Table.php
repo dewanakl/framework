@@ -7,7 +7,7 @@ use Core\Facades\App;
 
 /**
  * Membuat tabel dengan mudah.
- * 
+ *
  * @class Table
  * @package \Core\Database
  */
@@ -15,35 +15,35 @@ class Table
 {
     /**
      * Param query.
-     * 
+     *
      * @var array $query
      */
     private $query;
 
     /**
      * Tipe dbms.
-     * 
+     *
      * @var string $type
      */
     private $type;
 
     /**
      * Nama tabelnya.
-     * 
+     *
      * @var string $table
      */
     private $table;
 
     /**
      * Alter tabelnya.
-     * 
+     *
      * @var string|null $alter
      */
     private $alter;
 
     /**
      * Colums di tabel ini.
-     * 
+     *
      * @var array $columns
      */
     private $columns;
@@ -75,7 +75,7 @@ class Table
 
     /**
      * Create table sql.
-     * 
+     *
      * @return string
      */
     public function create(): string
@@ -89,12 +89,12 @@ class Table
 
     /**
      * Export hasilnya ke string sql.
-     * 
+     *
      * @return string|null
      */
     public function export(): string|null
     {
-        if ($this->alter == 'ADD') {
+        if ($this->alter == 'ADD' && !Schema::$dump) {
             $db = App::get()->singleton(DataBase::class);
 
             foreach ($this->columns as $value) {
@@ -137,7 +137,7 @@ class Table
 
     /**
      * Get index paling akhir.
-     * 
+     *
      * @return int
      */
     private function getLastArray(): int
@@ -147,7 +147,7 @@ class Table
 
     /**
      * Id, unique, primary key.
-     * 
+     *
      * @param string $name
      * @return void
      */
@@ -163,7 +163,7 @@ class Table
 
     /**
      * Tipe string atau varchar.
-     * 
+     *
      * @param string $name
      * @param int $len
      * @return Table
@@ -177,7 +177,7 @@ class Table
 
     /**
      * Tipe integer.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -190,7 +190,7 @@ class Table
 
     /**
      * Tipe text.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -203,7 +203,7 @@ class Table
 
     /**
      * Tipe boolean.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -216,7 +216,7 @@ class Table
 
     /**
      * Tipe timestamp / datetime.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -233,7 +233,7 @@ class Table
 
     /**
      * created_at and updated_at.
-     * 
+     *
      * @return void
      */
     public function timeStamp(): void
@@ -251,7 +251,7 @@ class Table
 
     /**
      * Boleh kosong.
-     * 
+     *
      * @return Table
      */
     public function nullable(): Table
@@ -262,7 +262,7 @@ class Table
 
     /**
      * Default value pada dbms.
-     * 
+     *
      * @param string|int|bool $name
      * @return void
      */
@@ -274,7 +274,7 @@ class Table
 
     /**
      * Harus berbeda.
-     * 
+     *
      * @return void
      */
     public function unique(): void
@@ -284,7 +284,7 @@ class Table
 
     /**
      * Bikin relasi antara nama attribute.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -296,7 +296,7 @@ class Table
 
     /**
      * Dengan nama attribute tabel targetnya.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -308,7 +308,7 @@ class Table
 
     /**
      * Nama tabel targetnya.
-     * 
+     *
      * @param string $name
      * @return Table
      */
@@ -320,7 +320,7 @@ class Table
 
     /**
      * Hapus nilai pada foreign key juga jika menghapus.
-     * 
+     *
      * @return void
      */
     public function cascadeOnDelete(): void
@@ -330,7 +330,7 @@ class Table
 
     /**
      * Tambahkan kolom baru.
-     * 
+     *
      * @param Closure $fn
      * @return void
      */
@@ -342,7 +342,7 @@ class Table
 
     /**
      * Hapus kolom.
-     * 
+     *
      * @param string $name
      * @return void
      */
@@ -354,7 +354,7 @@ class Table
 
     /**
      * Rename kolom.
-     * 
+     *
      * @param string $from
      * @param string $to
      * @return void
@@ -368,7 +368,7 @@ class Table
 
     /**
      * Edit kolomnya.
-     * 
+     *
      * @param Closure $fn
      * @return void
      */

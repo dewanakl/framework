@@ -4,6 +4,7 @@ namespace Core\Support;
 
 use Core\Database\Generator;
 use Core\Database\Migration;
+use Core\Database\Schema;
 use Core\Queue\Routine;
 use Core\Routing\Route;
 use Core\Valid\Hash;
@@ -631,6 +632,35 @@ class Console
     }
 
     /**
+     * Jadikan file .sql
+     *
+     * @return void
+     */
+    private function dump()
+    {
+        $baseFile = base_path('/database/schema/');
+
+        $files = scandir($baseFile, 0);
+        $files = array_diff($files, array('..', '.'));
+
+        Schema::setDump(true);
+
+        foreach ($files as $file) {
+            $arg = require $baseFile . $file;
+            if (!($arg instanceof Migration)) {
+                $this->exception('File ' . $file . ' bukan migrasi !');
+            }
+
+            $arg->up();
+
+            print("\n" . $file . $this->createColor('cyan', ' Dump '));
+        }
+
+        file_put_contents(base_path('/database/database.sql'), implode("\n", Schema::getDump()));
+        print("\n" . $this->createColor('green', 'DONE ') . $this->executeTime());
+    }
+
+    /**
      * Jalankan console.
      *
      * @return int
@@ -677,6 +707,9 @@ class Console
                 if ($this->options == '--gen') {
                     $this->generator();
                 }
+                break;
+            case 'migrasi:dump':
+                $this->dump();
                 break;
             case 'bikin:migrasi':
                 $this->createMigrasi($this->options);
