@@ -23,7 +23,7 @@ class Application implements ContainerInterface
     /**
      * Kumpulan objek ada disini.
      *
-     * @var array<int, object|string> $objectPool
+     * @var array<string, object|string> $objectPool
      */
     private $objectPool;
 
@@ -73,6 +73,7 @@ class Application implements ContainerInterface
         $id = 0;
 
         foreach ($parameters as $parameter) {
+            /** @var \ReflectionNamedType|null */
             $type = $parameter->getType();
 
             if ($type && !$type->isBuiltin()) {
@@ -168,7 +169,7 @@ class Application implements ContainerInterface
         }
 
         try {
-            return $this->objectPool[$id];
+            return $this->singleton($id);
         } catch (Throwable $th) {
             throw new ContainerException($th->getMessage());
         }
@@ -185,7 +186,7 @@ class Application implements ContainerInterface
     /**
      * Inject objek pada suatu closure fungsi.
      *
-     * @param Closure:mixed $name
+     * @param Closure $name
      * @param array<int, mixed> $default
      * @return mixed
      *

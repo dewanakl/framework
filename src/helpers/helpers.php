@@ -297,14 +297,18 @@ if (!function_exists('unavailable')) {
     /**
      * Tampikan hasil error 503.
      *
-     * @return \Core\View\Render
+     * @return \Core\View\Render|string
      */
-    function unavailable(): \Core\View\Render
+    function unavailable(): \Core\View\Render|string
     {
         $respond = respond();
         $respond->clean();
         $respond->setCode(503);
-        $respond->getHeader()->set('Content-Type', 'text/html');
+        $respond->getHeader()->set('Content-Type', request()->ajax() ? 'application/json' : 'text/html');
+
+        if (request()->ajax()) {
+            return $respond->formatJson(null, ['Service Unavailable'], 503);
+        }
 
         return render(helper_path('/errors/error'), ['pesan' => 'Service Unavailable']);
     }

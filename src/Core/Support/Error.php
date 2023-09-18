@@ -137,12 +137,12 @@ class Error
      */
     public function render(Request $request, Throwable $th): mixed
     {
-        respond()->clean();
-        respond()->setCode(500);
-
         if (!debug()) {
             return unavailable();
         }
+
+        respond()->clean();
+        respond()->setCode(500);
 
         if ($request->ajax()) {
             respond()->getHeader()->set('Content-Type', 'application/json');
