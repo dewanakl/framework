@@ -537,6 +537,10 @@ class Console
                 'description' => 'Kembalikan seperti awal dan isi ulang [--gen]'
             ],
             [
+                'command' => 'migrasi:dump',
+                'description' => 'Ubah menjadi file .sql pada foler database'
+            ],
+            [
                 'command' => 'generator',
                 'description' => 'Isi nilai ke databasenya'
             ],
