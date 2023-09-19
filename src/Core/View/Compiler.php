@@ -102,7 +102,7 @@ class Compiler
      *
      * @var string|null $originView
      */
-    private static $originView;
+    public static $originView;
 
     /**
      * Init object.
@@ -335,7 +335,7 @@ class Compiler
     private function ifOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@if\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@if\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php if (%s) : ?>', $matches);
             },
@@ -352,7 +352,7 @@ class Compiler
     private function issetOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@isset\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@isset\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php if (isset(%s)) : ?>', $matches);
             },
@@ -369,7 +369,7 @@ class Compiler
     private function emptyOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@empty\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@empty\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php if (empty(%s)) : ?>', $matches);
             },
@@ -386,7 +386,7 @@ class Compiler
     private function errorOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@error\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@error\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php $pesan = error(%s); if ($pesan) : ?>', $matches);
             },
@@ -403,7 +403,7 @@ class Compiler
     private function flashOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@flash\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@flash\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php $pesan = flash(%s); if ($pesan) : ?>', $matches);
             },
@@ -420,7 +420,7 @@ class Compiler
     private function forOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@for\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@for\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php for (%s) : ?>', $matches);
             },
@@ -437,7 +437,7 @@ class Compiler
     private function foreachOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@foreach\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@foreach\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php foreach(%s) : ?>', $matches);
             },
@@ -760,7 +760,7 @@ class Compiler
     private function elseifTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@elseif\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@elseif\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php elseif (%s) : ?>', $matches);
             },
@@ -852,7 +852,7 @@ class Compiler
     private function methodTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@method\s*\((.*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@method\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
                 return sprintf('<?php echo \'<input type="hidden" name="\' . \Core\Http\Request::METHOD . \'" value="\' . strtoupper(%s) . \'">\' . PHP_EOL ?>', $matches);
             },
