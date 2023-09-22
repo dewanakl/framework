@@ -35,6 +35,13 @@ class Validator
     private $errors;
 
     /**
+     * Ignore errornya.
+     *
+     * @var array|null $ignore
+     */
+    private $ignore;
+
+    /**
      * Init object.
      *
      * @param array $data
@@ -105,6 +112,12 @@ class Validator
     private function validateRequest(string $param, mixed $value, string $rule): void
     {
         switch (true) {
+            case $rule == 'nullable':
+                if (empty($value)) {
+                    $this->ignore[] = $param;
+                }
+                break;
+
             case $rule == 'required':
                 if (!$this->__isset($param) || empty(trim(strval($value)))) {
                     $this->setError($param, 'request.required');
@@ -134,7 +147,7 @@ class Validator
                 break;
 
             case $rule == 'uuid':
-                if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/im', $value)) {
+                if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/im', $value ?? '')) {
                     $this->setError($param, 'request.uuid');
                 }
                 break;
@@ -365,7 +378,8 @@ class Validator
      */
     private function setError(string $param, string $key, mixed $attribute = null): void
     {
-        if (empty($this->errors[$param])) {
+        $this->__set($param, null);
+        if (empty($this->errors[$param]) && !in_array($param, $this->ignore ?? [])) {
             $this->errors[$param] = translate()->trans(static::NAME . '.' . $key, [
                 'field' => $param,
                 'attribute' => strval($attribute)
