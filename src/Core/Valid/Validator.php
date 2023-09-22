@@ -99,7 +99,7 @@ class Validator
      *
      * @param string $param
      * @param mixed $value
-     * @param string $rules
+     * @param string $rule
      * @return void
      */
     private function validateRequest(string $param, mixed $value, string $rule): void
@@ -130,6 +130,12 @@ class Validator
                     $this->__set($param, filter_var($value, FILTER_SANITIZE_URL));
                 } else {
                     $this->setError($param, 'request.url');
+                }
+                break;
+
+            case $rule == 'uuid':
+                if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/im', $value)) {
+                    $this->setError($param, 'request.uuid');
                 }
                 break;
 
@@ -276,7 +282,7 @@ class Validator
      *
      * @param string $param
      * @param array $value
-     * @param string $rules
+     * @param string $rule
      * @return void
      *
      * @throws Exception
@@ -371,12 +377,12 @@ class Validator
      * Buat validasinya.
      *
      * @param array $data
-     * @param array $rules
+     * @param array $rule
      * @return Validator
      */
     public static function make(array $data, array $rule): Validator
     {
-        return new static($data, $rule);
+        return new Validator($data, $rule);
     }
 
     /**
