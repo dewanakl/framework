@@ -18,7 +18,7 @@ final class HasMany extends Relational
      */
     private function runCallback(Query $query): Model
     {
-        if (!is_null($this->callback)) {
+        if ($this->callback) {
             $callback = $this->callback;
             $result = $callback($query);
         } else {
@@ -30,7 +30,7 @@ final class HasMany extends Relational
         }
 
         $with = $this->getWith();
-        if (isset($with)) {
+        if ($with) {
             $result->map(function (object $data) use ($with): object {
                 foreach ($with as $value) {
                     $data->{$value->getAlias()} = $value->setLocalKey($data->{$value->getLocalKey()})->relational();
@@ -52,7 +52,7 @@ final class HasMany extends Relational
     {
         $localKey = $this->getValueLocalKey();
 
-        if ($this->recursive && !is_null($localKey)) {
+        if ($this->recursive && $localKey) {
             return $this->loop($localKey, Query::FetchAll, function (Query $query): Model {
                 return $this->runCallback($query);
             });

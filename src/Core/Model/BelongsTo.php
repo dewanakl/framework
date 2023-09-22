@@ -18,7 +18,7 @@ final class BelongsTo extends Relational
      */
     private function runCallback(Query $query): Model
     {
-        if (!is_null($this->callback)) {
+        if ($this->callback) {
             $callback = $this->callback;
             $result = $callback($query);
         } else {
@@ -30,7 +30,7 @@ final class BelongsTo extends Relational
         }
 
         $with = $this->getWith();
-        if (isset($with)) {
+        if ($with) {
             foreach ($with as $loop) {
                 $result[$loop->getAlias()] = $loop->setLocalKey($result[$loop->getLocalKey()])->relational();
             }
@@ -48,7 +48,7 @@ final class BelongsTo extends Relational
     {
         $localKey = $this->getValueLocalKey();
 
-        if ($this->recursive && !is_null($localKey)) {
+        if ($this->recursive && $localKey) {
             return $this->loop($localKey, Query::Fetch, function (Query $query): Model {
                 return $this->runCallback($query);
             });

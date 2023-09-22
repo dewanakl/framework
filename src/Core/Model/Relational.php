@@ -57,9 +57,16 @@ abstract class Relational
     /**
      * Object ini dalam array.
      *
-     * @var array<int, Relational> $with
+     * @var null|array<int, Relational> $with
      */
     private $with;
+
+    /**
+     * Num of limit.
+     *
+     * @var int|null $limit
+     */
+    private $limit;
 
     /**
      * Init object.
@@ -167,6 +174,15 @@ abstract class Relational
                 return $model;
             }
 
+            if (is_int($this->limit)) {
+                $this->limit = $this->limit - 1;
+            }
+
+            if (is_int($this->limit) && $this->limit <= 0) {
+                $model[$this->alias] = [];
+                return $model;
+            }
+
             $model[$this->alias] = $this->loop($model[$this->local_key], $fetch, $call);
             return $model;
         }
@@ -174,6 +190,15 @@ abstract class Relational
         return $model->map(
             function (object $val) use ($fetch, $call): object {
                 if (is_null($val->{$this->local_key})) {
+                    return $val;
+                }
+
+                if (is_int($this->limit)) {
+                    $this->limit = $this->limit - 1;
+                }
+
+                if (is_int($this->limit) && $this->limit <= 0) {
+                    $val->{$this->alias} = [];
                     return $val;
                 }
 
@@ -192,6 +217,18 @@ abstract class Relational
     public function with(Relational $with): Relational
     {
         $this->with[] = $with;
+        return $this;
+    }
+
+    /**
+     * Limit dari relasinya.
+     *
+     * @param int $num
+     * @return Relational
+     */
+    public function limit(int $num): Relational
+    {
+        $this->limit = $num;
         return $this;
     }
 

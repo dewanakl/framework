@@ -16,7 +16,7 @@ use Traversable;
 /**
  * Representasi table database.
  *
- * @method static \Core\Model\Query with(string|array $relational)
+ * @method static \Core\Model\Query with(string|array $relational, array $optional = [])
  * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
  * @method static \Core\Model\Query whereIn(string $column, array|Model $value, string $agr = 'AND')
@@ -368,6 +368,22 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
         }
 
         return $this->id($this->__get($this->primaryKey))->update($this->except($this->primaryKey)->attribute());
+    }
+
+    /**
+     * Hapus dengan primarykey yang ada.
+     *
+     * @return int
+     *
+     * @throws Exception
+     */
+    public function destroy(): int
+    {
+        if (empty($this->primaryKey) || empty($this->__get($this->primaryKey))) {
+            throw new Exception('Nilai primary key tidak ada !');
+        }
+
+        return $this->id($this->__get($this->primaryKey))->delete();
     }
 
     /**

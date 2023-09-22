@@ -220,7 +220,7 @@ class Query
     private function build(array $data): Model
     {
         $model = new $this->targetObject;
-        $methods = $this->relational;
+        list($methods, $parameters) = $this->relational ? $this->relational : [[], []];
         $status = $this->status;
 
         foreach ($methods as $method) {
@@ -228,13 +228,13 @@ class Query
                 throw new Exception('Method ' . $method . ' tidak ada !');
             }
 
-            $relational = App::get()->invoke($model, $method);
+            $relational = App::get()->invoke($model, $method, $parameters);
             $with = $relational->getWith();
 
             if ($status == static::Fetch) {
                 $data[$relational->getAlias($method)] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
 
-                if (isset($with)) {
+                if ($with) {
                     foreach ($with as $loop) {
                         $data[$loop->getAlias($method)] = $loop->setLocalKey($data[$loop->getLocalKey()])->relational();
                     }
@@ -247,7 +247,7 @@ class Query
                 foreach ($data as $key => $value) {
                     $value->{$relational->getAlias($method)} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
 
-                    if (isset($with)) {
+                    if ($with) {
                         foreach ($with as $loop) {
                             $value->{$loop->getAlias($method)} = $loop->setLocalKey($value->{$loop->getLocalKey()})->relational();
                         }
@@ -429,16 +429,17 @@ class Query
     /**
      * Tambahkan relasi dengan fungsi yang ada di model.
      *
-     * @param string|array $relational
+     * @param string|array<int, string> $relational
+     * @param array<int, mixed> $optional
      * @return Query
      */
-    public function with(string|array $relational): Query
+    public function with(string|array $relational, array $optional = []): Query
     {
         if (!is_array($relational)) {
             $relational = array($relational);
         }
 
-        $this->relational = $relational;
+        $this->relational = [$relational, $optional];
         return $this;
     }
 
