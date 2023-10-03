@@ -199,14 +199,14 @@ class Validator
 
             case str_contains($rule, 'min'):
                 $min = intval(explode(':', $rule)[1] ?? 0);
-                if (strlen($value ?? '') < $min) {
+                if ((is_numeric($value) ? intval($value) : strlen($value ?? '')) < $min) {
                     $this->setError($param, 'request.min', $min);
                 }
                 break;
 
             case str_contains($rule, 'max'):
                 $max = intval(explode(':', $rule)[1] ?? 0);
-                if (strlen($value ?? '') > $max) {
+                if ((is_numeric($value) ? intval($value) : strlen($value ?? '')) > $max) {
                     $this->setError($param, 'request.max', $max);
                 }
                 break;
