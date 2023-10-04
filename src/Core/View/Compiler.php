@@ -191,6 +191,30 @@ class Compiler
     }
 
     /**
+     * Check if same parentheses
+     *
+     * @param string $exp
+     * @return bool
+     */
+    private function same(string $exp): bool
+    {
+        $opening = 0;
+        $closing = 0;
+
+        foreach (token_get_all('<?php ' . $exp) as $token) {
+            if ($token === '(') {
+                $opening++;
+            }
+
+            if ($token === ')') {
+                $closing++;
+            }
+        }
+
+        return $opening == $closing;
+    }
+
+    /**
      * Override function and extract index 1 of matches.
      *
      * @param string $pattern
@@ -200,13 +224,40 @@ class Compiler
      */
     private function pregReplaceCallback(string $pattern, Closure $callback, string $subject): string
     {
-        return strval(preg_replace_callback(
-            $pattern,
-            function (array $matches) use ($callback): string {
-                return $callback(strval($matches[1] ?? $matches[0]));
-            },
-            $subject
-        ));
+        $matches = [];
+        preg_match_all($pattern, $subject, $matches);
+
+        for ($i = 0; isset($matches[0][$i]); $i++) {
+
+            $match = [
+                $matches[0][$i] ?? null,
+                $matches[1][$i] ?? null,
+                $matches[0][$i] ?? null,
+            ];
+
+            if (!$match[0]) {
+                return $subject;
+            }
+
+            list($before, $after) = explode($match[0],  $subject, 2);
+
+            while (str_ends_with($match[2], ')') && !$this->same($match[2])) {
+
+                $first = strstr($after, ')', true);
+                $first = $first === false ? $after : $first . ')';
+
+                $match[2] .= $first;
+                $after = explode($first, $after, 2)[1];
+            }
+
+            if ($match[0] != $match[2]) {
+                $match[1] .= explode($match[1], $match[2], 2)[1];
+            }
+
+            $subject = $before . $callback($match[1] ?? $match[2]) . $after;
+        }
+
+        return $subject;
     }
 
     /**
@@ -248,7 +299,7 @@ class Compiler
         }
 
         if (!(bool) @file_put_contents($file . '.php', $content)) {
-            throw new Exception(sprintf('Can\'t save file [%s.kita.php]', $this->cachePath));
+            throw new Exception(sprintf('Can\'t save file [%s.php]', $this->cachePath));
         }
     }
 
@@ -335,9 +386,9 @@ class Compiler
     private function ifOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@if\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@if\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php if (%s) : ?>', $matches);
+                return sprintf('<?php if %s : ?>', $matches);
             },
             $content
         );
@@ -352,9 +403,9 @@ class Compiler
     private function issetOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@isset\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@isset\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php if (isset(%s)) : ?>', $matches);
+                return sprintf('<?php if (isset%s) : ?>', $matches);
             },
             $content
         );
@@ -369,9 +420,9 @@ class Compiler
     private function emptyOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@empty\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@empty\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php if (empty(%s)) : ?>', $matches);
+                return sprintf('<?php if (empty%s) : ?>', $matches);
             },
             $content
         );
@@ -386,9 +437,9 @@ class Compiler
     private function errorOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@error\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@error\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php $pesan = error(%s); if ($pesan) : ?>', $matches);
+                return sprintf('<?php $pesan = error%s; if ($pesan) : ?>', $matches);
             },
             $content
         );
@@ -403,9 +454,9 @@ class Compiler
     private function flashOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@flash\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@flash\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php $pesan = flash(%s); if ($pesan) : ?>', $matches);
+                return sprintf('<?php $pesan = flash%s; if ($pesan) : ?>', $matches);
             },
             $content
         );
@@ -420,9 +471,9 @@ class Compiler
     private function forOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@for\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@for\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php for (%s) : ?>', $matches);
+                return sprintf('<?php for %s : ?>', $matches);
             },
             $content
         );
@@ -437,9 +488,9 @@ class Compiler
     private function foreachOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@foreach\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@foreach\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php foreach(%s) : ?>', $matches);
+                return sprintf('<?php foreach %s : ?>', $matches);
             },
             $content
         );
@@ -454,9 +505,9 @@ class Compiler
     private function sectionOpenTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@section\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@section\s*(\(.*?\))(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->section(%s) ?>', $matches);
+                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->section%s ?>', $matches);
             },
             $content
         );
@@ -709,9 +760,9 @@ class Compiler
     private function extendTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@extend\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@extend\s*(\(.*?\))(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->parents(%s); ?>', $matches);
+                return sprintf('<?php \Core\Facades\App::get()->singleton(\Core\View\View::class)->parents%s; ?>', $matches);
             },
             $content
         );
@@ -726,9 +777,9 @@ class Compiler
     private function includeTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@include\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@include\s*(\(.*?\))(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->including(%s) ?>', $matches);
+                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->including%s ?>', $matches);
             },
             $content
         );
@@ -743,9 +794,9 @@ class Compiler
     private function contentTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@content\s*\((.*?)\)(?(?=\w|)(?!\w)|)/s',
+            '/(?<!@)@content\s*(\(.*?\))(?(?=\w|)(?!\w)|)/s',
             function (string $matches): string {
-                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->content(%s) ?>', $matches);
+                return sprintf('<?php echo \Core\Facades\App::get()->singleton(\Core\View\View::class)->content%s ?>', $matches);
             },
             $content
         );
@@ -760,9 +811,9 @@ class Compiler
     private function elseifTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@elseif\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@elseif\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php elseif (%s) : ?>', $matches);
+                return sprintf('<?php elseif %s : ?>', $matches);
             },
             $content
         );
@@ -852,9 +903,9 @@ class Compiler
     private function methodTag(string $content): string
     {
         return $this->pregReplaceCallback(
-            '/(?<!@)@method\s*\(([\d\w!@#$%^&*()-+:";\'<>,.? ]*)\)(?(?=\w|)(?!\w)|)/m',
+            '/(?<!@)@method\s*(\(.*?\))(?(?=\w|)(?!\w)|)/m',
             function (string $matches): string {
-                return sprintf('<?php echo \'<input type="hidden" name="\' . \Core\Http\Request::METHOD . \'" value="\' . strtoupper(%s) . \'">\' . PHP_EOL ?>', $matches);
+                return sprintf('<?php echo \'<input type="hidden" name="\' . \Core\Http\Request::METHOD . \'" value="\' . strtoupper%s . \'">\' . PHP_EOL ?>', $matches);
             },
             $content
         );
