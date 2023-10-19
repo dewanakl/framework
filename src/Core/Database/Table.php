@@ -388,7 +388,7 @@ class Table
     public function dropForeign(string $name): void
     {
         $this->alter = 'DROP';
-        $this->query[$this->getLastArray()] = ($this->type == 'mysql' ? 'FOREIGN KEY ' : 'CONSTRAINT ') . $name;
+        $this->query[$this->getLastArray()] = ($this->type == 'mysql' ? 'FOREIGN KEY' : 'CONSTRAINT') . ' FK_' . $this->table . '_' . $name;
     }
 
     /**

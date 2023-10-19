@@ -381,12 +381,17 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     /**
      * Save perubahan pada attribute dengan primarykey.
      *
+     * @param array $fill
      * @return int
      *
      * @throws Exception
      */
-    public function save(): int
+    public function save(array $fill = []): int
     {
+        if ($fill) {
+            $this->fill($fill);
+        }
+
         if (empty($this->primaryKey) || empty($this->__get($this->primaryKey))) {
             throw new Exception('Nilai primary key tidak ada !');
         }
