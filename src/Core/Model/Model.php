@@ -355,6 +355,30 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     }
 
     /**
+     * Isi attributnya.
+     *
+     * @param array $fill
+     * @return Model
+     */
+    public function fill(array $fill): Model
+    {
+        foreach ($fill as $key => $value) {
+            if (!$this->fillable) {
+                $this->attributes[$key] = $value;
+                continue;
+            }
+
+            foreach ($this->fillable as $exist) {
+                if ($key == $exist) {
+                    $this->attributes[$key] = $value;
+                }
+            }
+        }
+
+        return $this;
+    }
+
+    /**
      * Save perubahan pada attribute dengan primarykey.
      *
      * @return int

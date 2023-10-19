@@ -283,6 +283,33 @@ class Table
     }
 
     /**
+     * Bikin indexnya.
+     *
+     * @param string|array $idx
+     * @return void
+     */
+    public function index(string|array $idx): void
+    {
+        $this->query[] = sprintf('CREATE INDEX IDX_%s_%s ON %s(%s)', $this->table, join('_', is_string($idx) ? [$idx] : $idx), $this->table, join(', ', is_string($idx) ? [$idx] : $idx));
+    }
+
+    /**
+     * Drop indexnya.
+     *
+     * @param string|array $idx
+     * @return void
+     */
+    public function dropIndex(string|array $idx): void
+    {
+        if ($this->type == 'pgsql') {
+            $this->query[] = sprintf('DROP INDEX IDX_%s_%s;', $this->table, join('_', is_string($idx) ? [$idx] : $idx));
+        } else {
+            $this->alter = 'DROP';
+            $this->query[$this->getLastArray()] = sprintf('INDEX IDX_%s_%s;', $this->table, join('_', is_string($idx) ? [$idx] : $idx));
+        }
+    }
+
+    /**
      * Bikin relasi antara nama attribute.
      *
      * @param string $name
@@ -350,6 +377,18 @@ class Table
     {
         $this->alter = 'DROP';
         $this->query[$this->getLastArray()] = 'COLUMN ' . $name;
+    }
+
+    /**
+     * Hapus foreignkey.
+     *
+     * @param string $name
+     * @return void
+     */
+    public function dropForeign(string $name): void
+    {
+        $this->alter = 'DROP';
+        $this->query[$this->getLastArray()] = ($this->type == 'mysql' ? 'FOREIGN KEY ' : 'CONSTRAINT ') . $name;
     }
 
     /**
