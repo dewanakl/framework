@@ -24,38 +24,43 @@ final class Routine
     public static function sync(string $file): void
     {
         $file = base_path('/cache/queue/' . $file);
+        if (!is_file($file)) {
+            return;
+        }
+
         $item = fopen($file, 'r');
         flock($item, LOCK_SH);
 
         $data = fgets($item);
+
         flock($item, LOCK_UN);
         fclose($item);
 
         if ($data) {
             try {
-                set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): void {
-                    throw new ErrorException($errstr, $errno, E_ERROR, $errfile, $errline);
+                set_error_handler(function (int $no, string $msg, string $file, int $line): void {
+                    throw new ErrorException($msg, $no, E_ERROR, $file, $line);
                 });
 
                 $job = unserialize($data);
-                App::get()->invoke($job, 'handle');
+                App::get()->invoke($job, Job::HANDLE);
             } catch (Throwable $th) {
-
                 try {
-                    set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): void {
-                        throw new ErrorException($errstr, $errno, E_ERROR, $errfile, $errline);
+                    restore_error_handler();
+                    set_error_handler(function (int $no, string $msg, string $file, int $line): void {
+                        throw new ErrorException($msg, $no, E_ERROR, $file, $line);
                     });
 
                     $job->failed($th);
                 } catch (Throwable $t) {
-                    (new Error())->report($t)->render(request(), $t);
+                    (new Error())->report($t);
                 } finally {
-                    (new Error())->report($th)->render(request(), $th);
+                    (new Error())->report($th);
                 }
-            } finally {
-                unlink($file);
             }
         }
+
+        @unlink($file);
     }
 
     /**

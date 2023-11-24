@@ -15,12 +15,44 @@ use Stringable;
  */
 class Respond
 {
-    /**
-     * Url redirect.
-     *
-     * @var string|null $redirect
-     */
-    private $redirect;
+    public const HTTP_CONTINUE = 100;
+    public const HTTP_SWITCHING_PROTOCOLS = 101;
+    public const HTTP_OK = 200;
+    public const HTTP_CREATED = 201;
+    public const HTTP_ACCEPTED = 202;
+    public const HTTP_NON_AUTHORITATIVE_INFORMATION = 203;
+    public const HTTP_NO_CONTENT = 204;
+    public const HTTP_RESET_CONTENT = 205;
+    public const HTTP_PARTIAL_CONTENT = 206;
+    public const HTTP_MULTIPLE_CHOICES = 300;
+    public const HTTP_MOVED_PERMANENTLY = 301;
+    public const HTTP_MOVED_TEMPORARILY = 302;
+    public const HTTP_SEE_OTHER = 303;
+    public const HTTP_NOT_MODIFIED = 304;
+    public const HTTP_USE_PROXY = 305;
+    public const HTTP_BAD_REQUEST = 400;
+    public const HTTP_UNAUTHORIZED = 401;
+    public const HTTP_PAYMENT_REQUIRED = 402;
+    public const HTTP_FORBIDDEN = 403;
+    public const HTTP_NOT_FOUND = 404;
+    public const HTTP_METHOD_NOT_ALLOWED = 405;
+    public const HTTP_NOT_ACCEPTABLE = 406;
+    public const HTTP_PROXY_AUTHENTICATION_REQUIRED = 407;
+    public const HTTP_REQUEST_TIMEOUT = 408;
+    public const HTTP_CONFLICT = 409;
+    public const HTTP_GONE = 410;
+    public const HTTP_LENGTH_REQUIRED = 411;
+    public const HTTP_PRECONDITION_FAILED = 412;
+    public const HTTP_REQUEST_ENTITY_TOO_LARGE = 413;
+    public const HTTP_REQUEST_URI_TOO_LARGE = 414;
+    public const HTTP_UNSUPPORTED_MEDIA_TYPE = 415;
+    public const HTTP_RANGE_NOT_SATISFIABLE = 416;
+    public const HTTP_INTERNAL_SERVER_ERROR = 500;
+    public const HTTP_NOT_IMPLEMENTED = 501;
+    public const HTTP_BAD_GATEWAY = 502;
+    public const HTTP_SERVICE_UNAVAILABLE = 503;
+    public const HTTP_GATEWAY_TIMEOUT = 504;
+    public const HTTP_VERSION_NOT_SUPPORTED = 505;
 
     /**
      * Content to respond.
@@ -65,6 +97,13 @@ class Respond
     private $message;
 
     /**
+     * Stream object.
+     *
+     * @var resource|null|false $stream
+     */
+    private $stream;
+
+    /**
      * Init object.
      *
      * @param string|null $content
@@ -73,7 +112,7 @@ class Respond
      * @param string $version
      * @return void
      */
-    public function __construct(string|null $content = null, int $code = 200, array $header = [], string $version = '1.1')
+    public function __construct(string|null $content = null, int $code = Respond::HTTP_OK, array $header = [], string $version = '1.1')
     {
         $this->code = $code;
         $this->header = new Header($header);
@@ -83,18 +122,45 @@ class Respond
         $this->version = $version;
         $this->message = $this->codeHttpMessage($code);
         $this->parameter = [];
+        $this->stream = fopen('php://output', 'wb');
+    }
+
+    /**
+     * Destroy object.
+     *
+     * @return void
+     */
+    public function __destruct()
+    {
+        if (is_resource($this->stream)) {
+            fclose($this->stream);
+        }
+
+        $this->stream = null;
     }
 
     /**
      * Alihkan halaman ke url.
      *
      * @param string $url
+     * @param int $code
      * @return Respond
      */
-    public function to(string $url): Respond
+    public function to(string $url, int $code = Respond::HTTP_MOVED_TEMPORARILY): Respond
     {
-        $this->redirect = $url;
+        $this->content = $url;
+        $this->setCode($code);
         return $this;
+    }
+
+    /**
+     * Get stream.
+     *
+     * @return mixed
+     */
+    public function getStream(): mixed
+    {
+        return $this->stream;
     }
 
     /**
@@ -162,7 +228,7 @@ class Respond
             $uri = $uri . '?' . http_build_query($this->parameter);
         }
 
-        $this->setCode($force ? 301 : 302);
+        $this->setCode($force ? Respond::HTTP_MOVED_PERMANENTLY : Respond::HTTP_MOVED_TEMPORARILY);
         $this->header->set('Location', $uri);
     }
 
@@ -216,95 +282,58 @@ class Respond
      * Ubah code menjadi http message.
      *
      * @param int $code
-     * @return string|null
+     * @return string
      *
      * @throws Exception
      */
-    public function codeHttpMessage(int $code): string|null
+    public function codeHttpMessage(int $code): string
     {
-        switch ($code) {
-            case 100:
-                return 'Continue';
-            case 101:
-                return 'Switching Protocols';
-            case 200:
-                return 'OK';
-            case 201:
-                return 'Created';
-            case 202:
-                return 'Accepted';
-            case 203:
-                return 'Non-Authoritative Information';
-            case 204:
-                return 'No Content';
-            case 205:
-                return 'Reset Content';
-            case 206:
-                return 'Partial Content';
-            case 300:
-                return 'Multiple Choices';
-            case 301:
-                return 'Moved Permanently';
-            case 302:
-                return 'Moved Temporarily';
-            case 303:
-                return 'See Other';
-            case 304:
-                return 'Not Modified';
-            case 305:
-                return 'Use Proxy';
-            case 400:
-                return 'Bad Request';
-            case 401:
-                return 'Unauthorized';
-            case 402:
-                return 'Payment Required';
-            case 403:
-                return 'Forbidden';
-            case 404:
-                return 'Not Found';
-            case 405:
-                return 'Method Not Allowed';
-            case 406:
-                return 'Not Acceptable';
-            case 407:
-                return 'Proxy Authentication Required';
-            case 408:
-                return 'Request Time-out';
-            case 409:
-                return 'Conflict';
-            case 410:
-                return 'Gone';
-            case 411:
-                return 'Length Required';
-            case 412:
-                return 'Precondition Failed';
-            case 413:
-                return 'Request Entity Too Large';
-            case 414:
-                return 'Request-URI Too Large';
-            case 415:
-                return 'Unsupported Media Type';
-            case 416:
-                return 'Range Not Satisfiable';
-            case 500:
-                return 'Internal Server Error';
-            case 501:
-                return 'Not Implemented';
-            case 502:
-                return 'Bad Gateway';
-            case 503:
-                return 'Service Unavailable';
-            case 504:
-                return 'Gateway Time-out';
-            case 505:
-                return 'HTTP Version not supported';
-            default:
-                if ($this->message === null) {
-                    throw new Exception('This code: ' . $code . ' is no defined in http');
-                }
-                return null;
+        $httpStatusMessages = [
+            100 => 'Continue',
+            101 => 'Switching Protocols',
+            200 => 'OK',
+            201 => 'Created',
+            202 => 'Accepted',
+            203 => 'Non-Authoritative Information',
+            204 => 'No Content',
+            205 => 'Reset Content',
+            206 => 'Partial Content',
+            300 => 'Multiple Choices',
+            301 => 'Moved Permanently',
+            302 => 'Moved Temporarily',
+            303 => 'See Other',
+            304 => 'Not Modified',
+            305 => 'Use Proxy',
+            400 => 'Bad Request',
+            401 => 'Unauthorized',
+            402 => 'Payment Required',
+            403 => 'Forbidden',
+            404 => 'Not Found',
+            405 => 'Method Not Allowed',
+            406 => 'Not Acceptable',
+            407 => 'Proxy Authentication Required',
+            408 => 'Request Time-out',
+            409 => 'Conflict',
+            410 => 'Gone',
+            411 => 'Length Required',
+            412 => 'Precondition Failed',
+            413 => 'Request Entity Too Large',
+            414 => 'Request-URI Too Large',
+            415 => 'Unsupported Media Type',
+            416 => 'Range Not Satisfiable',
+            500 => 'Internal Server Error',
+            501 => 'Not Implemented',
+            502 => 'Bad Gateway',
+            503 => 'Service Unavailable',
+            504 => 'Gateway Time-out',
+            505 => 'HTTP Version not supported',
+        ];
+
+        if (array_key_exists($code, $httpStatusMessages)) {
+            return $httpStatusMessages[$code];
         }
+
+        throw new Exception('This code: ' . $code . ' is not defined in HTTP');
     }
 
     /**
@@ -331,6 +360,16 @@ class Respond
     }
 
     /**
+     * Get http status code.
+     *
+     * @return int
+     */
+    public function getCode(): int
+    {
+        return $this->code;
+    }
+
+    /**
      * Set content.
      *
      * @param string|int|bool|null $prm
@@ -340,11 +379,7 @@ class Respond
     {
         $prm = strval($prm);
         if (!empty($prm)) {
-            if ($this->content !== null) {
-                $this->content = $this->content . $prm;
-            } else {
-                $this->content = $prm;
-            }
+            $this->content = $this->content !== null ? $this->content . $prm : $prm;
         }
     }
 
@@ -366,13 +401,15 @@ class Respond
     public function clean(): void
     {
         @clear_ob();
-        $this->code = 200;
+        $this->code = Respond::HTTP_OK;
         $this->header = new Header();
         $this->header->set('Content-Type', 'text/html; charset=utf-8');
         $this->header->set('Date', gmdate(DateTimeInterface::RFC7231));
         $this->content = null;
         $this->message = $this->codeHttpMessage($this->code);
         $this->parameter = [];
+        $this->__destruct();
+        $this->stream = fopen('php://output', 'wb');
     }
 
     /**
@@ -383,7 +420,7 @@ class Respond
      * @param int $code
      * @return string
      */
-    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = 200): string
+    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = Respond::HTTP_OK): string
     {
         return json([
             'code' => $code,
@@ -395,10 +432,15 @@ class Respond
     /**
      * Send all header queue.
      *
-     * @return void
+     * @return Respond
      */
-    public function prepare()
+    public function prepare(): Respond
     {
+        // Don't send again.
+        if (headers_sent()) {
+            return $this;
+        }
+
         session()->send();
 
         http_response_code($this->code);
@@ -418,6 +460,8 @@ class Respond
         foreach (cookie()->send() as $value) {
             header('Set-Cookie: ' . strval($value), false, $this->code);
         }
+
+        return $this;
     }
 
     /**
@@ -428,8 +472,6 @@ class Respond
      */
     public function send(mixed $respond): void
     {
-        $content = null;
-
         if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
             if ($respond instanceof Stringable) {
                 session()->set(Session::ROUTE, request()->server->get('REQUEST_URL'));
@@ -437,34 +479,36 @@ class Respond
                 session()->unset(Session::ERROR);
             }
 
-            $content = $respond;
+            $this->content = $respond;
         } else if (is_array($respond) || $respond instanceof JsonSerializable) {
-            $content = json($respond, $this->code);
-        }
-
-        if ($respond instanceof Respond) {
-            if ($this->redirect !== null) {
-                $this->redirect($this->redirect);
+            $this->content = json($respond, $this->code);
+        } else if ($respond instanceof Respond) {
+            if ($respond->getCode() >= 300 && $respond->getCode() < 400) {
+                $this->redirect($respond->getContent(), $respond->getCode() == Respond::HTTP_MOVED_PERMANENTLY);
+                $this->content = null;
             } else if ($respond->getContent() !== null) {
-                $content = $respond->getContent();
+                $this->content = $respond->getContent();
             }
+        } else if ($respond instanceof Stream) {
+            $respond = $respond->process();
         }
 
         $this->prepare();
 
         if ($respond instanceof Stream) {
+            @ob_end_clean();
             $respond->push();
-            $respond->terminate();
+        } else if ($this->content) {
+            @ob_end_clean();
+            fwrite($this->stream, $this->content);
         }
 
-        if ($content) {
-            echo $content;
-        }
-
+        // Send output buffer.
         while (ob_get_level() > 0) {
             @ob_end_flush();
         }
 
+        // The end.
         @flush();
     }
 }

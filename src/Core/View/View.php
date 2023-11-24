@@ -2,6 +2,7 @@
 
 namespace Core\View;
 
+use Core\View\Exception\CastToStringException;
 use ErrorException;
 use LogicException;
 use Stringable;
@@ -150,7 +151,7 @@ class View implements Stringable
 
             return $template;
         } catch (Throwable $th) {
-            if ($th instanceof LogicException) {
+            if (!($th instanceof CastToStringException)) {
                 throw $th;
             }
 

@@ -34,11 +34,12 @@ final class Storage
     /**
      * Get name location.
      *
+     * @param string|null $path
      * @return string
      */
-    public static function getLocation(): string
+    public static function getLocation(string|null $path = null): string
     {
-        return base_path('/' . static::$folderName . '/');
+        return base_path('/' . static::$folderName . '/') . $path;
     }
 
     /**
@@ -49,7 +50,7 @@ final class Storage
      */
     public static function stream(string $filename): Stream
     {
-        return App::get()->singleton(Stream::class)->send(realpath(static::getLocation() . $filename))->process();
+        return App::get()->singleton(Stream::class)->send(realpath(static::getLocation($filename)));
     }
 
     /**
@@ -60,7 +61,7 @@ final class Storage
      */
     public static function download(string $filename): Stream
     {
-        return static::stream($filename)->download()->process();
+        return static::stream($filename)->download();
     }
 
     /**

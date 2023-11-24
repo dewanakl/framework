@@ -46,26 +46,49 @@ class Request
     public $file;
 
     /**
+     * Stream object.
+     *
+     * @var resource|null|false $stream
+     */
+    private $stream;
+
+    /**
+     * Raw content of request.
+     *
+     * @var string|null $content
+     */
+    private $content;
+
+    /**
      * Init objek.
      *
      * @return void
      */
     public function __construct()
     {
-        $this->server = new Header($_SERVER);
+        $this->stream = fopen('php://input', 'rb');
+        $this->content = stream_get_contents($this->stream);
+        $this->content = !empty($this->content) ? $this->content : null;
 
-        if ($this->ajax()) {
-            $raw = @file_get_contents('php://input');
-            if ($raw) {
-                $json = @json_decode($raw, true, 1024) ?? [];
-                if ($json) {
-                    $_REQUEST = [...$_REQUEST, ...$json];
-                }
-            }
+        $RAW = $this->content ? (json_decode($this->content, true, 1024, JSON_ERROR_NONE) ?? []) : [];
+
+        $this->server = new Header($_SERVER);
+        $this->request = new Header([...$_REQUEST, ...$RAW]);
+        $this->file = new Header(UploadedFile::parse($_FILES));
+    }
+
+    /**
+     * Destroy object.
+     *
+     * @return void
+     */
+    public function __destruct()
+    {
+        if (is_resource($this->stream)) {
+            fclose($this->stream);
         }
 
-        $this->request = new Header($_REQUEST);
-        $this->file = new Header(UploadedFile::parse($_FILES));
+        $this->stream = null;
     }
 
     /**
@@ -81,6 +104,16 @@ class Request
         }
 
         return trim(substr($auth, 6));
+    }
+
+    /**
+     * Get content of raw request
+     *
+     * @return string
+     */
+    public function getContent(): string
+    {
+        return strval($this->content);
     }
 
     /**
@@ -231,6 +264,44 @@ class Request
     public function file(string $name): UploadedFile|array
     {
         return $this->file->get($name);
+    }
+
+    /**
+     * Get valid url based on baseurl.
+     *
+     * @return string
+     */
+    public function getValidUrl(): string
+    {
+        $url = '/';
+        $host = $this->server->get('HTTP_HOST');
+        $uri = $this->server->get('REQUEST_URI');
+        $sep = strpos(base_url(), $host);
+
+        if ($sep === false) {
+            $url = $uri;
+        } else {
+            $sep = substr(base_url(), strlen($host) + $sep);
+            $raw = strpos($uri, $sep);
+            if ($raw !== false) {
+                $url = substr($uri, strlen($sep) + $raw);
+            }
+        }
+
+        $this->server->set('REQUEST_URL', $url);
+        return parse_url($url, PHP_URL_PATH);
+    }
+
+    /**
+     * Pastikan methodnya betul.
+     *
+     * @return string
+     */
+    public function getValidMethod(): string
+    {
+        return !$this->ajax() && $this->method(Request::POST)
+            ? strtoupper($this->get(Request::METHOD, $this->method()))
+            : $this->method();
     }
 
     /**

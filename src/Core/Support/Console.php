@@ -5,13 +5,18 @@ namespace Core\Support;
 use Core\Database\Generator;
 use Core\Database\Migration;
 use Core\Database\Schema;
+use Core\Http\Request;
 use Core\Queue\Routine;
 use Core\Routing\Route;
 use Core\Valid\Hash;
 use Core\View\Compiler;
 use DirectoryIterator;
+use Psy\Configuration;
+use Psy\Shell;
+use Psy\VersionUpdater\Checker;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Throwable;
 
 /**
  * Saya console untuk mempermudah develop app.
@@ -48,27 +53,15 @@ class Console
      * @var float $timenow
      */
     private $timenow;
-
-    /**
-     * Apakah versi cmd dibawah 10?.
-     *
-     * @var bool $supportColor
-     */
-    private $supportColor;
-
     /**
      * Buat objek console.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(Request $request)
     {
-        Env::initDefaultValue();
-
-        $this->timenow = request()->server->get('REQUEST_TIME_FLOAT');
-        $this->supportColor = intval(php_uname('r')) >= 10 || !str_contains(php_uname('s'), 'Windows');
-
-        $argv = request()->server->get('argv');
+        $this->timenow = $request->server->get('REQUEST_TIME_FLOAT');
+        $argv = $request->server->get('argv');
 
         array_shift($argv);
         $this->command = $argv[0] ?? null;
@@ -103,6 +96,17 @@ class Console
         return null;
     }
 
+    public function catchException(Throwable $th): int
+    {
+        if (in_array('--nooutput', $this->args)) {
+            return 1;
+        }
+
+        echo $this->createColor('red', $th->getFile() . ' - ' . $th->getMessage());
+
+        return 1;
+    }
+
     /**
      * Buat dan tulis file dalam folder.
      *
@@ -130,9 +134,9 @@ class Console
      * @param string $value
      * @return string
      */
-    private function createColor(string $name, string $value): string
+    public function createColor(string $name, string $value): string
     {
-        if (!$this->supportColor) {
+        if (!stream_isatty(STDOUT)) {
             return $value;
         }
 
@@ -568,6 +572,10 @@ class Console
                 'command' => 'bikin:job',
                 'description' => 'Bikin file job [nama file]'
             ],
+            [
+                'command' => 'play',
+                'description' => 'Bermain dengan applikasi'
+            ],
         ];
 
         print("Penggunaan:\n perintah [options]\n\n");
@@ -640,7 +648,7 @@ class Console
      *
      * @return void
      */
-    private function dump()
+    private function dump(): void
     {
         $baseFile = base_path('/database/schema/');
 
@@ -662,6 +670,122 @@ class Console
 
         file_put_contents(base_path('/database/database.sql'), implode("\n", Schema::getDump()));
         print("\n" . $this->createColor('green', 'DONE ') . $this->executeTime());
+    }
+
+    /**
+     * Play with this application.
+     *
+     * @return int
+     */
+    public function play(): int
+    {
+        $config = new Configuration();
+        $config->setColorMode(Configuration::COLOR_MODE_AUTO);
+        $config->setUpdateCheck(Checker::NEVER);
+        $config->setInteractiveMode(Configuration::INTERACTIVE_MODE_AUTO);
+
+        $loader = new class($this, new Shell($config))
+        {
+            /**
+             * The shell instance.
+             *
+             * @var \Psy\Shell
+             */
+            protected $shell;
+
+            /**
+             * The console instance.
+             *
+             * @var \Core\Support\Console
+             */
+            protected $console;
+
+            /**
+             * All of the discovered classes.
+             *
+             * @var array
+             */
+            protected $classes = [];
+
+            /**
+             * Create a new shell instance.
+             *
+             * @param  \Psy\Shell  $shell
+             * @return void
+             */
+            public function __construct(Console $console, Shell $shell)
+            {
+                $this->shell = $shell;
+                $this->console = $console;
+
+                $classes = (array) @require_once base_path('/vendor/composer/autoload_classmap.php');
+
+                foreach ($classes as $class => $path) {
+                    $name = basename(str_replace('\\', '/', $class));
+
+                    if (!isset($this->classes[$name])) {
+                        $this->classes[$name] = $class;
+                    }
+                }
+            }
+
+            /**
+             * Find the closest class by name.
+             *
+             * @param  string  $class
+             * @return void
+             */
+            public function aliasClass(string $class): void
+            {
+                if (str_contains($class, '\\')) {
+                    return;
+                }
+
+                $fullName = $this->classes[$class] ?? false;
+
+                if ($fullName) {
+                    $this->shell->writeStdout($this->console->createColor('yellow', sprintf("Class [%s] alias [%s].\n", $class, $fullName)));
+                    class_alias($fullName, $class);
+                }
+            }
+
+            /**
+             * Register a new alias loader instance.
+             *
+             * @return self
+             */
+            public function register(): self
+            {
+                spl_autoload_register([$this, 'aliasClass']);
+                return $this;
+            }
+
+            /**
+             * Unregister the alias loader instance.
+             *
+             * @return void
+             */
+            public function unregister(): void
+            {
+                spl_autoload_unregister([$this, 'aliasClass']);
+            }
+
+            /**
+             * Get shell instance.
+             *
+             * @return Shell
+             */
+            public function getShell(): Shell
+            {
+                return $this->shell;
+            }
+        };
+
+        try {
+            return $loader->register()->getShell()->run();
+        } finally {
+            $loader->unregister();
+        }
     }
 
     /**
@@ -739,6 +863,8 @@ class Console
             case 'queue:sync':
                 Routine::sync($this->options);
                 break;
+            case 'play':
+                return $this->play();
             default:
                 $this->listMenu();
                 break;

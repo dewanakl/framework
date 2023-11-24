@@ -10,6 +10,9 @@ namespace Core\Facades;
  */
 abstract class Provider
 {
+    public const REGISTRASI = 'registrasi';
+    public const BOOTING = 'booting';
+
     /**
      * Object application.
      *

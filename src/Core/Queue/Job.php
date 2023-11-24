@@ -12,6 +12,8 @@ use Throwable;
  */
 abstract class Job
 {
+    public const HANDLE = 'handle';
+
     /**
      * Dispatch new job.
      *

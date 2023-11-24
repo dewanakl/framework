@@ -4,11 +4,23 @@ if (!function_exists('context')) {
     /**
      * Simple context dengan stdClass.
      *
-     * @return \stdClass
+     * @param string|null $key
+     * @param mixed $val
+     * @return mixed
      */
-    function &context(): \stdClass
+    function context(string|null $key = null, mixed $val = null): mixed
     {
-        return \Core\Facades\App::get()->singleton(\stdClass::class);
+        $ctx = \Core\Facades\App::get()->singleton(\stdClass::class);
+        if (!$key && !$val) {
+            return $ctx;
+        }
+
+        if (!$val) {
+            return $ctx->{$key};
+        }
+
+        $ctx->{$key} = $val;
+        return $ctx->{$key};
     }
 }
 
@@ -141,7 +153,7 @@ if (!function_exists('e')) {
      * @param mixed $var
      * @return string|null
      *
-     * @throws ErrorException
+     * @throws \Core\View\Exception\CastToStringException
      */
     function e(mixed $var): string|null
     {
@@ -149,20 +161,15 @@ if (!function_exists('e')) {
             return null;
         }
 
-        try {
-            $str = strval($var);
+        $str = strval($var);
 
-            $error = error_get_last();
-            if ($error !== null) {
-                error_clear_last();
-                throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
-            }
-
-            return htmlspecialchars($str);
-        } catch (Throwable $th) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1)[0];
-            throw new ErrorException($th->getMessage(), 0, E_ERROR, $trace['file'], $trace['line']);
+        $error = error_get_last();
+        if ($error !== null) {
+            error_clear_last();
+            throw new \Core\View\Exception\CastToStringException($error['message'], 0, $error['type'], $error['file'], $error['line']);
         }
+
+        return htmlspecialchars($str);
     }
 }
 
@@ -212,20 +219,18 @@ if (!function_exists('dd')) {
     function dd(mixed ...$param): void
     {
         // In Console Application.
-        if (php_sapi_name() == 'cli') {
+        if (in_array(PHP_SAPI, ['cli', 'phpdbg', 'embed'], true)) {
             var_dump(...$param);
             exit(1);
         }
 
         // Clean all temp respond.
         respond()->clean();
+        header_remove();
 
-        // Show output manualy without respond class.
-        if (!headers_sent()) {
-            http_response_code(500);
-            header('Content-Type: ' . (request()->ajax() ? 'application/json' : 'text/html'));
-            header('HTTP/1.1 500 Internal Server Error', true, 500);
-        }
+        http_response_code(500);
+        header('Content-Type: ' . (request()->ajax() ? 'application/json' : 'text/html'));
+        header('HTTP/1.1 500 Internal Server Error', true, 500);
 
         if (request()->ajax()) {
             echo json_encode($param, JSON_THROW_ON_ERROR, 1024);
@@ -605,5 +610,30 @@ if (!function_exists('dispatch')) {
         if ($status === false || !chmod($file, 0777)) {
             throw new Exception('Cant save file in cache queue');
         }
+    }
+}
+
+if (!function_exists('fake')) {
+    /**
+     * Bikin sesuatu yang palsu.
+     *
+     * @param string $locale
+     * @return \Faker\Generator
+     *
+     * @throws Exception
+     */
+    function fake(string $locale = 'id_ID'): \Faker\Generator
+    {
+        if (!class_exists(\Faker\Factory::class)) {
+            throw new Exception("Class \Faker\Factory Doesn't Exist!");
+        }
+
+        if (!\Core\Facades\App::get()->has(\Faker\Factory::class)) {
+            \Core\Facades\App::get()->bind(\Faker\Factory::class, function () use ($locale): Faker\Generator {
+                return \Faker\Factory::create($locale);
+            });
+        }
+
+        return \Core\Facades\App::get()->singleton(\Faker\Factory::class);
     }
 }

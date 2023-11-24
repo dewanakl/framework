@@ -100,6 +100,16 @@ class Stream
         $this->respond = $respond;
     }
 
+    public function __destruct()
+    {
+        if (is_resource($this->file)) {
+            fclose($this->file);
+        }
+
+        $this->file = null;
+        $this->callback = null;
+    }
+
     /**
      * Init file.
      *
@@ -111,7 +121,7 @@ class Stream
         $hashFile = $etag ? @md5_file($this->path) : Hash::rand(5);
         $type = $this->ftype($this->path);
 
-        if ($type != $this->ftype() && $etag) {
+        if ($etag && $type != $this->ftype()) {
             if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
                 $this->respond->setCode(304);
                 throw new StreamTerminate;
@@ -123,7 +133,7 @@ class Stream
         @set_time_limit(0);
         @ignore_user_abort(true);
 
-        $this->file = @fopen($this->path, 'r');
+        $this->file = @fopen($this->path, 'rb');
         $this->name = @basename($this->path);
         $this->boundary = $hashFile;
         $this->size = @filesize($this->path);
@@ -185,15 +195,15 @@ class Stream
             foreach ($tmpRanges as $range) {
                 list($start, $end) = $range;
 
-                echo "\r\n--" . $this->boundary . "\r\n";
-                echo 'Content-Type: ' . $this->type . "\r\n";
-                echo sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size);
+                fwrite($this->respond->getStream(), "\r\n--" . $this->boundary . "\r\n");
+                fwrite($this->respond->getStream(), 'Content-Type: ' . $this->type . "\r\n");
+                fwrite($this->respond->getStream(), sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size));
 
                 @fseek($this->file, $start);
                 $this->readBuffer($end - $start + 1);
             }
 
-            echo "\r\n--" . $this->boundary . "--\r\n";
+            fwrite($this->respond->getStream(), "\r\n--" . $this->boundary . "--\r\n");
         };
     }
 
@@ -249,20 +259,24 @@ class Stream
     {
         $bytesLeft = $bytes;
         while ($bytesLeft > 0 && !feof($this->file)) {
-            if (@connection_aborted()) {
+            if (@connection_status() != CONNECTION_NORMAL) {
                 break;
             }
 
-            $length = ($bytesLeft > $size) ? $size : $bytesLeft;
+            $length = @stream_copy_to_stream(
+                $this->file,
+                $this->respond->getStream(),
+                ($bytesLeft > $size) ? $size : $bytesLeft
+            );
 
-            $read = @fread($this->file, $length);
-            if ($read === false) {
+            if ($length === false) {
                 break;
             }
-
-            echo $read;
 
             $bytesLeft -= $length;
+
+            // Send Now.
+            @ob_end_flush();
             @flush();
         }
     }
@@ -279,34 +293,60 @@ class Stream
             return 'application/octet-stream';
         }
 
-        $mimeTypes = [
+        $fileMimeTypes = [
             'txt' => 'text/plain',
             'text' => 'text/plain',
-            'html' => 'text/plain',
-            'php' => 'text/plain',
+            'html' => 'text/html',
+            'php' => 'text/html',
             'css' => 'text/css',
             'js' => 'text/javascript',
-            'png' => 'image/png',
-            'jpeg' => 'image/jpeg',
+            'json' => 'application/json',
+            'xml' => 'application/xml',
+            'rss' => 'application/rss+xml',
+            'atom' => 'application/atom+xml',
+            'pdf' => 'application/pdf',
             'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
             'gif' => 'image/gif',
             'bmp' => 'image/bmp',
-            'ico' => 'image/ico',
+            'ico' => 'image/x-icon',
             'svg' => 'image/svg+xml',
             'mp4' => 'video/mp4',
             'mkv' => 'video/mp4',
+            'mov' => 'video/quicktime',
+            'avi' => 'video/x-msvideo',
+            'webm' => 'video/webm',
             'mp3' => 'audio/mpeg',
-            'json' => 'application/json',
-            'pdf' => 'application/pdf'
+            'ogg' => 'audio/ogg',
+            'wav' => 'audio/wav',
+            'ttf' => 'font/ttf',
+            'otf' => 'font/otf',
+            'woff' => 'font/woff',
+            'woff2' => 'font/woff2',
+            'eot' => 'application/vnd.ms-fontobject',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'zip' => 'application/zip',
+            'tar' => 'application/x-tar',
+            'gz' => 'application/gzip',
+            'rar' => 'application/x-rar-compressed',
+            '7z' => 'application/x-7z-compressed',
+            'csv' => 'text/csv',
+            'rtf' => 'application/rtf',
         ];
 
         $typeFile = strtolower(pathinfo($typeFile, PATHINFO_EXTENSION));
 
-        if (empty($mimeTypes[$typeFile])) {
+        if (empty($fileMimeTypes[$typeFile])) {
             return 'application/octet-stream';
         }
 
-        return $mimeTypes[$typeFile];
+        return $fileMimeTypes[$typeFile];
     }
 
     /**
@@ -327,16 +367,16 @@ class Stream
             $t = count($ranges);
         }
 
-        $this->respond->getHeader()->set('Accept-Ranges', 'bytes');
-        $this->respond->getHeader()->set('Content-Type',  $this->type);
-        $this->respond->getHeader()->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)));
-
-        $this->respond->getHeader()->set(
-            'Content-Disposition',
-            $this->type == $this->ftype()
-                ? sprintf('attachment; filename="%s"', $this->name)
-                : 'inline'
-        );
+        $this->respond->getHeader()
+            ->set('Accept-Ranges', 'bytes')
+            ->set('Content-Type',  $this->type)
+            ->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)))
+            ->set(
+                'Content-Disposition',
+                $this->type == $this->ftype()
+                    ? sprintf('attachment; filename="%s"', $this->name)
+                    : 'inline'
+            );
 
         if ($t > 0) {
             if ($t === 1) {
@@ -359,21 +399,6 @@ class Stream
     public function push(): void
     {
         ($this->callback)();
-    }
-
-    /**
-     * End of stream.
-     *
-     * @return void
-     */
-    public function terminate(): void
-    {
-        if (is_resource($this->file)) {
-            @fclose($this->file);
-        }
-
-        $this->file = null;
-        $this->callback = null;
     }
 
     /**

@@ -24,6 +24,8 @@
         "ext-openssl": "*"
     },
     "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "psy/psysh": "^0.11.22",
         "phpstan/phpstan": "^1.10",
         "phpunit/phpunit": "^10"
     },

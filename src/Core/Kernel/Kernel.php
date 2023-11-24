@@ -4,8 +4,8 @@ namespace Core\Kernel;
 
 use Core\Facades\App;
 use Core\Facades\Application;
-use Core\Facades\Service;
-use Core\Support\Console;
+use Core\Facades\Cli;
+use Core\Facades\Web;
 use Core\Support\Env;
 use Core\Support\Time;
 
@@ -40,22 +40,21 @@ final class Kernel
      * Kernel for web.
      *
      * @param KernelContract $kernel
-     * @return Service
+     * @return Web
      */
-    public static function web(KernelContract $kernel): Service
+    public static function web(KernelContract $kernel): Web
     {
-        return new Service(static::build($kernel));
+        return new Web(static::build($kernel));
     }
 
     /**
      * Kernel for console.
      *
      * @param KernelContract $kernel
-     * @return Console
+     * @return Cli
      */
-    public static function console(KernelContract $kernel): Console
+    public static function console(KernelContract $kernel): Cli
     {
-        static::build($kernel);
-        return new Console();
+        return new Cli(static::build($kernel));
     }
 }

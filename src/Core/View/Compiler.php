@@ -66,7 +66,7 @@ class Compiler
      */
     private const commentTag = [
         '{{--' => '--}}',
-        '<!--' => '-->'
+        // '<!--' => '-->' // If enable, inconsistencies line
     ];
 
     /**

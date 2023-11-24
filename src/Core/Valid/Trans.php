@@ -3,6 +3,7 @@
 namespace Core\Valid;
 
 use Exception;
+use Throwable;
 
 /**
  * Translate bahasa.
@@ -24,16 +25,22 @@ class Trans
      *
      * @var string $language
      */
-    private static $language;
+    public static $language;
 
     /**
      * Init object.
      *
      * @return void
+     *
+     * @throws Exception
      */
     public function __construct()
     {
-        $this->data = (array) require_once base_path('/resources/lang/' . static::getLanguage() . '.php');
+        try {
+            $this->data = (array) @require_once base_path('/resources/lang/' . static::getLanguage() . '.php');
+        } catch (Throwable) {
+            throw new Exception('"' . static::getLanguage() . '.php" Not Found!');
+        }
     }
 
     /**

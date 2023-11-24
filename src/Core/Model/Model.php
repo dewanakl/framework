@@ -111,6 +111,32 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     protected $dateFormat;
 
     /**
+     * Create data with fake.
+     *
+     * @param int $len
+     * @return array
+     */
+    public function factory(int $len = 1): array
+    {
+        if ($len <= 1) {
+            $class = static::class;
+            $model = new $class();
+
+            return $model->create($model->fakes())->toArray();
+        }
+
+        $data = [];
+        for ($i = 0; $i < $len; $i++) {
+            $class = static::class;
+            $model = new $class();
+
+            $data[] = $model->create($model->fakes())->toArray();
+        }
+
+        return $data;
+    }
+
+    /**
      * Mempunyai satu dari.
      *
      * @param string $model
@@ -168,6 +194,16 @@ abstract class Model implements ArrayAccess, Countable, IteratorAggregate, JsonS
     {
         $this->table = $name;
         return $this;
+    }
+
+    /**
+     * Get fake configuration.
+     *
+     * @return array
+     */
+    protected function fakes(): array
+    {
+        return [];
     }
 
     /**
