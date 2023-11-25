@@ -497,8 +497,8 @@ class Respond
 
         if ($respond instanceof Respond) {
             $this->setCode($respond->getCode());
-            $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
-            $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
+            $this->headers = new Header(array_unique([...$respond->headers->all(), ...$this->headers->all()]));
+            $this->setParameter(array_unique([...$respond->getParameter(), ...$this->getParameter()]));
 
             if ($this->code >= 300 && $this->code < 400) {
                 $this->redirect($respond->getContent(), $this->code == Respond::HTTP_MOVED_PERMANENTLY);
