@@ -69,11 +69,11 @@ class Respond
     private $code;
 
     /**
-     * Respond header.
+     * Respond headers.
      *
-     * @var Header $header
+     * @var Header $headers
      */
-    private $header;
+    public $headers;
 
     /**
      * Parameter query string.
@@ -92,7 +92,7 @@ class Respond
     /**
      * Http message.
      *
-     * @var string|null $message
+     * @var string $message
      */
     private $message;
 
@@ -115,13 +115,16 @@ class Respond
     public function __construct(string|null $content = null, int $code = Respond::HTTP_OK, array $header = [], string $version = '1.1')
     {
         $this->code = $code;
-        $this->header = new Header($header);
-        $this->header->set('Content-Type', 'text/html; charset=utf-8');
-        $this->header->set('Date', gmdate(DateTimeInterface::RFC7231));
+        $this->headers = new Header($header);
+        $this->headers->set('Content-Type', 'text/html');
+        $this->headers->set('Date', gmdate(DateTimeInterface::RFC7231));
         $this->content = $content;
         $this->version = $version;
         $this->message = $this->codeHttpMessage($code);
         $this->parameter = [];
+
+        // Ensure stream is null.
+        $this->__destruct();
         $this->stream = fopen('php://output', 'wb');
     }
 
@@ -229,7 +232,7 @@ class Respond
         }
 
         $this->setCode($force ? Respond::HTTP_MOVED_PERMANENTLY : Respond::HTTP_MOVED_TEMPORARILY);
-        $this->header->set('Location', $uri);
+        $this->headers->set('Location', $uri);
     }
 
     /**
@@ -343,7 +346,7 @@ class Respond
      */
     public function getHeader(): Header
     {
-        return $this->header;
+        return $this->headers;
     }
 
     /**
@@ -372,25 +375,55 @@ class Respond
     /**
      * Set content.
      *
-     * @param string|int|bool|null $prm
-     * @return void
+     * @param mixed $content
+     * @return Respond
      */
-    public function setContent(string|int|bool|null $prm): void
+    public function setContent(mixed $content = null): Respond
     {
-        $prm = strval($prm);
-        if (!empty($prm)) {
-            $this->content = $this->content !== null ? $this->content . $prm : $prm;
+        if (!is_null($content)) {
+            $content = strval($content);
         }
+
+        $this->content = $content;
+
+        return $this;
+    }
+
+    /**
+     * Set query parameter.
+     *
+     * @param array $param
+     * @return Respond
+     */
+    public function setParameter(array $param = []): Respond
+    {
+        $this->parameter = $param;
+        return $this;
+    }
+
+    /**
+     * Get query parameter.
+     *
+     * @return array
+     */
+    public function getParameter(): array
+    {
+        return $this->parameter;
     }
 
     /**
      * Dapatkan content.
      *
+     * @param bool $nullable
      * @return string|null
      */
-    public function getContent(): string|null
+    public function getContent(bool $nullable = true): string|null
     {
-        return $this->content;
+        if ($nullable) {
+            return $this->content;
+        }
+
+        return $this->content ?? '';
     }
 
     /**
@@ -400,33 +433,9 @@ class Respond
      */
     public function clean(): void
     {
+        $presistenVersion = $this->getVersionHeader();
         @clear_ob();
-        $this->code = Respond::HTTP_OK;
-        $this->header = new Header();
-        $this->header->set('Content-Type', 'text/html; charset=utf-8');
-        $this->header->set('Date', gmdate(DateTimeInterface::RFC7231));
-        $this->content = null;
-        $this->message = $this->codeHttpMessage($this->code);
-        $this->parameter = [];
-        $this->__destruct();
-        $this->stream = fopen('php://output', 'wb');
-    }
-
-    /**
-     * Format json default.
-     *
-     * @param array|object|null $data
-     * @param array|object|null $error
-     * @param int $code
-     * @return string
-     */
-    public function formatJson(array|object|null $data = null, array|object|null $error = null, int $code = Respond::HTTP_OK): string
-    {
-        return json([
-            'code' => $code,
-            'data' => $data,
-            'error' => $error
-        ], $code);
+        $this->__construct(version: $presistenVersion);
     }
 
     /**
@@ -444,11 +453,9 @@ class Respond
         session()->send();
 
         http_response_code($this->code);
-        if ($this->version && $this->code && $this->message) {
-            header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
-        }
+        header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
 
-        foreach ($this->header->all() as $key => $value) {
+        foreach ($this->headers->all() as $key => $value) {
             if (!$value) {
                 header($key, true, $this->code);
                 continue;
@@ -465,12 +472,12 @@ class Respond
     }
 
     /**
-     * Tampilkan responnya.
+     * Transform respond to response instance.
      *
      * @param mixed $respond
-     * @return void
+     * @return Respond
      */
-    public function send(mixed $respond): void
+    public function transform(mixed $respond): Respond
     {
         if (is_string($respond) || is_numeric($respond) || $respond instanceof Stringable) {
             if ($respond instanceof Stringable) {
@@ -480,27 +487,60 @@ class Respond
             }
 
             $this->content = $respond;
-        } else if (is_array($respond) || $respond instanceof JsonSerializable) {
-            $this->content = json($respond, $this->code);
-        } else if ($respond instanceof Respond) {
-            if ($respond->getCode() >= 300 && $respond->getCode() < 400) {
-                $this->redirect($respond->getContent(), $respond->getCode() == Respond::HTTP_MOVED_PERMANENTLY);
-                $this->content = null;
-            } else if ($respond->getContent() !== null) {
-                $this->content = $respond->getContent();
-            }
-        } else if ($respond instanceof Stream) {
-            $respond = $respond->process();
+            return $this;
         }
 
-        $this->prepare();
+        if (is_array($respond) || $respond instanceof JsonSerializable) {
+            $this->content = json($respond, $this->code);
+            return $this;
+        }
+
+        if ($respond instanceof Respond) {
+            $this->setCode($respond->getCode());
+            $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
+            $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
+
+            if ($this->code >= 300 && $this->code < 400) {
+                $this->redirect($respond->getContent(), $this->code == Respond::HTTP_MOVED_PERMANENTLY);
+                $this->content = null;
+                return $this;
+            }
+
+            if ($respond->getContent() !== null) {
+                $this->content = $respond->getContent();
+                return $this;
+            }
+
+            return $this;
+        }
 
         if ($respond instanceof Stream) {
-            @ob_end_clean();
+            $this->setParameter(); // Set empty query parameters.
+            $this->content = null;
+            $respond->process();
+            return $this;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Tampilkan responnya.
+     *
+     * @param Respond|Stream $respond
+     * @return void
+     */
+    public function send(Respond|Stream $respond): void
+    {
+        $this->prepare();
+        @ob_end_clean();
+
+        if ($respond instanceof Stream) {
             $respond->push();
-        } else if ($this->content) {
-            @ob_end_clean();
-            fwrite($this->stream, $this->content);
+        }
+
+        if ($respond instanceof Respond) {
+            fwrite($respond->getStream(), $respond->getContent(false));
         }
 
         // Send output buffer.

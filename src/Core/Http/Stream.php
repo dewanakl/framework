@@ -88,6 +88,13 @@ class Stream
     private $path;
 
     /**
+     * Respond stream.
+     *
+     * @var resource|false|null $stream
+     */
+    private $stream;
+
+    /**
      * Init objek.
      *
      * @param Request $request
@@ -98,6 +105,7 @@ class Stream
     {
         $this->request = $request;
         $this->respond = $respond;
+        $this->stream = $respond->getStream();
     }
 
     public function __destruct()
@@ -118,7 +126,7 @@ class Stream
      */
     private function init(bool $etag): void
     {
-        $hashFile = $etag ? @md5_file($this->path) : Hash::rand(5);
+        $hashFile = $etag ? @md5_file($this->path) : Hash::rand(10);
         $type = $this->ftype($this->path);
 
         if ($etag && $type != $this->ftype()) {
@@ -195,15 +203,15 @@ class Stream
             foreach ($tmpRanges as $range) {
                 list($start, $end) = $range;
 
-                fwrite($this->respond->getStream(), "\r\n--" . $this->boundary . "\r\n");
-                fwrite($this->respond->getStream(), 'Content-Type: ' . $this->type . "\r\n");
-                fwrite($this->respond->getStream(), sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size));
+                fwrite($this->stream, "\r\n--" . $this->boundary . "\r\n");
+                fwrite($this->stream, 'Content-Type: ' . $this->type . "\r\n");
+                fwrite($this->stream, sprintf("Content-Range: bytes %s-%s/%s\r\n\r\n", $start, $end, $this->size));
 
                 @fseek($this->file, $start);
                 $this->readBuffer($end - $start + 1);
             }
 
-            fwrite($this->respond->getStream(), "\r\n--" . $this->boundary . "--\r\n");
+            fwrite($this->stream, "\r\n--" . $this->boundary . "--\r\n");
         };
     }
 
@@ -265,7 +273,7 @@ class Stream
 
             $length = @stream_copy_to_stream(
                 $this->file,
-                $this->respond->getStream(),
+                $this->stream,
                 ($bytesLeft > $size) ? $size : $bytesLeft
             );
 

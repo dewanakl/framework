@@ -102,7 +102,8 @@ class Console
             return 1;
         }
 
-        echo $this->createColor('red', $th->getFile() . ' - ' . $th->getMessage());
+        echo $this->createColor('red', get_class($th));
+        echo ' - ' . $th->getMessage();
 
         return 1;
     }
@@ -744,7 +745,7 @@ class Console
                 $fullName = $this->classes[$class] ?? false;
 
                 if ($fullName) {
-                    $this->shell->writeStdout($this->console->createColor('yellow', sprintf("Class [%s] alias [%s].\n", $class, $fullName)));
+                    $this->shell->writeStdout("\n" . $this->console->createColor('yellow', "[WARN]") . sprintf(" Class \"%s\" alias \"%s\"", $class, $fullName) . "\n");
                     class_alias($fullName, $class);
                 }
             }

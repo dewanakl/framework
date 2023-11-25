@@ -136,13 +136,14 @@ if (!function_exists('json')) {
      *
      * @param mixed $data
      * @param int $code
+     * @param int $flag
      * @return string
      */
-    function json(mixed $data, int $code = 200): string
+    function json(mixed $data, int $code = 200, int $flag = 0): string
     {
         respond()->setCode($code);
         respond()->getHeader()->set('Content-Type', 'application/json');
-        return json_encode($data, JSON_THROW_ON_ERROR, 1024);
+        return json_encode($data, JSON_THROW_ON_ERROR | $flag, 1024);
     }
 }
 
@@ -309,10 +310,9 @@ if (!function_exists('unavailable')) {
         $respond = respond();
         $respond->clean();
         $respond->setCode(503);
-        $respond->getHeader()->set('Content-Type', request()->ajax() ? 'application/json' : 'text/html');
 
         if (request()->ajax()) {
-            return $respond->formatJson(null, ['Service Unavailable'], 503);
+            return json(['Service Unavailable'], 503);
         }
 
         return render(helper_path('/errors/error'), ['pesan' => 'Service Unavailable']);
