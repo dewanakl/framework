@@ -93,7 +93,7 @@ abstract class HttpException extends ErrorException implements Stringable
     public function __toString(): string
     {
         if (isset(static::$json)) {
-            return strval(is_string(static::$json) ? respond()->formatJson(null, [static::$json], $this->code) : json(static::$json, $this->code));
+            return strval(is_string(static::$json) ? json([static::$json], $this->code) : json(static::$json, $this->code));
         }
 
         if (isset(static::$path)) {

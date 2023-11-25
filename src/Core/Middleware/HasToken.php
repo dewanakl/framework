@@ -29,8 +29,7 @@ trait HasToken
                 page_expired();
             }
 
-            return respond()->formatJson(
-                null,
+            return json(
                 ['Csrf token not found'],
                 400
             );

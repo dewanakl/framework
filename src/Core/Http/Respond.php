@@ -527,11 +527,15 @@ class Respond
     /**
      * Tampilkan responnya.
      *
-     * @param Respond|Stream $respond
+     * @param mixed $respond
      * @return void
      */
-    public function send(Respond|Stream $respond): void
+    public function send(mixed $respond): void
     {
+        if (!($respond instanceof Stream) && !($respond instanceof Respond)) {
+            $this->transform($respond);
+        }
+
         $this->prepare();
         @ob_end_clean();
 

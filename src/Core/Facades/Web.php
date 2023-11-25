@@ -8,7 +8,9 @@ use Core\Http\Exception\HttpException;
 use Core\Http\Exception\NotAllowedException;
 use Core\Http\Exception\NotFoundException;
 use Core\Http\Exception\StreamTerminate;
+use Core\Http\Respond;
 use Core\Http\Session;
+use Core\Http\Stream;
 use Core\Middleware\Middleware;
 use Core\Routing\Controller;
 use Core\Routing\Route;
@@ -53,11 +55,11 @@ class Web extends Service
      *
      * @param array<string, mixed> $route
      * @param array<int, mixed> $variables
-     * @return mixed
+     * @return Respond|Stream
      *
      * @throws ErrorException
      */
-    private function process(array $route, array $variables): mixed
+    private function process(array $route, array $variables): Respond|Stream
     {
         $middleware = new Middleware([
             ...$this->kernel->middlewares(),
@@ -114,18 +116,16 @@ class Web extends Service
     /**
      * Run route list.
      *
-     * @return mixed
+     * @return Respond|Stream
      *
      * @throws HttpException
      */
-    private function runRoute(): mixed
+    private function runRoute(): Respond|Stream
     {
         $path = $this->request->getValidUrl();
         $method = $this->request->getValidMethod();
 
-        $result = null;
         $routeMatch = false;
-        $methodMatch = false;
 
         foreach (Route::router()->routes() as $route) {
             $pattern = '#^' . $route['path'] . '$#';
@@ -135,14 +135,12 @@ class Web extends Service
                 $routeMatch = true;
 
                 if ($route['method'] == $method) {
-                    $methodMatch = true;
-                    $result = $this->process($route, $variables);
-                    break;
+                    return $this->process($route, $variables);
                 }
             }
         }
 
-        if ($routeMatch && !$methodMatch) {
+        if ($routeMatch) {
             if ($this->request->ajax()) {
                 NotAllowedException::json();
             }
@@ -150,15 +148,11 @@ class Web extends Service
             throw new NotAllowedException();
         }
 
-        if (!$routeMatch) {
-            if ($this->request->ajax()) {
-                NotFoundException::json();
-            }
-
-            throw new NotFoundException();
+        if ($this->request->ajax()) {
+            NotFoundException::json();
         }
 
-        return $result;
+        throw new NotFoundException();
     }
 
     /**
@@ -170,10 +164,10 @@ class Web extends Service
     protected function handleHttpException(HttpException $th): int
     {
         try {
-            $this->respond->send($th->__toString());
+            $this->respond->send($this->respond->transform($th->__toString()));
         } catch (Throwable $th) {
             $this->respond->clean();
-            $this->respond->send($this->handleError($th));
+            $this->respond->send($this->respond->transform($this->handleError($th)));
         } finally {
             return 1;
         }
@@ -226,7 +220,7 @@ class Web extends Service
                 return $this->handleHttpException($th);
             }
 
-            $this->respond->send($this->handleError($th));
+            $this->respond->send($this->respond->transform($this->handleError($th)));
             return 1;
         }
     }

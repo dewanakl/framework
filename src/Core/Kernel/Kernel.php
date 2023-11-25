@@ -48,12 +48,12 @@ final class Kernel
     }
 
     /**
-     * Kernel for console.
+     * Kernel for cli.
      *
      * @param KernelContract $kernel
      * @return Cli
      */
-    public static function console(KernelContract $kernel): Cli
+    public static function cli(KernelContract $kernel): Cli
     {
         return new Cli(static::build($kernel));
     }
