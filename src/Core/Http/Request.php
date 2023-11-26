@@ -66,15 +66,24 @@ class Request
      */
     public function __construct()
     {
-        $this->stream = fopen('php://input', 'rb');
-        $this->content = stream_get_contents($this->stream);
-        $this->content = !empty($this->content) ? $this->content : null;
+        if (!App::get()->has(Request::class) && !is_resource($this->stream)) {
+            $this->stream = fopen('php://input', 'rb');
+            $this->content = stream_get_contents($this->stream);
+            $this->content = !empty($this->content) ? $this->content : null;
 
-        $RAW = $this->content ? (json_decode($this->content, true, 1024, JSON_ERROR_NONE) ?? []) : [];
+            $RAW = $this->content ? (json_decode($this->content, true, 1024, JSON_ERROR_NONE) ?? []) : [];
 
-        $this->server = new Header($_SERVER);
-        $this->request = new Header([...$_REQUEST, ...$RAW]);
-        $this->file = new Header(UploadedFile::parse($_FILES));
+            $this->server = new Header($_SERVER);
+            $this->request = new Header([...$_REQUEST, ...$RAW]);
+            $this->file = new Header(UploadedFile::parse($_FILES));
+        } else {
+            $raw = App::get()->singleton(Request::class);
+
+            $this->content = $raw->getContent();
+            $this->server = $raw->server;
+            $this->request = $raw->request;
+            $this->file = $raw->file;
+        }
     }
 
     /**

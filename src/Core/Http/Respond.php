@@ -2,6 +2,7 @@
 
 namespace Core\Http;
 
+use Core\Facades\App;
 use DateTimeInterface;
 use Exception;
 use JsonSerializable;
@@ -123,6 +124,18 @@ class Respond
         $this->message = $this->codeHttpMessage($code);
         $this->parameter = [];
 
+        if (!App::get()->has(Respond::class) && !is_resource($this->stream)) {
+            $this->createStream();
+        }
+    }
+
+    /**
+     * Create a new stream.
+     *
+     * @return void
+     */
+    private function createStream(): void
+    {
         // Ensure stream is null.
         $this->__destruct();
         $this->stream = fopen('php://output', 'wb');
@@ -435,6 +448,7 @@ class Respond
     {
         $presistenVersion = $this->getVersionHeader();
         @clear_ob();
+        $this->createStream();
         $this->__construct(version: $presistenVersion);
     }
 
@@ -495,7 +509,7 @@ class Respond
             return $this;
         }
 
-        if ($respond instanceof Respond) {
+        if (App::get()->singleton(Respond::class) !== $respond && $respond instanceof Respond) {
             $this->setCode($respond->getCode());
             $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
             $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
@@ -532,11 +546,7 @@ class Respond
      */
     public function send(mixed $respond): void
     {
-        if (!($respond instanceof Stream) && !($respond instanceof Respond)) {
-            $this->transform($respond);
-        }
-
-        $this->prepare();
+        $this->transform($respond)->prepare();
         @ob_end_clean();
 
         if ($respond instanceof Stream) {

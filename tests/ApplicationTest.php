@@ -8,9 +8,11 @@ use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase
 {
+    protected $application;
+
     public function __construct(string $name)
     {
         parent::__construct($name);
-        App::new(new Application);
+        $this->application = App::new(new Application);
     }
 }
