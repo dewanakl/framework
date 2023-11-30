@@ -105,7 +105,6 @@ class Stream
     {
         $this->request = $request;
         $this->respond = $respond;
-        $this->stream = $respond->getStream();
     }
 
     public function __destruct()
@@ -364,6 +363,7 @@ class Stream
      */
     public function process(): Stream
     {
+        $this->stream = $this->respond->getStream();
         $range = '';
         $ranges = [];
         $t = 0;

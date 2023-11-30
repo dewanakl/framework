@@ -500,7 +500,7 @@ class Respond
                 session()->unset(Session::ERROR);
             }
 
-            $this->content = $respond;
+            $this->content = strval($respond);
             return $this;
         }
 
@@ -511,17 +511,13 @@ class Respond
 
         if (App::get()->singleton(Respond::class) !== $respond && $respond instanceof Respond) {
             $this->setCode($respond->getCode());
+            $this->content = $respond->getContent();
             $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
             $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
 
             if ($this->code >= 300 && $this->code < 400) {
-                $this->redirect($respond->getContent(), $this->code == Respond::HTTP_MOVED_PERMANENTLY);
+                $this->redirect($this->content, $this->code == Respond::HTTP_MOVED_PERMANENTLY);
                 $this->content = null;
-                return $this;
-            }
-
-            if ($respond->getContent() !== null) {
-                $this->content = $respond->getContent();
                 return $this;
             }
 
@@ -546,8 +542,9 @@ class Respond
      */
     public function send(mixed $respond): void
     {
-        $this->transform($respond)->prepare();
         @ob_end_clean();
+
+        $this->transform($respond)->prepare();
 
         if ($respond instanceof Stream) {
             $respond->push();
