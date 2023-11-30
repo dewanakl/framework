@@ -40,6 +40,37 @@ class Error
     private $information;
 
     /**
+     * Stream stderr.
+     *
+     * @var resource|null
+     */
+    private $stream;
+
+    /**
+     * Init object.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->stream = fopen('php://stderr', 'wb');
+    }
+
+    /**
+     * Destroy object.
+     *
+     * @return void
+     */
+    public function __destruct()
+    {
+        if (is_resource($this->stream)) {
+            fclose($this->stream);
+        }
+
+        $this->stream = null;
+    }
+
+    /**
      * Ubah ke JSON.
      *
      * @param Throwable $th
@@ -118,6 +149,17 @@ class Error
 
         if (env('LOG', 'true') == 'false') {
             return $this;
+        }
+
+        if (is_resource($this->stream)) {
+            fwrite($this->stream, sprintf(
+                '[%s] (%s) %s::%s %s',
+                now(DateTimeImmutable::RFC3339_EXTENDED),
+                execute_time(),
+                $th->getFile(),
+                $th->getLine(),
+                $th->getMessage()
+            ) . PHP_EOL);
         }
 
         $status = @file_put_contents($absoluteFile, $this->information . PHP_EOL, FILE_USE_INCLUDE_PATH | FILE_APPEND | LOCK_EX);
