@@ -12,6 +12,7 @@ use Core\Http\Respond;
 use Core\Http\Session;
 use Core\Http\Stream;
 use Core\Middleware\Middleware;
+use Core\Middleware\MiddlewareInterface;
 use Core\Routing\Controller;
 use Core\Routing\Route;
 use Core\Support\Error;
@@ -36,64 +37,39 @@ class Web extends Service
     }
 
     /**
-     * Eksekusi core middleware.
+     * Eksekusi controller.
      *
-     * @param array<string, mixed> $route
-     * @param array<int, mixed> $variables
+     * @param object $controller
+     * @param string|null $function
      * @return Closure
      */
-    private function coreMiddleware(array $route, array $variables): Closure
+    private function coreMiddleware(object $controller, string|null $function = null): Closure
     {
-        return function () use ($route, $variables): mixed {
-            $this->registerProvider();
-            return $this->invokeController($route, $variables);
+        return function () use ($controller, $function): mixed {
+            if ($function === null) {
+                return null;
+            }
+
+            return $this->app->invoke(
+                $controller,
+                $function,
+                array_values($this->request->route())
+            );
         };
     }
 
     /**
-     * Process middleware, provider, and controller.
+     * Process middleware and controller.
      *
      * @param array<string, mixed> $route
-     * @param array<int, mixed> $variables
      * @return Respond|Stream
      *
      * @throws ErrorException
      */
-    private function process(array $route, array $variables): Respond|Stream
-    {
-        $middleware = new Middleware([
-            ...$this->kernel->middlewares(),
-            ...$route['middleware']
-        ]);
-
-        $result = $middleware->handle($this->request, $this->coreMiddleware($route, $variables));
-
-        $error = error_get_last();
-        if ($error !== null) {
-            error_clear_last();
-            throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Eksekusi controllernya.
-     *
-     * @param array<string, mixed> $route
-     * @param array<int, mixed> $variables
-     * @return mixed
-     *
-     * @throws Exception
-     */
-    private function invokeController(array $route, array $variables): mixed
+    private function process(array $route): Respond|Stream
     {
         $controller = $route['controller'];
         $function = $route['function'];
-
-        if ($function === null) {
-            return null;
-        }
 
         if ($controller === null) {
             $controller = $function;
@@ -105,12 +81,41 @@ class Web extends Service
             throw new Exception(sprintf('Class "%s" is not extends BaseController.', get_class($controller)));
         }
 
-        $parameters = [];
-        for ($i = 1; $i < count($variables); $i++) {
-            $parameters[] = $variables[$i];
+        $attributeMiddleware = [];
+        if ($function) {
+            foreach ($this->app->getAttribute($controller, $function) as $value) {
+                if ($this->app->make($value->getName()) instanceof MiddlewareInterface) {
+                    $attributeMiddleware[] = $value->getName();
+                }
+
+                $this->app->clean($value->getName());
+            }
         }
 
-        return $this->app->invoke($controller, $function, $parameters);
+        $middleware = new Middleware([
+            ...$this->kernel->middlewares(),
+            ...$route['middleware'],
+            ...$attributeMiddleware
+        ]);
+
+        $result = $middleware->handle(
+            $this->request,
+            $this->coreMiddleware($controller, $function)
+        );
+
+        $error = error_get_last();
+        if ($error !== null) {
+            error_clear_last();
+            throw new ErrorException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -128,14 +133,23 @@ class Web extends Service
         $routeMatch = false;
 
         foreach (Route::router()->routes() as $route) {
-            $pattern = '#^' . $route['path'] . '$#';
+
+            $params = [];
             $variables = [];
+
+            preg_match_all('/{(\w+)}/', $route['path'], $params);
+            $pattern = '#^' . preg_replace('/{(\w+)}/', '([\w-]*)', $route['path']) . '$#';
 
             if (preg_match($pattern, $path, $variables)) {
                 $routeMatch = true;
 
                 if ($route['method'] == $method) {
-                    return $this->process($route, $variables);
+                    array_shift($variables);
+                    $route['params'] = array_combine($params[1], $variables);
+
+                    Route::$route = $route;
+                    $this->registerProvider();
+                    return $this->process($route);
                 }
             }
         }

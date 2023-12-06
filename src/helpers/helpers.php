@@ -167,7 +167,13 @@ if (!function_exists('e')) {
         $error = error_get_last();
         if ($error !== null) {
             error_clear_last();
-            throw new \Core\View\Exception\CastToStringException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            throw new \Core\View\Exception\CastToStringException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            );
         }
 
         return htmlspecialchars($str);
@@ -440,7 +446,7 @@ if (!function_exists('route')) {
         $found = false;
         foreach (\Core\Routing\Route::router()->routes() as $route) {
             if ($route['name'] == $param) {
-                $param = $route['path'];
+                $param = preg_replace('/{(\w+)}/', '([\w-]*)', $route['path']);
                 $found = true;
                 break;
             }

@@ -71,7 +71,6 @@ class Router
             $function = $action;
         }
 
-        $path = preg_replace('/{(\w+)}/', '([\w-]*)', $path);
         $middleware = is_null($middleware) ? [] : (is_string($middleware) ? array($middleware) : $middleware);
 
         $idroute = count($this->routes);
@@ -268,8 +267,7 @@ class Router
 
                 if (!is_null($tempPrefix)) {
                     $old = $this->routes[$id]['path'];
-                    $prefix = preg_replace('/{(\w+)}/', '([\w-]*)', $tempPrefix);
-                    $this->routes[$id]['path'] = ($old != '/') ? $prefix . $old : $prefix;
+                    $this->routes[$id]['path'] = ($old != '/') ? $tempPrefix . $old : $tempPrefix;
                 }
 
                 if (!empty($tempMiddleware)) {

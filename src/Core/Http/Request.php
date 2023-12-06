@@ -4,6 +4,7 @@ namespace Core\Http;
 
 use Core\Facades\App;
 use Core\File\UploadedFile;
+use Core\Routing\Route;
 use Core\Valid\Exception\ValidationException;
 use Core\Valid\Validator;
 use Exception;
@@ -98,6 +99,28 @@ class Request
         }
 
         $this->stream = null;
+    }
+
+    /**
+     * Set or get route params.
+     *
+     * @param string|null $key
+     * @param mixed $val
+     * @return mixed
+     */
+    public function route(string|null $key = null, mixed $val = null): mixed
+    {
+        $params = Route::route()['params'];
+        if (!$key) {
+            return $params;
+        }
+
+        if (!$val) {
+            return @$params[$key] ?? null;
+        }
+
+        $params[$key] = $val;
+        return $val;
     }
 
     /**

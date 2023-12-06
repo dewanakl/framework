@@ -51,8 +51,10 @@ class Application implements ContainerInterface
     private function build(string $name, array $default = []): object
     {
         try {
+            $ref = new ReflectionClass($name);
+
             return new $name(...$this->getDependencies(
-                (new ReflectionClass($name))->getConstructor()?->getParameters() ?? [],
+                $ref->getConstructor()?->getParameters() ?? [],
                 $default
             ));
         } catch (ReflectionException $e) {
@@ -138,8 +140,10 @@ class Application implements ContainerInterface
         }
 
         try {
+            $ref = new ReflectionClass($name);
+
             return $name->{$method}(...$this->getDependencies(
-                (new ReflectionClass($name))->getMethod($method)->getParameters(),
+                $ref->getMethod($method)->getParameters(),
                 $default
             ));
         } catch (ReflectionException $e) {
@@ -195,8 +199,10 @@ class Application implements ContainerInterface
     public function resolve(Closure $name, array $default = []): mixed
     {
         try {
+            $ref = new ReflectionFunction($name);
+
             return $name(...$this->getDependencies(
-                (new ReflectionFunction($name))->getParameters(),
+                $ref->getParameters(),
                 $default
             ));
         } catch (ReflectionException $e) {
@@ -226,5 +232,18 @@ class Application implements ContainerInterface
         }
 
         $this->objectPool[$abstract] = $bind;
+    }
+
+    /**
+     * Get attribute on function of object.
+     *
+     * @param object $abstract
+     * @param string $function
+     * @return array<int, \ReflectionAttribute>
+     */
+    public function getAttribute(object $abstract, string $function): array
+    {
+        $ref = new ReflectionClass($abstract);
+        return $ref->getMethod($function)->getAttributes();
     }
 }

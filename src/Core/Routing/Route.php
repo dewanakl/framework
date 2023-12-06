@@ -14,6 +14,23 @@ use Throwable;
 final class Route
 {
     /**
+     * Indicate current route.
+     *
+     * @var array $route
+     */
+    public static $route;
+
+    /**
+     * Get current route.
+     *
+     * @return array
+     */
+    public static function &route(): array
+    {
+        return static::$route;
+    }
+
+    /**
      * Simpan url route get.
      *
      * @param string $path

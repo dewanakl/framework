@@ -29,7 +29,13 @@ abstract class Controller
         $error = error_get_last();
         if ($error !== null) {
             error_clear_last();
-            throw new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line']);
+            throw new ErrorException(
+                $error['message'],
+                0,
+                $error['type'],
+                $error['file'],
+                $error['line']
+            );
         }
     }
 
