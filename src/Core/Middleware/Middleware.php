@@ -24,13 +24,13 @@ class Middleware
     /**
      * Buat objek middleware.
      *
-     * @param array<int, MiddlewareInterface> $layers
+     * @param array<int, class-string<MiddlewareInterface>|MiddlewareInterface> $layers
      * @return void
      */
     public function __construct(array $layers = [])
     {
         for ($i = (count($layers) - 1); $i >= 0; $i--) {
-            $this->layers[] = new $layers[$i];
+            $this->layers[] = is_object($layers[$i]) ? $layers[$i] : new $layers[$i];
         }
     }
 

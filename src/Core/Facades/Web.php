@@ -39,14 +39,14 @@ class Web extends Service
     /**
      * Eksekusi controller.
      *
-     * @param object $controller
+     * @param object|null $controller
      * @param string|null $function
      * @return Closure
      */
-    private function coreMiddleware(object $controller, string|null $function = null): Closure
+    private function coreMiddleware(object|null $controller = null, string|null $function = null): Closure
     {
         return function () use ($controller, $function): mixed {
-            if ($function === null) {
+            if ($function === null || $controller === null) {
                 return null;
             }
 
@@ -76,16 +76,20 @@ class Web extends Service
             $function = '__invoke';
         }
 
-        $controller = $this->app->singleton($controller);
-        if (!($controller instanceof Controller)) {
-            throw new Exception(sprintf('Class "%s" is not extends BaseController.', get_class($controller)));
+        if ($controller) {
+            $controller = $this->app->singleton($controller);
+            if (!($controller instanceof Controller)) {
+                throw new Exception(sprintf('Class "%s" is not extends BaseController.', get_class($controller)));
+            }
         }
 
         $attributeMiddleware = [];
-        if ($function) {
+        if ($controller && $function) {
             foreach ($this->app->getAttribute($controller, $function) as $value) {
-                if ($this->app->make($value->getName()) instanceof MiddlewareInterface) {
-                    $attributeMiddleware[] = $value->getName();
+                $object = $this->app->make($value->getName());
+
+                if ($object instanceof MiddlewareInterface) {
+                    $attributeMiddleware[] = $object;
                 }
 
                 $this->app->clean($value->getName());
