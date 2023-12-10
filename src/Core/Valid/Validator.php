@@ -99,6 +99,12 @@ class Validator
                 $this->checkUploadedFile($file, $param, $rule);
             }
         }
+
+        foreach ($this->ignore ?? [] as $value) {
+            if (empty($this->__get($value))) {
+                $this->__set($value, null);
+            }
+        }
     }
 
     /**

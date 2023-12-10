@@ -9,6 +9,8 @@
     <style>
         body {
             margin: 2rem 1rem;
+            font-family: monospace;
+            font-size: 0.94rem;
         }
 
         .pre {
@@ -17,11 +19,6 @@
             overflow: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-        }
-
-        .font {
-            font-family: monospace;
-            font-size: 0.94rem;
         }
 
         th {
@@ -47,7 +44,6 @@
             display: flex;
             flex-direction: row;
             height: 50vh;
-
         }
 
         @media (max-width: 800px) {
@@ -65,7 +61,7 @@
         }
 
         .item {
-            padding: 0.3rem;
+            padding: 0.4rem;
             text-align: left;
             border-bottom: 0.05rem solid #bbb;
         }
@@ -114,7 +110,7 @@ ini_set("highlight.string", "#DD0000");
         <h3 style="font-family: monospace; overflow: auto; white-space: pre-wrap; word-wrap: break-word;">Process: <?= execute_time() ?>ms</h3>
     </nav>
 
-    <main class="font">
+    <main>
 
         <section class="trace">
             <div class="information">
@@ -125,7 +121,8 @@ ini_set("highlight.string", "#DD0000");
                         echo '<div id="0" style="display: none">';
                         echo '<pre style="margin: 0.25rem;">' . htmlspecialchars($error->getFile()) . '</pre><hr>';
                         $depth = $depthReadFile;
-                        $file = explode("<br />", @highlight_file($error->getFile(), true));
+                        $filename = @highlight_file($error->getFile(), true);
+                        $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
 
                         for ($i = $depth; $i > 0; $i--) {
                             if (isset($file[$error->getLine() - $i])) {
@@ -152,7 +149,7 @@ ini_set("highlight.string", "#DD0000");
                     <pre style="margin: 0;white-space: nowrap;overflow: hidden; text-overflow: ellipsis; color:black !important;" class="black">[0] <?= ltrim($file[$error->getLine() - 1], '&nbsp;') ?></pre>
                 </div>
                 <?php foreach ($error->getTrace() as $id => $value) : ?>
-                    <div class="item" <?= empty($value['file']) ? 'style="cursor: not-allowed;"' : 'onclick="document.getElementById(\'file\').innerHTML = document.getElementById(' . $id + 1 . ').innerHTML"' ?>>
+                    <div class="item" <?= empty($value['file']) ? 'style="cursor: not-allowed;"' : 'onclick="document.getElementById(\'file\').innerHTML = document.getElementById(' . ($id + 1) . ').innerHTML"' ?>>
                         <pre style="margin: 0; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">[<?= $id + 1 ?>] <?= htmlspecialchars(isset($value['class']) ? $value['class'] . $value['type'] . $value['function'] : $value['function']) ?></pre>
 
                         <?php
@@ -161,10 +158,11 @@ ini_set("highlight.string", "#DD0000");
                             continue;
                         }
 
-                        echo '<div id="' . $id + 1 . '" style="display: none">';
+                        echo '<div id="' . ($id + 1) . '" style="display: none">';
                         echo '<pre style="margin: 0.25rem;">' . htmlspecialchars($value['file'] ?? '-') . '</pre><hr>';
                         $depth = $depthReadFile;
-                        $file = explode("<br />", highlight_file($value['file'], true));
+                        $filename = @highlight_file($value['file'], true);
+                        $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
 
                         for ($i = $depth; $i > 0; $i--) {
                             if (isset($file[$value['line'] - $i])) {
@@ -194,7 +192,9 @@ ini_set("highlight.string", "#DD0000");
                     echo '<pre style="margin: 0.25rem; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">' . htmlspecialchars($error->getFile()) . '</pre><hr>';
 
                     $depth = $depthReadFile;
-                    $file = explode("<br />", @highlight_file($error->getFile(), true));
+                    $filename = @highlight_file($error->getFile(), true);
+                    $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
+
                     for ($i = $depth; $i > 0; $i--) {
                         if (isset($file[$error->getLine() - $i])) {
                             $class = '';
