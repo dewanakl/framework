@@ -107,13 +107,13 @@ class Compiler
     /**
      * Init object.
      *
-     * @param string $path
+     * @param string|null $path
      * @return void
      */
-    public function __construct(string $path = '/cache/views')
+    public function __construct(string|null $path = null)
     {
         $this->orignalBlocks = [];
-        $this->originCachePath = $path;
+        $this->originCachePath = $path ? $path : env('VIEW_COMPILED_PATH', '/cache/views');
         $this->uid = md5(random_bytes(5));
     }
 
