@@ -69,7 +69,7 @@ class DataBase
     private function options(): array
     {
         $options = [
-            PDO::ATTR_PERSISTENT => true,
+            PDO::ATTR_PERSISTENT => env('PDO_ATTR_PERSISTENT', 'true') == 'true',
             PDO::ATTR_CASE => PDO::CASE_NATURAL,
             PDO::ATTR_STRINGIFY_FETCHES => false,
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
