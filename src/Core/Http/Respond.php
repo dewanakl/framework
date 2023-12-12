@@ -109,16 +109,19 @@ class Respond
      *
      * @param string|null $content
      * @param int $code
-     * @param array $header
+     * @param array $headers
      * @param string $version
      * @return void
      */
-    public function __construct(string|null $content = null, int $code = Respond::HTTP_OK, array $header = [], string $version = '1.1')
+    public function __construct(string|null $content = null, int $code = Respond::HTTP_OK, array $headers = [], string $version = '1.1')
     {
         $this->code = $code;
-        $this->headers = new Header($header);
-        $this->headers->set('Content-Type', 'text/html');
-        $this->headers->set('Date', gmdate(DateTimeInterface::RFC7231));
+        $this->headers = new Header([
+            'Content-Type' => 'text/html',
+            'Date' => gmdate(DateTimeInterface::RFC7231),
+            ...$headers
+        ]);
+
         $this->content = $content;
         $this->version = $version;
         $this->message = $this->codeHttpMessage($code);
