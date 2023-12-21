@@ -122,7 +122,7 @@ ini_set("highlight.string", "#DD0000");
                         echo '<pre style="margin: 0.25rem;">' . htmlspecialchars($error->getFile()) . '</pre><hr>';
                         $depth = $depthReadFile;
                         $filename = @highlight_file($error->getFile(), true);
-                        $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
+                        $file = explode(str_contains($filename, '<br />') ? '<br />' : "\n", $filename);
 
                         for ($i = $depth; $i > 0; $i--) {
                             if (isset($file[$error->getLine() - $i])) {
@@ -162,7 +162,7 @@ ini_set("highlight.string", "#DD0000");
                         echo '<pre style="margin: 0.25rem;">' . htmlspecialchars($value['file'] ?? '-') . '</pre><hr>';
                         $depth = $depthReadFile;
                         $filename = @highlight_file($value['file'], true);
-                        $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
+                        $file = explode(str_contains($filename, '<br />') ? '<br />' : "\n", $filename);
 
                         for ($i = $depth; $i > 0; $i--) {
                             if (isset($file[$value['line'] - $i])) {
@@ -193,7 +193,7 @@ ini_set("highlight.string", "#DD0000");
 
                     $depth = $depthReadFile;
                     $filename = @highlight_file($error->getFile(), true);
-                    $file = explode(str_contains($filename, '<br />') ? '<br />' : PHP_EOL, $filename);
+                    $file = explode(str_contains($filename, '<br />') ? '<br />' : "\n", $filename);
 
                     for ($i = $depth; $i > 0; $i--) {
                         if (isset($file[$error->getLine() - $i])) {
