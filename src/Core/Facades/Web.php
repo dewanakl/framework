@@ -202,7 +202,11 @@ class Web extends Service
         try {
             $kernel = $this->kernel->error();
             $kernelError = new $kernel($th);
-            return $kernelError->report()->render($th);
+            $kernelError->report();
+
+            // Force close stream.
+            $kernelError->__destruct();
+            return $kernelError->render($th);
         } catch (Throwable $th) {
             $error = new Error($th);
             return $error->report()->render($th);
