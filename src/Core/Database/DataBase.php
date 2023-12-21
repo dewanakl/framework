@@ -41,11 +41,12 @@ class DataBase
     {
         if ($this->pdo === null) {
             $dsn = sprintf(
-                '%s:host=%s;dbname=%s;port=%s;',
+                '%s:host=%s;dbname=%s;port=%s;%s',
                 env('DB_DRIV'),
                 env('DB_HOST'),
                 env('DB_NAME'),
-                env('DB_PORT')
+                env('DB_PORT'),
+                env('DB_OPTIONS', '')
             );
 
             try {
@@ -77,8 +78,8 @@ class DataBase
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ,
         ];
 
-        if (env('MYSQL_ATTR_SSL_CA')) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = env('MYSQL_ATTR_SSL_CA');
+        if (env('PDO_MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = env('PDO_MYSQL_ATTR_SSL_CA');
         }
 
         return $options;
