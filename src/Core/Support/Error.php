@@ -4,7 +4,6 @@ namespace Core\Support;
 
 use Core\Database\Exception\DatabaseException;
 use Core\Facades\App;
-use Core\Http\Request;
 use Core\View\View;
 use DateTimeImmutable;
 use Exception;
@@ -47,12 +46,21 @@ class Error
     private $stream;
 
     /**
+     * Throwable object.
+     *
+     * @var Throwable
+     */
+    private $throwable;
+
+    /**
      * Init object.
      *
+     * @param Throwable $throwable
      * @return void
      */
-    public function __construct()
+    public function __construct(Throwable $throwable)
     {
+        $this->throwable = $throwable;
         $this->stream = fopen('php://stderr', 'wb');
     }
 
@@ -111,13 +119,23 @@ class Error
     }
 
     /**
+     * Get Throwable.
+     *
+     * @return Throwable
+     */
+    public function getThrowable(): Throwable
+    {
+        return $this->throwable;
+    }
+
+    /**
      * Dapatkan informasi dalam json.
      *
-     * @return bool|string
+     * @return string
      */
-    public function getInformation(): bool|string
+    public function getInformation(): string
     {
-        return $this->information;
+        return strval($this->information);
     }
 
     /**
@@ -138,14 +156,13 @@ class Error
     /**
      * Laporkan errornya.
      *
-     * @param Throwable $th
      * @return Error
      */
-    public function report(Throwable $th): Error
+    public function report(): Error
     {
-        $absoluteFile = base_path($this->locationFileLog . $this->nameFileLog);
-
-        $this->information = $this->transformToJson($th);
+        if (!$this->information) {
+            $this->setInformation($this->transformToJson($this->throwable));
+        }
 
         if (env('LOG', 'true') == 'false') {
             return $this;
@@ -156,13 +173,18 @@ class Error
                 '[%s] (%s) %s::%s %s',
                 now(DateTimeImmutable::RFC3339_EXTENDED),
                 execute_time(),
-                $th->getFile(),
-                $th->getLine(),
-                $th->getMessage()
+                $this->throwable->getFile(),
+                $this->throwable->getLine(),
+                $this->throwable->getMessage()
             ) . PHP_EOL);
         }
 
-        $status = @file_put_contents($absoluteFile, $this->information . PHP_EOL, FILE_USE_INCLUDE_PATH | FILE_APPEND | LOCK_EX);
+        $status = @file_put_contents(
+            base_path($this->locationFileLog . $this->nameFileLog),
+            $this->getInformation() . PHP_EOL,
+            FILE_USE_INCLUDE_PATH | FILE_APPEND | LOCK_EX
+        );
+
         if (!$status) {
             throw new Exception('Error could not save log file');
         }
@@ -173,11 +195,10 @@ class Error
     /**
      * Show error to dev.
      *
-     * @param Request $request
      * @param Throwable $th
      * @return mixed
      */
-    public function render(Request $request, Throwable $th): mixed
+    public function render(Throwable $th): mixed
     {
         if (!debug()) {
             return unavailable();
@@ -186,12 +207,11 @@ class Error
         respond()->clean();
         respond()->setCode(500);
 
-        if ($request->ajax()) {
-            respond()->getHeader()->set('Content-Type', 'application/json');
-            return $this->information;
+        if (!request()->ajax()) {
+            return render(helper_path('/errors/trace'), ['error' => $th]);
         }
 
-        respond()->getHeader()->set('Content-Type', 'text/html');
-        return render(helper_path('/errors/trace'), ['error' => $th]);
+        respond()->getHeader()->set('Content-Type', 'application/json');
+        return $this->getInformation();
     }
 }

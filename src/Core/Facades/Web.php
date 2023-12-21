@@ -199,12 +199,16 @@ class Web extends Service
      */
     protected function handleError(Throwable $th): mixed
     {
-        $error = $this->app->make($this->kernel->error());
+        $kernel = $this->kernel->error();
+        $kernelError = new $kernel($th);
 
         try {
-            return $error->report($th)->render($this->request, $th);
+            return $kernelError->report()->render($th);
         } catch (Throwable $th) {
-            return (new Error())->setInformation($error->getInformation())->render($this->request, $th);
+            $error = new Error($th);
+            return $error->setInformation($kernelError->getInformation())
+                ->report()
+                ->render($th);
         }
     }
 
