@@ -228,7 +228,7 @@ ini_set("highlight.string", "#DD0000");
                     <?php foreach ($error->getInfoDriver() as $key => $value) : ?>
                         <tr>
                             <td><?= htmlspecialchars($key) ?></td>
-                            <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : strval($value))) ?></td>
+                            <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : (is_bool($value) ? ($value ? 'true' : 'false') : strval($value)))) ?></td>
                         </tr>
                     <?php endforeach ?>
                 </table>
@@ -246,7 +246,7 @@ ini_set("highlight.string", "#DD0000");
                     <?php foreach (request()->all() as $key => $value) : ?>
                         <tr>
                             <td><?= htmlspecialchars($key) ?></td>
-                            <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : strval($value))) ?></td>
+                            <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : (is_bool($value) ? ($value ? 'true' : 'false') : strval($value)))) ?></td>
                         </tr>
                     <?php endforeach ?>
                 </table>
@@ -263,7 +263,7 @@ ini_set("highlight.string", "#DD0000");
                 <?php foreach (request()->server->all() as $key => $value) : ?>
                     <tr>
                         <td><?= htmlspecialchars($key) ?></td>
-                        <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : strval($value))) ?></td>
+                        <td><?= htmlspecialchars(is_array($value) ? implode(', ', $value) : (is_null($value) ? 'null' : (is_bool($value) ? ($value ? 'true' : 'false') : strval($value)))) ?></td>
                     </tr>
                 <?php endforeach ?>
             </table>
