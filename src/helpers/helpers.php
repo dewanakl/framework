@@ -96,6 +96,18 @@ if (!function_exists('translate')) {
     }
 }
 
+if (!function_exists('event')) {
+    /**
+     * Helper method untuk menjalankan objek event.
+     *
+     * @return object
+     */
+    function event(object $event): object
+    {
+        return \Core\Facades\App::get()->singleton(\Core\Events\Dispatch::class)->dispatch($event);
+    }
+}
+
 if (!function_exists('render')) {
     /**
      * Baca dari file .kita serta masih bentuk object.

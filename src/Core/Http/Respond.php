@@ -249,6 +249,7 @@ class Respond
 
         $this->setCode($force ? Respond::HTTP_MOVED_PERMANENTLY : Respond::HTTP_MOVED_TEMPORARILY);
         $this->headers->set('Location', $uri);
+        $this->headers->unset('Content-Type');
     }
 
     /**
@@ -512,7 +513,7 @@ class Respond
             return $this;
         }
 
-        if (App::get()->singleton(Respond::class) !== $respond && $respond instanceof Respond) {
+        if ($respond instanceof Respond) {
             $this->setCode($respond->getCode());
             $this->content = $respond->getContent();
             $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);

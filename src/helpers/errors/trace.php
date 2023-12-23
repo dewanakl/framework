@@ -149,7 +149,7 @@ ini_set("highlight.string", "#DD0000");
                     <pre style="margin: 0;white-space: nowrap;overflow: hidden; text-overflow: ellipsis; color:black !important;" class="black">[0] <?= ltrim($file[$error->getLine() - 1], '&nbsp;') ?></pre>
                 </div>
                 <?php foreach ($error->getTrace() as $id => $value) : ?>
-                    <div class="item" <?= empty($value['file']) ? 'style="cursor: not-allowed;"' : 'onclick="document.getElementById(\'file\').innerHTML = document.getElementById(' . ($id + 1) . ').innerHTML"' ?>>
+                    <div class="item" <?= empty($value['file']) ? 'style="cursor: auto;"' : 'onclick="document.getElementById(\'file\').innerHTML = document.getElementById(' . ($id + 1) . ').innerHTML"' ?>>
                         <pre style="margin: 0; white-space: nowrap;overflow: hidden; text-overflow: ellipsis;">[<?= $id + 1 ?>] <?= htmlspecialchars(isset($value['class']) ? $value['class'] . $value['type'] . $value['function'] : $value['function']) ?></pre>
 
                         <?php
