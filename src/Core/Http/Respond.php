@@ -554,7 +554,7 @@ class Respond
             $respond->push();
         }
 
-        if ($respond instanceof Respond) {
+        if ($respond instanceof Respond && $respond->getContent()) {
             fwrite($respond->getStream(), $respond->getContent(false));
         }
 

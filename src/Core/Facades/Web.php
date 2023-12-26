@@ -86,13 +86,12 @@ class Web extends Service
         $attributeMiddleware = [];
         if ($controller && $function) {
             foreach ($this->app->getAttribute($controller, $function) as $value) {
-                $object = $this->app->make($value->getName());
+                $name = $value->getName();
+                $object = new $name();
 
                 if ($object instanceof MiddlewareInterface) {
                     $attributeMiddleware[] = $object;
                 }
-
-                $this->app->clean($value->getName());
             }
         }
 

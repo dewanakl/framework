@@ -107,6 +107,11 @@ class Stream
         $this->respond = $respond;
     }
 
+    /**
+     * Destroy object.
+     *
+     * @return void
+     */
     public function __destruct()
     {
         if (is_resource($this->file)) {
@@ -118,34 +123,21 @@ class Stream
     }
 
     /**
-     * Init file.
+     * Init stream.
      *
-     * @param bool $etag
      * @return void
      */
-    private function init(bool $etag): void
+    private function init(): void
     {
-        $hashFile = $etag ? @md5_file($this->path) : Hash::rand(10);
-        $type = $this->ftype($this->path);
-
-        if ($etag && $type != $this->ftype()) {
-            if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $hashFile) {
-                $this->respond->setCode(304);
-                throw new StreamTerminate;
-            }
-
-            $this->respond->getHeader()->set('Etag', $hashFile);
-        }
+        $headers = $this->respond->getHeader()->all();
+        $this->respond->clean();
+        $this->respond->headers = new Header([...$headers, ...$this->respond->headers->all()]);
 
         @set_time_limit(0);
         @ignore_user_abort(true);
 
-        $this->file = @fopen($this->path, 'rb');
-        $this->name = @basename($this->path);
-        $this->boundary = $hashFile;
-        $this->size = @filesize($this->path);
+        $this->boundary = Hash::rand(10);
         $this->download = false;
-        $this->type = $type;
     }
 
     /**
@@ -160,8 +152,8 @@ class Stream
 
         if ($start > 0 || $end < ($this->size - 1)) {
             $this->respond->setCode(206);
-            $this->respond->getHeader()->set('Content-Length', strval($end - $start + 1));
-            $this->respond->getHeader()->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->size));
+            $this->respond->getHeader()->set('Content-Length', strval($end - $start + 1))
+                ->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->size));
 
             return function () use ($start, $end): void {
                 @fseek($this->file, $start);
@@ -363,6 +355,10 @@ class Stream
      */
     public function process(): Stream
     {
+        if (!is_resource($this->file)) {
+            return $this;
+        }
+
         $this->stream = $this->respond->getStream();
         $range = '';
         $ranges = [];
@@ -378,7 +374,7 @@ class Stream
         $this->respond->getHeader()
             ->set('Accept-Ranges', 'bytes')
             ->set('Content-Type',  $this->type)
-            ->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)))
+            ->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, $this->path ? @filemtime($this->path) : null))
             ->set(
                 'Content-Disposition',
                 $this->type == $this->ftype()
@@ -410,6 +406,18 @@ class Stream
     }
 
     /**
+     * Callback for end of stream
+     *
+     * @param Closure $function
+     * @return Stream
+     */
+    public function callback(Closure $function): Stream
+    {
+        $this->callback = $function;
+        return $this;
+    }
+
+    /**
      * Download file.
      *
      * @return Stream
@@ -435,9 +443,75 @@ class Stream
             throw new NotFoundException;
         }
 
+        $this->init();
+
         $this->path = $filename;
-        $this->respond->clean();
-        $this->init(false);
+        $this->file = @fopen($this->path, 'rb');
+        $this->name = @basename($this->path);
+        $this->size = @filesize($this->path);
+        $this->type = $this->ftype($this->path);
+
+        return $this;
+    }
+
+    /**
+     * Add etag for stream response.
+     *
+     * @return Stream
+     */
+    public function etag(): Stream
+    {
+        if ($this->path) {
+            $this->boundary = @md5_file($this->path);
+        }
+
+        if ($this->type == $this->ftype()) {
+            return $this;
+        }
+
+        if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $this->boundary) {
+            $this->respond->setCode(304);
+            throw new StreamTerminate;
+        }
+
+        $this->respond->getHeader()->set('Etag', $this->boundary);
+        return $this;
+    }
+
+    /**
+     * Create new stream from string or resources
+     *
+     * @param mixed $content
+     * @param string $name
+     * @return Stream
+     */
+    public function create(mixed $content, string $name): Stream
+    {
+        $this->init();
+        $this->name = @basename($name);
+        $this->type = $this->ftype($this->name);
+
+        if (is_resource($content)) {
+            $this->file = $content;
+            fseek($this->file, 0);
+            $contents = stream_get_contents($this->file);
+            fseek($this->file, 0);
+
+            $this->boundary = md5($contents);
+            $this->size = strlen($contents);
+
+            return $this;
+        }
+
+        $content = strval($content);
+
+        $this->file = fopen('php://memory', 'wb+');
+        fseek($this->file, 0);
+        fwrite($this->file, $content);
+        fseek($this->file, 0);
+
+        $this->boundary = md5($content);
+        $this->size = strlen($content);
 
         return $this;
     }
