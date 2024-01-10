@@ -290,7 +290,7 @@ class Table
      */
     public function index(string|array $idx): void
     {
-        $this->query[] = sprintf('CREATE INDEX IDX_%s_%s ON %s(%s)', $this->table, join('_', is_string($idx) ? [$idx] : $idx), $this->table, join(', ', is_string($idx) ? [$idx] : $idx));
+        $this->query[] = sprintf('KEY %s_%s_index (%s)', $this->table, join('_', is_string($idx) ? [$idx] : $idx), join(', ', is_string($idx) ? [$idx] : $idx));
     }
 
     /**

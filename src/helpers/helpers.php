@@ -174,7 +174,19 @@ if (!function_exists('e')) {
             return null;
         }
 
-        $str = strval($var);
+        try {
+            $str = strval($var);
+        } catch (Throwable $th) {
+            $prev = $th->getTrace()[0];
+
+            throw new \Core\View\Exception\CastToStringException(
+                $th->getMessage(),
+                0,
+                E_ERROR,
+                $prev['file'],
+                $prev['line']
+            );
+        }
 
         $error = error_get_last();
         if ($error !== null) {
@@ -327,10 +339,10 @@ if (!function_exists('unavailable')) {
     {
         $respond = respond();
         $respond->clean();
-        $respond->setCode(503);
+        $respond->setCode(\Core\Http\Respond::HTTP_SERVICE_UNAVAILABLE);
 
         if (request()->ajax()) {
-            return json(['Service Unavailable'], 503);
+            return json(['Service Unavailable'], \Core\Http\Respond::HTTP_SERVICE_UNAVAILABLE);
         }
 
         return render(helper_path('/errors/error'), ['pesan' => 'Service Unavailable']);

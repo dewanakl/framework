@@ -151,7 +151,7 @@ class Stream
         list($start, $end) = $this->getRange($range);
 
         if ($start > 0 || $end < ($this->size - 1)) {
-            $this->respond->setCode(206);
+            $this->respond->setCode(Respond::HTTP_PARTIAL_CONTENT);
             $this->respond->getHeader()->set('Content-Length', strval($end - $start + 1))
                 ->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->size));
 
@@ -186,7 +186,7 @@ class Stream
 
         $length += strlen("\r\n--" . $this->boundary . "--\r\n");
 
-        $this->respond->setCode(206);
+        $this->respond->setCode(Respond::HTTP_PARTIAL_CONTENT);
         $this->respond->getHeader()->set('Content-Type', 'multipart/byteranges; boundary=' . $this->boundary);
         $this->respond->getHeader()->set('Content-Length', strval($length));
 
@@ -226,7 +226,7 @@ class Stream
 
         // @phpstan-ignore-next-line
         if ($start < 0 || $start > $end) {
-            $this->respond->setCode(416);
+            $this->respond->setCode(Respond::HTTP_RANGE_NOT_SATISFIABLE);
             $this->respond->getHeader()->set('Content-Range', 'bytes */' . strval($this->size));
             throw new StreamTerminate;
         }
@@ -470,7 +470,7 @@ class Stream
         }
 
         if (@trim($this->request->server->get('HTTP_IF_NONE_MATCH', '')) == $this->boundary) {
-            $this->respond->setCode(304);
+            $this->respond->setCode(Respond::HTTP_NOT_MODIFIED);
             throw new StreamTerminate;
         }
 
@@ -479,39 +479,51 @@ class Stream
     }
 
     /**
+     * Get Stream file.
+     *
+     * @return mixed
+     */
+    public function getStream(): mixed
+    {
+        if (!is_resource($this->file)) {
+            $this->file = fopen('php://memory', 'wb+');
+        }
+
+        return $this->file;
+    }
+
+    /**
      * Create new stream from string or resources
      *
-     * @param mixed $content
-     * @param string $name
+     * @param string $contentOrName
+     * @param string|null $name
      * @return Stream
      */
-    public function create(mixed $content, string $name): Stream
+    public function create(string $contentOrName, string|null $name = null): Stream
     {
         $this->init();
-        $this->name = @basename($name);
+        $this->name = @basename($name ? $name : $contentOrName);
         $this->type = $this->ftype($this->name);
 
-        if (is_resource($content)) {
-            $this->file = $content;
+        if ($name) {
+            $this->file = fopen('php://memory', 'wb+');
+
             fseek($this->file, 0);
-            $contents = stream_get_contents($this->file);
+            fwrite($this->file, $contentOrName);
             fseek($this->file, 0);
 
-            $this->boundary = md5($contents);
-            $this->size = strlen($contents);
+            $this->boundary = md5($contentOrName);
+            $this->size = strlen($contentOrName);
 
             return $this;
         }
 
-        $content = strval($content);
-
-        $this->file = fopen('php://memory', 'wb+');
         fseek($this->file, 0);
-        fwrite($this->file, $content);
+        $contents = stream_get_contents($this->file);
         fseek($this->file, 0);
 
-        $this->boundary = md5($content);
-        $this->size = strlen($content);
+        $this->boundary = md5($contents);
+        $this->size = strlen($contents);
 
         return $this;
     }

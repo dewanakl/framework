@@ -4,6 +4,7 @@ namespace Core\Support;
 
 use Core\Database\Exception\DatabaseException;
 use Core\Facades\App;
+use Core\Http\Respond;
 use Core\View\View;
 use DateTimeImmutable;
 use Exception;
@@ -205,7 +206,7 @@ class Error
         }
 
         respond()->clean();
-        respond()->setCode(500);
+        respond()->setCode(Respond::HTTP_INTERNAL_SERVER_ERROR);
 
         if (!request()->ajax()) {
             return render(helper_path('/errors/trace'), ['error' => $th]);

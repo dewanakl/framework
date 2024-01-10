@@ -135,6 +135,13 @@ class Query
     private $status;
 
     /**
+     * Timezone to database.
+     *
+     * @var string|null
+     */
+    public static $tz;
+
+    /**
      * Buat objek model.
      *
      * @return void
@@ -144,6 +151,16 @@ class Query
         if (!($this->db instanceof DataBase)) {
             $this->db = App::get()->singleton(DataBase::class);
         }
+    }
+
+    /**
+     * Set timezone to database.
+     *
+     * @return void
+     */
+    public static function setTimezoneBeforeQuery(): void
+    {
+        static::$tz = date_default_timezone_get();
     }
 
     /**
@@ -178,7 +195,11 @@ class Query
         $this->queryDuration = microtime(true);
         $this->query = $query;
 
-        $this->db->query($query);
+        if (static::$tz) {
+            $this->db->exec(sprintf('SET TIMEZONE TO \'%s\';', static::$tz));
+        }
+
+        $this->db->query($this->query);
 
         foreach ($data as $key => $value) {
             $this->db->bind(is_string($key) ? ':' . $key : $key + 1, $value);
@@ -465,6 +486,25 @@ class Query
         $this->query = $this->query . sprintf(' %s %s %s :', $agr, $column, $statment) . $replaceColumn;
         $this->param[$replaceColumn] = $value;
 
+        return $this;
+    }
+
+    /**
+     * Insert raw query.
+     *
+     * @param string $statment
+     * @param string $agr
+     * @return Query
+     */
+    public function whereRaw(string $statment, string $agr = 'AND'): Query
+    {
+        $this->checkQuery();
+
+        if (!str_contains($this->query ?? '', 'WHERE')) {
+            $agr = 'WHERE';
+        }
+
+        $this->query = $this->query . sprintf(' %s %s', $agr, $statment);
         return $this;
     }
 

@@ -50,7 +50,7 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
         try {
             return new Time($time, new DateTimeZone(env('TIMEZONE', 'Asia/Jakarta')));
         } catch (Throwable) {
-            return new Time($time, new DateTimeZone('UTC'));
+            return new Time($time, new DateTimeZone(date_default_timezone_get()));
         }
     }
 
@@ -159,7 +159,7 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
         }
 
         if ($result) {
-            return join(', ', $result) . ' ' . $translate->trans(static::NAME . '.ago');
+            return join(', ', $result) . ' ' . $translate->trans(static::NAME . ($interval->invert ? '.future' : '.ago'));
         }
 
         return $translate->trans(static::NAME . '.recently');
