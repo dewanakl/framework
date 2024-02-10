@@ -339,6 +339,18 @@ class Query
         );
     }
 
+    public function getQuery(): string
+    {
+        $this->checkQuery();
+
+        $replace = $this->query;
+
+        foreach ($this->param as $key => $value) {
+            $replace = str_replace(':' . $key, $value, $replace);
+        }
+        return $replace;
+    }
+
     /**
      * Set fillable.
      *
