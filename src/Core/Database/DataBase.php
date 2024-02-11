@@ -40,6 +40,10 @@ class DataBase
     public function __construct()
     {
         if ($this->pdo === null) {
+            if (env('DB_DRIV', '') ==  '') {
+                throw new Exception('DB_DRIV not set');
+            }
+
             $dsn = sprintf(
                 '%s:host=%s;dbname=%s;port=%s;%s',
                 env('DB_DRIV'),
