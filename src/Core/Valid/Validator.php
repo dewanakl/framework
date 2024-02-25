@@ -203,6 +203,10 @@ class Validator
                 $this->__set($param, trim($value ?? ''));
                 break;
 
+            case $rule == 'alpha_num':
+                $this->__set($param, preg_replace('/[^A-Za-z0-9]/', '', $value ?? ''));
+                break;
+
             case str_contains($rule, 'min'):
                 $min = intval(explode(':', $rule)[1] ?? 0);
                 if ((is_int($value) || is_float($value) ? intval($value) : strlen($value ?? '')) < $min) {

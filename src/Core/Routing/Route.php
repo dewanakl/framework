@@ -154,16 +154,17 @@ final class Route
     /**
      * Isi url dari cache atau route.
      *
-     * @return void
+     * @return bool
      */
-    public static function setRouteFromCacheIfExist(): void
+    public static function setRouteFromCacheIfExist(): bool
     {
         try {
             $route = (array) @require_once base_path('/cache/routes/routes.php');
             static::router()->setRoutes($route);
+            return true;
         } catch (Throwable) {
             error_clear_last();
-            static::setRouteFromFile();
+            return false;
         }
     }
 

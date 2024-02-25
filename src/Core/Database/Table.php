@@ -95,20 +95,8 @@ class Table
     public function export(): string|null
     {
         if ($this->alter == 'ADD' && !Schema::$dump) {
-            $db = App::get()->singleton(DataBase::class);
-
             foreach ($this->columns as $value) {
-                if ($this->type == 'pgsql') {
-                    $query = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'' . $this->table . '\' and column_name=\'' . $value . '\';';
-                } else {
-                    $query = 'SHOW COLUMNS FROM ' . $this->table . ' WHERE Field = \'' . $value . '\';';
-                }
-
-                $db->query($query);
-                $db->execute();
-                $column = $db->rowCount();
-
-                if ($column != 0) {
+                if ($this->checkColumn($value)) {
                     $this->query = [];
                     $this->alter = null;
                     $this->columns = [];
@@ -133,6 +121,27 @@ class Table
         $this->columns = [];
 
         return $query;
+    }
+
+    /**
+     * Check column in this table.
+     *
+     * @param string $value
+     * @return bool
+     */
+    public function checkColumn(string $value): bool
+    {
+        $db = App::get()->singleton(DataBase::class);
+
+        if ($this->type == 'pgsql') {
+            $query = 'SELECT column_name FROM information_schema.columns WHERE table_name=\'' . $this->table . '\' and column_name=\'' . $value . '\';';
+        } else {
+            $query = 'SHOW COLUMNS FROM ' . $this->table . ' WHERE Field = \'' . $value . '\';';
+        }
+
+        $db->query($query);
+        $db->execute();
+        return $db->rowCount() != 0;
     }
 
     /**
@@ -400,7 +409,7 @@ class Table
      */
     public function renameColumn(string $from, string $to): void
     {
-        $this->alter = 'RENAME';
+        $this->alter = 'RENAME COLUMN';
         $this->query[$this->getLastArray()] = $from . ' TO ' . $to;
         $this->columns[] = $from;
     }
