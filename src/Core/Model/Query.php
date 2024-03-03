@@ -2,6 +2,7 @@
 
 namespace Core\Model;
 
+use Closure;
 use Core\Database\DataBase;
 use Core\Facades\App;
 use Core\Support\Time;
@@ -25,7 +26,7 @@ class Query
     /**
      * Nilai yang akan dimasukan.
      *
-     * @var array|null $param
+     * @var array<int|string, mixed>|null $param
      */
     private $param;
 
@@ -39,14 +40,14 @@ class Query
     /**
      * Waktu bikin dan update.
      *
-     * @var array $dates
+     * @var array<int, string> $dates
      */
-    private $dates;
+    private $dates = [];
 
     /**
      * Castsing a attribute.
      *
-     * @var array $casts
+     * @var array<string, string> $casts
      */
     protected $casts = [];
 
@@ -74,7 +75,7 @@ class Query
     /**
      * Set Target relasinya.
      *
-     * @var array $relational
+     * @var array<int, mixed> $relational
      */
     private $relational;
 
@@ -88,7 +89,7 @@ class Query
     /**
      * Log query.
      *
-     * @var array|null $queryLog
+     * @var array<int, array<string, mixed>>|null $queryLog
      */
     private $queryLog;
 
@@ -149,7 +150,9 @@ class Query
     public function __construct()
     {
         if (!($this->db instanceof DataBase)) {
-            $this->db = App::get()->singleton(DataBase::class);
+            /** @var DataBase $db */
+            $db = App::get()->singleton(DataBase::class);
+            $this->db = $db;
         }
     }
 
@@ -177,33 +180,41 @@ class Query
                 'model' => $this->targetObject
             ];
         }
-
-        $this->db->close();
-        $this->query = null;
-        $this->param = [];
     }
 
     /**
-     * Bind antara query dengan param.
+     * Execute this query.
      *
-     * @param string $query
-     * @param array $data
-     * @return void
+     * @param Closure $callback
+     * @return mixed
      */
-    private function bind(string $query, array $data = []): void
+    private function execute(Closure $callback): mixed
     {
         $this->queryDuration = microtime(true);
-        $this->query = $query;
 
         if (static::$tz) {
             $this->db->exec(sprintf('SET TIMEZONE TO \'%s\';', static::$tz));
         }
 
-        $this->db->query($this->query);
-
-        foreach ($data as $key => $value) {
-            $this->db->bind(is_string($key) ? ':' . $key : $key + 1, $value);
+        if ($this->query) {
+            $this->db->query($this->query);
         }
+
+        if ($this->param) {
+            foreach ($this->param as $key => $value) {
+                $this->db->bind(is_string($key) ? ':' . $key : intval($key) + 1, $value);
+            }
+        }
+
+        $this->db->execute();
+        $result = $callback($this->db);
+        $this->db->close();
+
+        $this->recordQueryLog();
+        $this->query = null;
+        $this->param = [];
+
+        return $result;
     }
 
     /**
@@ -233,13 +244,14 @@ class Query
     /**
      * Build ke target object.
      *
-     * @param array $data
-     * @return Model
+     * @param array<int|string, mixed> $data
+     * @return Model<int|string, mixed>
      *
      * @throws Exception
      */
     private function build(array $data): Model
     {
+        /** @var Model<int|string, mixed> $model */
         $model = new $this->targetObject;
         list($methods, $parameters) = $this->relational ? $this->relational : [[], []];
         $status = $this->status;
@@ -339,22 +351,94 @@ class Query
         );
     }
 
+    /**
+     * Cast to object Time.
+     *
+     * @param array<string, mixed>|object $attribute
+     * @return array<string, mixed>|object
+     */
+    private function parseDate(array|object $attribute): array|object
+    {
+        if (!$this->dates) {
+            return $attribute;
+        }
+
+        foreach ($this->dates as $value) {
+            if (is_object($attribute)) {
+                if (!empty($attribute->{$value})) {
+                    $attribute->{$value} = Time::factory($attribute->{$value})->setFormat($this->dateFormat);
+                }
+
+                continue;
+            }
+
+            if (!empty($attribute[$value])) {
+                $attribute[$value] = Time::factory($attribute[$value])->setFormat($this->dateFormat);
+            }
+        }
+
+        return $attribute;
+    }
+
+    /**
+     * Cast to object.
+     *
+     * @param array<string, mixed>|object $attribute
+     * @return array<string, mixed>|object
+     */
+    private function parseCast(array|object $attribute): array|object
+    {
+        if (!$this->casts) {
+            return $attribute;
+        }
+
+        foreach ($this->casts as $att => $type) {
+            if (is_object($attribute)) {
+                if (!empty($attribute->{$att})) {
+                    $attribute->{$att} = $this->casts($type, $attribute->{$att});
+                }
+
+                continue;
+            }
+
+            if (!empty($attribute[$att])) {
+                $attribute[$att] = $this->casts($type, $attribute[$att]);
+            }
+        }
+
+        return $attribute;
+    }
+
+    /**
+     * Get query now.
+     *
+     * @return string
+     */
     public function getQuery(): string
     {
         $this->checkQuery();
 
         $replace = $this->query;
-
         foreach ($this->param as $key => $value) {
+            if (is_int($key)) {
+                $pos = strpos($replace, '?');
+                if ($pos !== false) {
+                    $replace = substr_replace($replace, $value, $pos, 1);
+                }
+
+                continue;
+            }
+
             $replace = str_replace(':' . $key, $value, $replace);
         }
+
         return $replace;
     }
 
     /**
      * Set fillable.
      *
-     * @param array $fillable
+     * @param array<int, string> $fillable
      * @return Query
      */
     public function setFillable(array $fillable): Query
@@ -378,7 +462,7 @@ class Query
     /**
      * Dapatkan log dari semua query.
      *
-     * @return array
+     * @return array<int, array<string, mixed>>
      */
     public function getRecordQueryLog(): array
     {
@@ -400,7 +484,7 @@ class Query
     /**
      * Set tanggal updatenya.
      *
-     * @param array $date
+     * @param array<int, string> $date
      * @return Query
      */
     public function setDates(array $date): Query
@@ -412,7 +496,7 @@ class Query
     /**
      * Set casts attribute.
      *
-     * @param array $casts
+     * @param array<string, string> $casts
      * @return Query
      */
     public function setCasts(array $casts): Query
@@ -493,10 +577,8 @@ class Query
             $agr = 'WHERE';
         }
 
-        $replaceColumn = str_replace(['.', '-'], '_', $column);
-
-        $this->query = $this->query . sprintf(' %s %s %s :', $agr, $column, $statment) . $replaceColumn;
-        $this->param[$replaceColumn] = $value;
+        $this->query = $this->query . sprintf(' %s %s %s ?', $agr, $column, $statment);
+        $this->param[] = $value;
 
         return $this;
     }
@@ -524,7 +606,7 @@ class Query
      * Where IN syntax sql.
      *
      * @param string $column
-     * @param array|Model $value
+     * @param array<int, mixed>|Model<int|string, mixed> $value
      * @param string $agr
      * @return Query
      */
@@ -544,9 +626,12 @@ class Query
             $value = $data;
         }
 
-        $value = count($value) == 0 ? ['\'\''] : $value;
+        $value = array_map(function (string $arr): string {
+            return sprintf('\'%s\'', $arr);
+        }, count($value) == 0 ? ['\'\''] : $value);
 
-        $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, implode(', ', $value));
+        $this->query = $this->query . sprintf(' %s %s IN (?)', $agr, $column);
+        $this->param[] = implode(', ', $value);
 
         return $this;
     }
@@ -555,7 +640,7 @@ class Query
      * Where Not IN syntax sql.
      *
      * @param string $column
-     * @param array|Model $value
+     * @param array<int, mixed>|Model<int|string, mixed> $value
      * @param string $agr
      * @return Query
      */
@@ -575,9 +660,12 @@ class Query
             $value = $data;
         }
 
-        $value = count($value) == 0 ? ['\'\''] : $value;
+        $value = array_map(function (string $arr) {
+            return sprintf('\'%s\'', $arr);
+        }, count($value) == 0 ? ['\'\''] : $value);
 
-        $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, implode(', ', $value));
+        $this->query = $this->query . sprintf(' %s %s NOT IN (?)', $agr, $column);
+        $this->param[] = implode(', ', $value);
 
         return $this;
     }
@@ -701,7 +789,7 @@ class Query
     /**
      * Group By syntax sql.
      *
-     * @param string|array $param
+     * @param string|array<int, string> $param
      * @return Query
      */
     public function groupBy(string|array $param): Query
@@ -754,7 +842,7 @@ class Query
     /**
      * Select raw syntax sql.
      *
-     * @param string|array $param
+     * @param string|array<int, string> $param
      * @return Query
      */
     public function select(string|array $param): Query
@@ -863,11 +951,21 @@ class Query
     /**
      * Delete by id primary key.
      *
-     * @param int $id
+     * @param int|string|array<int, int|string> $id
      * @return int
+     *
+     * @throws Exception
      */
-    public function destroy(int $id): int
+    public function destroy(int|string|array $id): int
     {
+        if (is_array($id)) {
+            if (empty($this->primaryKey)) {
+                throw new Exception('Primary key is\'n defined !');
+            }
+
+            return $this->whereIn($this->primaryKey, $id)->delete();
+        }
+
         return $this->id($id)->delete();
     }
 
@@ -876,7 +974,7 @@ class Query
      *
      * @param mixed $id
      * @param string|null $where
-     * @return Model
+     * @return Model<int|string, mixed>
      */
     public function find(mixed $id, string|null $where = null): Model
     {
@@ -886,85 +984,54 @@ class Query
     /**
      * Ambil semua data.
      *
-     * @return Model
+     * @return Model<int|string, mixed>
      */
     public function get(): Model
     {
         $this->checkSelect();
         $this->status = static::FetchAll;
 
-        $this->bind($this->query, $this->param ?? []);
-        $this->db->execute();
+        return $this->build($this->execute(function (DataBase $db): array {
+            $sets = array();
 
-        $isDates = count($this->dates) > 0;
-
-        $sets = array();
-        do {
-            $record = $this->db->fetch();
-            if (!$record) {
-                break;
-            }
-
-            if ($isDates) {
-                foreach ($this->dates as $value) {
-                    if (!empty($record->{$value})) {
-                        $record->{$value} = Time::factory($record->{$value})->setFormat($this->dateFormat);
-                    }
+            do {
+                $record = $db->fetch();
+                if (!$record) {
+                    break;
                 }
-            }
 
-            foreach ($this->casts as $attribute => $type) {
-                if (!empty($record->{$attribute})) {
-                    $record->{$attribute} = $this->casts($type, $record->{$attribute});
-                }
-            }
+                $sets[] = $this->parseCast($this->parseDate($record));
+            } while (true);
 
-            $sets[] = $record;
-        } while (true);
-
-        $this->recordQueryLog();
-        return $this->build($sets);
+            return $sets;
+        }));
     }
 
     /**
      * Ambil satu data aja paling atas.
      *
-     * @return Model
+     * @return Model<int|string, mixed>
      */
     public function first(): Model
     {
         $this->checkSelect();
         $this->status = static::Fetch;
 
-        $this->bind($this->query, $this->param ?? []);
-        $this->db->execute();
-
-        $record = $this->db->fetch();
-        $set = $record === false ? [] : get_object_vars($record);
-
-        if (count($this->dates) > 0) {
-            foreach ($this->dates as $value) {
-                if (!empty($set[$value])) {
-                    $set[$value] = Time::factory($set[$value])->setFormat($this->dateFormat);
-                }
-            }
-        }
-
-        foreach ($this->casts as $attribute => $type) {
-            if (!empty($set[$attribute])) {
-                $set[$attribute] = $this->casts($type, $set[$attribute]);
-            }
-        }
-
-        $this->recordQueryLog();
-        return $this->build($set);
+        return $this->build(
+            $this->parseCast(
+                $this->parseDate($this->execute(function (DataBase $db): array {
+                    $record = $db->fetch();
+                    return $record === false ? [] : get_object_vars($record);
+                }))
+            )
+        );
     }
 
     /**
      * Isi datanya.
      *
-     * @param array $data
-     * @return Model
+     * @param array<string, mixed> $data
+     * @return Model<int|string, mixed>
      */
     public function create(array $data): Model
     {
@@ -978,51 +1045,33 @@ class Query
             $data = $temp;
         }
 
-        $isDates = count($this->dates) > 0;
-        if ($isDates) {
-            $now = now('Y-m-d H:i:s.u');
-            $data = [...$data, ...array_combine($this->dates, array($now, $now))];
-        }
+        $now = now('Y-m-d H:i:s.u');
+        $data = [...$data, ...array_combine($this->dates, array($now, $now))];
 
-        $keys = array_keys($data);
-
-        $query = sprintf(
+        $this->param = array_values($data);
+        $this->query = sprintf(
             'INSERT INTO %s (%s) VALUES (%s)',
             $this->table,
-            implode(', ', $keys),
-            implode(', ', array_map(fn (string $field): string => ':' . $field, $keys))
+            implode(', ', array_keys($data)),
+            implode(', ', array_fill(0, count($this->param), '?'))
         );
 
-        $this->bind($query, $data);
-        $this->db->execute();
-
-        if ($this->primaryKey && $this->typeKey) {
-            $id = $this->db->lastInsertId(sprintf('%s_%s_seq', $this->table, $this->primaryKey));
-            if ($id) {
-                $data[$this->primaryKey] = $this->casts($this->typeKey, $id);
+        return $this->build($this->parseCast($this->parseDate($this->execute(function (DataBase $db) use ($data): array {
+            if ($this->primaryKey && $this->typeKey) {
+                $id = $db->lastInsertId(sprintf('%s_%s_seq', $this->table, $this->primaryKey));
+                if ($id) {
+                    $data[$this->primaryKey] = $this->casts($this->typeKey, $id);
+                }
             }
-        }
 
-        if ($isDates) {
-            foreach ($this->dates as $value) {
-                $data[$value] = Time::factory($data[$value])->setFormat($this->dateFormat);
-            }
-        }
-
-        foreach ($this->casts as $attribute => $type) {
-            if (!empty($data[$attribute])) {
-                $data[$attribute] = $this->casts($type, $data[$attribute]);
-            }
-        }
-
-        $this->recordQueryLog();
-        return $this->build($data);
+            return $data;
+        }))));
     }
 
     /**
      * Update datanya.
      *
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return int
      */
     public function update(array $data): int
@@ -1032,12 +1081,14 @@ class Query
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
-        $setQuery = 'SET ' . implode(', ', array_map(fn ($field) => $field . ' = :' . $field, array_keys($data))) . ($this->query ? ' WHERE' : '');
+        $setQuery = 'SET ' . implode(', ', array_map(fn (string $field): string => $field . ' = ?', array_keys($data))) . ($this->query ? ' WHERE' : '');
 
-        $this->bind(str_replace('WHERE', $setQuery, $query), [...$data, ...$this->param ?? []]);
-        $this->db->execute();
-        $this->recordQueryLog();
-        return $this->db->rowCount();
+        $this->query = str_replace('WHERE', $setQuery, $query);
+        $this->param = array_values([...$data, ...$this->param ?? []]);
+
+        return $this->execute(function (DataBase $db): int {
+            return $db->rowCount();
+        });
     }
 
     /**
@@ -1047,19 +1098,18 @@ class Query
      */
     public function delete(): int
     {
-        $query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
-        $this->bind($query, $this->param ?? []);
+        $this->query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
 
-        $this->db->execute();
-        $this->recordQueryLog();
-        return $this->db->rowCount();
+        return $this->execute(function (DataBase $db): int {
+            return $db->rowCount();
+        });
     }
 
     /**
      * Call this method.
      *
      * @param string $name
-     * @param array $arguments
+     * @param array<int, mixed> $arguments
      * @return mixed
      */
     public function __call(string $name, array $arguments): mixed
