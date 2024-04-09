@@ -17,7 +17,7 @@ use Traversable;
  * Representasi table database.
  *
  * @method static \Core\Model\Query with(string|array $relational, array $optional = [])
- * @method static \Core\Model\Query where(string $column, mixed $value, string $statment = '=', string $agr = 'AND')
+ * @method static \Core\Model\Query where(string|Closure $column, mixed $value = null, string $statment = '=', string $agr = 'AND')
  * @method static \Core\Model\Query whereNull(string $column, string $agr = 'AND')
  * @method static \Core\Model\Query whereIn(string $column, array|Model $value, string $agr = 'AND')
  * @method static \Core\Model\Query whereNotIn(string $column, array|Model $value, string $agr = 'AND')
