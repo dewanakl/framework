@@ -80,6 +80,13 @@ class Query
     private $relational;
 
     /**
+     * Is subquery.
+     *
+     * @var string|null $subQuery
+     */
+    private $subQuery;
+
+    /**
      * Object database.
      *
      * @var DataBase $db
@@ -563,13 +570,13 @@ class Query
     /**
      * Where syntax sql.
      *
-     * @param string $column
+     * @param string|Closure $column
      * @param mixed $value
      * @param string $statment
      * @param string $agr
      * @return Query
      */
-    public function where(string $column, mixed $value, string $statment = '=', string $agr = 'AND'): Query
+    public function where(string|Closure $column, mixed $value = null, string $statment = '=', string $agr = 'AND'): Query
     {
         $this->checkQuery();
 
@@ -577,7 +584,15 @@ class Query
             $agr = 'WHERE';
         }
 
-        $this->query = $this->query . sprintf(' %s %s %s ?', $agr, $column, $statment);
+        if ($column instanceof Closure) {
+            $this->subQuery = '(';
+            $column($this);
+            $this->subQuery = null;
+            $this->query .= ')';
+            return $this;
+        }
+
+        $this->query = $this->query . sprintf(' %s %s %s %s ?', $agr, $this->subQuery, $column, $statment);
         $this->param[] = $value;
 
         return $this;
