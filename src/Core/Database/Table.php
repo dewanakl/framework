@@ -115,7 +115,12 @@ class Table
             }
         }
 
-        $query = 'ALTER TABLE ' . $this->table . ' ' . join(', ', array_map(fn ($data) => $this->alter . ' ' . $data, $this->query)) . ';';
+        $query = array_map(fn ($data) => $this->alter . ' ' . $data, $this->query);
+        if (count($query) == 0) {
+            return null;
+        }
+
+        $query = 'ALTER TABLE ' . $this->table . ' ' . join(', ', $query) . ';';
         $this->query = [];
         $this->alter = null;
         $this->columns = [];
