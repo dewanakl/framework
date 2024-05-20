@@ -62,11 +62,11 @@ class Web extends Service
      * Process middleware and controller.
      *
      * @param array<string, mixed> $route
-     * @return Respond|Stream
+     * @return mixed
      *
      * @throws ErrorException
      */
-    private function process(array $route): Respond|Stream
+    private function process(array $route): mixed
     {
         $controller = $route['controller'];
         $function = $route['function'];
@@ -124,11 +124,11 @@ class Web extends Service
     /**
      * Run route list.
      *
-     * @return Respond|Stream
+     * @return mixed
      *
      * @throws HttpException
      */
-    private function runRoute(): Respond|Stream
+    private function runRoute(): mixed
     {
         $path = $this->request->getValidUrl();
         $method = $this->request->getValidMethod();

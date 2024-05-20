@@ -515,7 +515,7 @@ class Respond
 
         if ($respond instanceof Respond) {
             $this->setCode($respond->getCode());
-            $this->content = $respond->getContent();
+            $this->setContent($respond->getContent());
             $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
             $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
 
@@ -552,10 +552,8 @@ class Respond
 
         if ($respond instanceof Stream) {
             $respond->push();
-        }
-
-        if ($respond instanceof Respond && $respond->getContent()) {
-            fwrite($respond->getStream(), $respond->getContent(false));
+        } else {
+            fwrite($this->stream, $this->getContent(false));
         }
 
         // Send output buffer.

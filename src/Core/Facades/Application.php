@@ -231,6 +231,10 @@ class Application implements ContainerInterface
             $bind = $result;
         }
 
+        if (is_string($bind)) {
+            $bind = $this->singleton($bind);
+        }
+
         $this->objectPool[$abstract] = $bind;
     }
 

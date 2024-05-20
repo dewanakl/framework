@@ -113,7 +113,7 @@ if (!function_exists('render')) {
      * Baca dari file .kita serta masih bentuk object.
      *
      * @param string $path
-     * @param array $data
+     * @param array<string, mixed> $data
      * @return \Core\View\Render
      */
     function render(string $path, array $data = []): \Core\View\Render
@@ -665,5 +665,20 @@ if (!function_exists('fake')) {
         }
 
         return \Core\Facades\App::get()->singleton(\Faker\Factory::class);
+    }
+}
+
+if (!function_exists('once')) {
+    /**
+     * Panggil secara satu kali saja.
+     *
+     * @template  TReturnType
+     *
+     * @param  callable(): TReturnType  $callback
+     * @return TReturnType
+     */
+    function &once(callable $callback): mixed
+    {
+        return \Core\Facades\App::get()->singleton(\Core\Support\Once::class)->value(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT, 2), $callback);
     }
 }

@@ -167,7 +167,7 @@ class Stream
     /**
      * Send multi file.
      *
-     * @param array $ranges
+     * @param array<int, string> $ranges
      * @return Closure
      */
     private function pushMulti(array $ranges): Closure
@@ -210,7 +210,7 @@ class Stream
      * Get range file.
      *
      * @param string $range
-     * @return array
+     * @return array<int, int>
      *
      * @throws StreamTerminate
      */
@@ -402,7 +402,7 @@ class Stream
      */
     public function push(): void
     {
-        ($this->callback)();
+        call_user_func($this->callback);
     }
 
     /**

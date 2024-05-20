@@ -86,7 +86,7 @@ class Session
         $this->cookie = $cookie;
         $this->data = new Header();
 
-        $this->name = env('APP_NAME', 'kamu') . static::SESSID;
+        $this->name = strtolower(env('APP_NAME', 'kamu') . static::SESSID);
         $this->expires = intval(env('COOKIE_LIFETIME', 120));
 
         if (env('COOKIE', 'true') == 'true') {
