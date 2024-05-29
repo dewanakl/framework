@@ -88,7 +88,6 @@ class Service
     {
         foreach ($this->kernel->services() as $service) {
             $this->app->invoke($service, Provider::REGISTRASI);
-            $this->app->clean($service);
         }
     }
 

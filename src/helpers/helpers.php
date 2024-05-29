@@ -590,7 +590,12 @@ if (!function_exists('format_bytes')) {
         $base = log($size, 1024);
         $suffixes = ['Byte', 'Kb', 'Mb', 'Gb', 'Tb'];
 
-        return strval(round(pow(1024, $base - floor($base)), $precision)) . $suffixes[intval(floor($base))];
+        $index = intval(floor($base));
+        if ($index === -1) {
+            return 'NaN' . $suffixes[0];
+        }
+
+        return strval(round(pow(1024, $base - floor($base)), $precision)) . $suffixes[$index];
     }
 }
 
@@ -672,9 +677,9 @@ if (!function_exists('once')) {
     /**
      * Panggil secara satu kali saja.
      *
-     * @template  TReturnType
+     * @template TReturnType
      *
-     * @param  callable(): TReturnType  $callback
+     * @param callable(): TReturnType  $callback
      * @return TReturnType
      */
     function &once(callable $callback): mixed

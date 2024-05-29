@@ -8,9 +8,7 @@ use Core\Http\Exception\HttpException;
 use Core\Http\Exception\NotAllowedException;
 use Core\Http\Exception\NotFoundException;
 use Core\Http\Exception\StreamTerminate;
-use Core\Http\Respond;
 use Core\Http\Session;
-use Core\Http\Stream;
 use Core\Middleware\Middleware;
 use Core\Middleware\MiddlewareInterface;
 use Core\Routing\Controller;
@@ -78,33 +76,31 @@ class Web extends Service
 
         if ($controller) {
             $controller = $this->app->singleton($controller);
-            if (!($controller instanceof Controller)) {
-                throw new Exception(sprintf('Class "%s" is not extends BaseController.', get_class($controller)));
+            if (!($controller instanceof Controller) && !($controller instanceof Provider)) {
+                throw new Exception(sprintf('Class "%s" is not extends Controller or Provider.', get_class($controller)));
             }
         }
 
-        $attributeMiddleware = [];
+        $middlewares = [
+            ...$this->kernel->middlewares(),
+            ...$route['middleware'],
+        ];
+
         if ($controller && $function) {
             foreach ($this->app->getAttribute($controller, $function) as $value) {
-                $name = $value->getName();
-                $object = new $name();
+                $object = $this->app->singleton($value->getName());
 
                 if ($object instanceof MiddlewareInterface) {
-                    $attributeMiddleware[] = $object;
+                    array_push($middlewares, $object);
                 }
             }
         }
 
-        $middleware = new Middleware([
-            ...$this->kernel->middlewares(),
-            ...$route['middleware'],
-            ...$attributeMiddleware
-        ]);
-
-        $result = $middleware->handle(
-            $this->request,
-            $this->coreMiddleware($controller, $function)
-        );
+        $result = $this->app->make(Middleware::class, [$middlewares])
+            ->handle(
+                $this->request,
+                $this->coreMiddleware($controller, $function)
+            );
 
         $error = error_get_last();
         if ($error !== null) {
