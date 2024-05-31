@@ -63,6 +63,13 @@ class Respond
     private $content;
 
     /**
+     * Content length to respond.
+     *
+     * @var int|null $contentLength
+     */
+    private $contentLength;
+
+    /**
      * Respond code.
      *
      * @var int $code
@@ -468,6 +475,11 @@ class Respond
             return $this;
         }
 
+        if (!empty($this->content)) {
+            $this->contentLength = strlen($this->content);
+            $this->headers->set('Content-Length', strval($this->contentLength));
+        }
+
         session()->send();
 
         http_response_code($this->code);
@@ -556,12 +568,21 @@ class Respond
             fwrite($this->stream, $this->content);
         }
 
-        // Send output buffer.
+        $this->flush();
+    }
+
+    /**
+     * Flush all output buffer.
+     *
+     * @return void
+     */
+    private function flush(): void
+    {
+        @flush();
+        @ob_flush();
         while (ob_get_level() > 0) {
             @ob_end_flush();
         }
-
-        // The end.
-        @flush();
+        @fastcgi_finish_request();
     }
 }

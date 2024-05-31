@@ -274,9 +274,9 @@ class Stream
 
             $bytesLeft -= $length;
 
-            // Send Now.
-            @ob_end_flush();
+            // flush response.
             @flush();
+            @ob_flush();
         }
     }
 
