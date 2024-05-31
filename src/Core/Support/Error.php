@@ -56,12 +56,10 @@ class Error
     /**
      * Init object.
      *
-     * @param Throwable $throwable
      * @return void
      */
-    public function __construct(Throwable $throwable)
+    public function __construct()
     {
-        $this->throwable = $throwable;
         $this->stream = fopen('php://stderr', 'wb');
     }
 
@@ -117,6 +115,18 @@ class Error
         $view->show($path);
 
         return $view;
+    }
+
+    /**
+     * Set Throwable.
+     *
+     * @param Throwable $t
+     * @return Error
+     */
+    public function setThrowable(Throwable $t): Error
+    {
+        $this->throwable = $t;
+        return $this;
     }
 
     /**
@@ -196,10 +206,9 @@ class Error
     /**
      * Show error to dev.
      *
-     * @param Throwable $th
      * @return mixed
      */
-    public function render(Throwable $th): mixed
+    public function render(): mixed
     {
         if (!debug()) {
             return unavailable();
@@ -209,7 +218,7 @@ class Error
         respond()->setCode(Respond::HTTP_INTERNAL_SERVER_ERROR);
 
         if (!request()->ajax()) {
-            return render(helper_path('/errors/trace'), ['error' => $th]);
+            return render(helper_path('/errors/trace'), ['error' => $this->throwable]);
         }
 
         respond()->getHeader()->set('Content-Type', 'application/json');

@@ -97,10 +97,7 @@ class Web extends Service
         }
 
         $result = $this->app->make(Middleware::class, [$middlewares])
-            ->handle(
-                $this->request,
-                $this->coreMiddleware($controller, $function)
-            );
+            ->handle($this->request, $this->coreMiddleware($controller, $function));
 
         $error = error_get_last();
         if ($error !== null) {
@@ -177,10 +174,10 @@ class Web extends Service
     protected function handleHttpException(HttpException $th): int
     {
         try {
-            $this->respond->send($this->respond->transform($th->__toString()));
+            $this->respond->send($th->__toString());
         } catch (Throwable $th) {
             $this->respond->clean();
-            $this->respond->send($this->respond->transform($this->handleError($th)));
+            $this->respond->send($this->handleError($th));
         } finally {
             return 1;
         }
@@ -195,16 +192,14 @@ class Web extends Service
     protected function handleError(Throwable $th): mixed
     {
         try {
-            $kernel = $this->kernel->error();
-            $kernelError = new $kernel($th);
-            $kernelError->report();
+            $kernelError = $this->app->make($this->kernel->error());
+            $kernelError->setThrowable($th)->report();
 
             // Force close stream.
             $kernelError->__destruct();
-            return $kernelError->render($th);
-        } catch (Throwable $th) {
-            $error = new Error($th);
-            return $error->report()->render($th);
+            return $kernelError->render();
+        } catch (Throwable $t) {
+            return $this->app->make(Error::class)->setThrowable($t)->report()->render();
         }
     }
 
@@ -238,7 +233,7 @@ class Web extends Service
                 return $this->handleHttpException($th);
             }
 
-            $this->respond->send($this->respond->transform($this->handleError($th)));
+            $this->respond->send($this->handleError($th));
             return 1;
         }
     }
