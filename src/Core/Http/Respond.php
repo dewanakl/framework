@@ -568,21 +568,10 @@ class Respond
             fwrite($this->stream, $this->content);
         }
 
-        $this->flush();
-    }
-
-    /**
-     * Flush all output buffer.
-     *
-     * @return void
-     */
-    private function flush(): void
-    {
         @flush();
         @ob_flush();
         while (ob_get_level() > 0) {
             @ob_end_flush();
         }
-        @fastcgi_finish_request();
     }
 }
