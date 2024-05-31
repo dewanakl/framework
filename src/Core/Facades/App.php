@@ -20,12 +20,11 @@ final class App
     /**
      * Bikin objek untuk pertama kalinya.
      *
-     * @param Application $app
      * @return Application
      */
-    public static function &new(Application $app): Application
+    public static function &new(): Application
     {
-        static::$app = $app;
+        static::$app = new Application();
         return static::get();
     }
 

@@ -474,7 +474,7 @@ class Respond
         header(sprintf('HTTP/%s %s %s', $this->version, $this->code, $this->message), true, $this->code);
 
         foreach ($this->headers->all() as $key => $value) {
-            if (!$value) {
+            if (empty($value)) {
                 header($key, true, $this->code);
                 continue;
             }
@@ -552,8 +552,8 @@ class Respond
 
         if ($respond instanceof Stream) {
             $respond->push();
-        } else {
-            fwrite($this->stream, $this->getContent(false));
+        } else if (!empty($this->content)) {
+            fwrite($this->stream, $this->content);
         }
 
         // Send output buffer.

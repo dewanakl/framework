@@ -25,7 +25,7 @@ final class Kernel
      */
     private static function build(KernelContract $kernel): Application
     {
-        $app = App::new(new Application());
+        $app = App::new();
         $app->bind(KernelContract::class, function () use ($kernel): KernelContract {
             return $kernel;
         });
