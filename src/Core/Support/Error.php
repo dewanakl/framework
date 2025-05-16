@@ -175,10 +175,6 @@ class Error
             $this->setInformation($this->transformToJson($this->throwable));
         }
 
-        if (env('LOG', 'true') == 'false') {
-            return $this;
-        }
-
         if (is_resource($this->stream)) {
             fwrite($this->stream, sprintf(
                 '[%s] (%s) %s::%s %s',
@@ -188,6 +184,10 @@ class Error
                 $this->throwable->getLine(),
                 $this->throwable->getMessage()
             ) . PHP_EOL);
+        }
+
+        if (env('LOG', 'true') == 'false') {
+            return $this;
         }
 
         $status = @file_put_contents(
