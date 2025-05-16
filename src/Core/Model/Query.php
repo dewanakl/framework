@@ -126,14 +126,14 @@ class Query
      *
      * @var int Fetch
      */
-    public const Fetch = 1;
+    public const FETCH = 1;
 
     /**
      * Data banyak.
      *
      * @var int FetchAll
      */
-    public const FetchAll = 2;
+    public const FETCH_ALL = 2;
 
     /**
      * Status dari fetch.
@@ -271,7 +271,7 @@ class Query
             $relational = App::get()->invoke($model, $method, $parameters);
             $with = $relational->getWith();
 
-            if ($status == static::Fetch) {
+            if ($status == static::FETCH) {
                 $data[$relational->getAlias($method)] = $relational->setLocalKey($data[$relational->getLocalKey()])->relational();
 
                 if ($with) {
@@ -283,7 +283,7 @@ class Query
                 continue;
             }
 
-            if ($status == static::FetchAll) {
+            if ($status == static::FETCH_ALL) {
                 foreach ($data as $key => $value) {
                     $value->{$relational->getAlias($method)} = $relational->setLocalKey($value->{$relational->getLocalKey()})->relational();
 
@@ -314,11 +314,11 @@ class Query
     private function casts(string $type, mixed $data): mixed
     {
         $grammar = [
-            'string' => fn (mixed $data, string|null $arg): string => strval($data),
-            'int' => fn (mixed $data, string|null $arg): int => intval($data),
-            'float' => fn (mixed $data, string|null $arg): float => floatval($data),
-            'bool' => fn (mixed $data, string|null $arg): bool => boolval($data),
-            'datetime' => fn (Time $data, string|null $arg): Time => $data->setFormat(empty($arg) ? null : $arg)
+            'string' => fn(mixed $data, string|null $arg): string => strval($data),
+            'int' => fn(mixed $data, string|null $arg): int => intval($data),
+            'float' => fn(mixed $data, string|null $arg): float => floatval($data),
+            'bool' => fn(mixed $data, string|null $arg): bool => boolval($data),
+            'datetime' => fn(Time $data, string|null $arg): Time => $data->setFormat(empty($arg) ? null : $arg)
         ];
 
         foreach ($grammar as $key => $value) {
@@ -641,12 +641,13 @@ class Query
             $value = $data;
         }
 
-        $value = array_map(function (string $arr): string {
-            return sprintf('\'%s\'', $arr);
-        }, count($value) == 0 ? ['\'\''] : $value);
+        if (empty($value)) {
+            $value = [''];
+        }
 
-        $this->query = $this->query . sprintf(' %s %s IN (?)', $agr, $column);
-        $this->param[] = implode(', ', $value);
+        $placeholders = implode(', ', array_fill(0, count($value), '?'));
+        $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, $placeholders);
+        $this->param = array_merge($this->param ?? [], $value);
 
         return $this;
     }
@@ -675,12 +676,13 @@ class Query
             $value = $data;
         }
 
-        $value = array_map(function (string $arr) {
-            return sprintf('\'%s\'', $arr);
-        }, count($value) == 0 ? ['\'\''] : $value);
+        if (empty($value)) {
+            $value = [''];
+        }
 
-        $this->query = $this->query . sprintf(' %s %s NOT IN (?)', $agr, $column);
-        $this->param[] = implode(', ', $value);
+        $placeholders = implode(', ', array_fill(0, count($value), '?'));
+        $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, $placeholders);
+        $this->param = array_merge($this->param ?? [], $value);
 
         return $this;
     }
@@ -1004,7 +1006,7 @@ class Query
     public function get(): Model
     {
         $this->checkSelect();
-        $this->status = static::FetchAll;
+        $this->status = static::FETCH_ALL;
 
         return $this->build($this->execute(function (DataBase $db): array {
             $sets = array();
@@ -1030,7 +1032,7 @@ class Query
     public function first(): Model
     {
         $this->checkSelect();
-        $this->status = static::Fetch;
+        $this->status = static::FETCH;
 
         return $this->build(
             $this->parseCast(
@@ -1060,8 +1062,10 @@ class Query
             $data = $temp;
         }
 
-        $now = now('Y-m-d H:i:s.u');
-        $data = [...$data, ...array_combine($this->dates, array($now, $now))];
+        if (count($this->dates) > 0) {
+            $now = now('Y-m-d H:i:s.u');
+            $data = [...$data, ...array_combine($this->dates, array($now, $now))];
+        }
 
         $this->param = array_values($data);
         $this->query = sprintf(
@@ -1096,7 +1100,7 @@ class Query
         }
 
         $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
-        $setQuery = 'SET ' . implode(', ', array_map(fn (string $field): string => $field . ' = ?', array_keys($data))) . ($this->query ? ' WHERE' : '');
+        $setQuery = 'SET ' . implode(', ', array_map(fn(string $field): string => $field . ' = ?', array_keys($data))) . ($this->query ? ' WHERE' : '');
 
         $this->query = str_replace('WHERE', $setQuery, $query);
         $this->param = array_values([...$data, ...$this->param ?? []]);
