@@ -40,7 +40,7 @@ use Traversable;
  * @method static \Core\Model\Model first()
  * @method static \Core\Model\Model find(mixed $id, string|null $where = null)
  * @method static \Core\Model\Model create(array $data)
- * @method static int destroy(int $id)
+ * @method static int destroy()
  * @method static int update(array $data)
  * @method static int delete()
  *
