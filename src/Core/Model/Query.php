@@ -430,7 +430,7 @@ class Query
             if (is_int($key)) {
                 $pos = strpos($replace, '?');
                 if ($pos !== false) {
-                    $replace = substr_replace($replace, $value, $pos, 1);
+                    $replace = substr_replace($replace, is_null($value) ? 'NULL' : $value, $pos, 1);
                 }
 
                 continue;
@@ -642,7 +642,7 @@ class Query
         }
 
         if (empty($value)) {
-            $value = [''];
+            return $this->where('0', '1');
         }
 
         $placeholders = implode(', ', array_fill(0, count($value), '?'));
@@ -677,7 +677,7 @@ class Query
         }
 
         if (empty($value)) {
-            $value = [''];
+            return $this->where('0', '1');
         }
 
         $placeholders = implode(', ', array_fill(0, count($value), '?'));
@@ -859,19 +859,40 @@ class Query
     /**
      * Select raw syntax sql.
      *
-     * @param string|array<int, string> $param
+     * @param string|object|array<int, string|object> $select
      * @return Query
      */
-    public function select(string|array $param): Query
+    public function select(string|object|array $select): Query
     {
-        if (is_array($param)) {
-            $param = implode(', ', $param);
+        $sql = $select;
+
+        if (is_object($select)) {
+            $this->param = array_merge(@$select?->param ?? [], $this->param ?? []);
+            $sql = @$select?->sql;
+        }
+
+        if (is_array($select)) {
+            $sql = implode(', ', array_map(function (string|object $data): string {
+                if (is_object($data)) {
+                    $this->param = array_merge(@$data?->param ?? [], $this->param ?? []);
+                    $data = @$data?->sql;
+                }
+
+                return $data;
+            }, $select));
         }
 
         $this->checkSelect();
-        $data = explode(' FROM', $this->query, 2);
 
-        $this->query = $data[0] . (str_contains($this->query, 'SELECT *') ? ' ' : ', ') . $param . ' FROM' . $data[1];
+        $lastFromPos = strrpos($this->query, ' FROM');
+        if ($lastFromPos === false) {
+            throw new \LogicException("Missing 'FROM' clause in query.");
+        }
+
+        $beforeFrom = substr($this->query, 0, $lastFromPos);
+        $afterFrom = substr($this->query, $lastFromPos + strlen(' FROM'));
+
+        $this->query = $beforeFrom . (str_contains($this->query, 'SELECT *') ? ' ' : ', ') . $sql . ' FROM' . $afterFrom;
         $this->query = str_replace('SELECT *', 'SELECT', $this->query);
 
         return $this;
