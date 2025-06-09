@@ -169,7 +169,7 @@ abstract class Relational
     {
         $model = $call((new $this->model)->where($this->foreign_key, $id));
 
-        if ($fetch == Query::Fetch) {
+        if ($fetch == Query::FETCH) {
             if (is_null($model[$this->local_key])) {
                 return $model;
             }

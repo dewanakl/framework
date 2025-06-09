@@ -49,7 +49,7 @@ final class BelongsTo extends Relational
         $localKey = $this->getValueLocalKey();
 
         if ($this->recursive && $localKey) {
-            return $this->loop($localKey, Query::Fetch, function (Query $query): Model {
+            return $this->loop($localKey, Query::FETCH, function (Query $query): Model {
                 return $this->runCallback($query);
             });
         }

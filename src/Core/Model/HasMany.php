@@ -53,7 +53,7 @@ final class HasMany extends Relational
         $localKey = $this->getValueLocalKey();
 
         if ($this->recursive && $localKey) {
-            return $this->loop($localKey, Query::FetchAll, function (Query $query): Model {
+            return $this->loop($localKey, Query::FETCH_ALL, function (Query $query): Model {
                 return $this->runCallback($query);
             });
         }
