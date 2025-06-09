@@ -152,6 +152,14 @@ class Validator
                 }
                 break;
 
+            case $rule == 'ip':
+                if (filter_var($value, FILTER_VALIDATE_IP)) {
+                    $this->__set($param, filter_var($value, FILTER_VALIDATE_IP));
+                } else {
+                    $this->setError($param, 'request.ip');
+                }
+                break;
+
             case $rule == 'uuid':
                 if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/im', $value ?? '')) {
                     $this->setError($param, 'request.uuid');
