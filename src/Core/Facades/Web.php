@@ -193,13 +193,13 @@ class Web extends Service
     {
         try {
             $kernelError = $this->app->make($this->kernel->error());
-            $kernelError->setThrowable($th)->report();
+            $kernelError->report($th);
 
             // Force close stream.
             $kernelError->__destruct();
             return $kernelError->render();
         } catch (Throwable $t) {
-            return $this->app->make(Error::class)->setThrowable($t)->report()->render();
+            return $this->app->make(Error::class)->report($t)->render();
         }
     }
 

@@ -216,22 +216,31 @@ class Stream
      */
     private function getRange(string $range): array
     {
-        $raw = strpos($range, '-');
+        $parts = explode('-', $range, 2);
+        $startRaw = trim($parts[0]);
+        $endRaw = isset($parts[1]) ? trim($parts[1]) : '';
 
-        $start = substr($range, 0, $raw);
-        $end = substr($range, $raw + 1); // number 1 of separator length '-';
+        $start = 0;
+        $end = 0;
 
-        $end = intval(empty($end) ? ($this->size - 1) : min(abs(intval($end)), ($this->size - 1)));
-        $start = intval((empty($start) || ($end < abs(intval($start)))) ? 0 : max(abs(intval($start)), 0));
+        if ($startRaw === '') {
+            if ($endRaw === '') {
+                throw new StreamTerminate('Invalid range format');
+            }
+            $start = max(0, $this->size - intval($endRaw));
+            $end = $this->size - 1;
+        } else {
+            $start = intval($startRaw);
+            $end = ($endRaw === '') ? $this->size - 1 : intval($endRaw);
+        }
 
-        // @phpstan-ignore-next-line
-        if ($start < 0 || $start > $end) {
+        if ($start < 0 || $start >= $this->size || ($endRaw !== '' && $start > $end)) {
             $this->respond->setCode(Respond::HTTP_RANGE_NOT_SATISFIABLE);
             $this->respond->getHeader()->set('Content-Range', 'bytes */' . strval($this->size));
             throw new StreamTerminate;
         }
 
-        return [$start, $end];
+        return [$start, min($end, $this->size - 1)];
     }
 
     /**

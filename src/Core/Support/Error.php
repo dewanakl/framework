@@ -23,14 +23,14 @@ class Error
      *
      * @var string $nameFileLog
      */
-    protected $nameFileLog = '/kamu.log';
+    public static $nameFileLog = '/kamu.log';
 
     /**
      * Nama folder dari log nya.
      *
      * @var string $locationFileLog
      */
-    protected $locationFileLog = '/cache/log';
+    public static $locationFileLog = '/cache/log';
 
     /**
      * Informasi dalam json.
@@ -118,18 +118,6 @@ class Error
     }
 
     /**
-     * Set Throwable.
-     *
-     * @param Throwable $t
-     * @return Error
-     */
-    public function setThrowable(Throwable $t): Error
-    {
-        $this->throwable = $t;
-        return $this;
-    }
-
-    /**
      * Get Throwable.
      *
      * @return Throwable
@@ -167,10 +155,13 @@ class Error
     /**
      * Laporkan errornya.
      *
+     * @param Throwable $th
      * @return Error
      */
-    public function report(): Error
+    public function report(Throwable $th): Error
     {
+        $this->throwable = $th;
+
         if (!$this->information) {
             $this->setInformation($this->transformToJson($this->throwable));
         }
@@ -191,7 +182,7 @@ class Error
         }
 
         $status = @file_put_contents(
-            base_path($this->locationFileLog . $this->nameFileLog),
+            base_path(static::$locationFileLog . static::$nameFileLog),
             $this->getInformation() . PHP_EOL,
             FILE_USE_INCLUDE_PATH | FILE_APPEND | LOCK_EX
         );

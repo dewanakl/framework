@@ -53,9 +53,9 @@ final class Routine
 
                     $job->failed($th);
                 } catch (Throwable $t) {
-                    (new Error($t))->report();
+                    (new Error())->report($t);
                 } finally {
-                    (new Error($th))->report();
+                    (new Error())->report($th);
                 }
             }
         }
