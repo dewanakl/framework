@@ -29,6 +29,21 @@ final class DB extends Model
     }
 
     /**
+     * Select raw with param.
+     *
+     * @param string $select
+     * @param array $param
+     * @return object
+     */
+    public static function selectRaw(string $select, array $param = []): object
+    {
+        return (object) [
+            'sql' => $select,
+            'param' => $param,
+        ];
+    }
+
+    /**
      * Mulai transaksinya.
      *
      * @return bool

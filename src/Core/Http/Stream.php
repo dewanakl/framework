@@ -227,11 +227,19 @@ class Stream
             if ($endRaw === '') {
                 throw new StreamTerminate('Invalid range format');
             }
+
+            if (intval($endRaw) <= 0) {
+                throw new StreamTerminate('Invalid suffix range');
+            }
+
             $start = intval(max(0, $this->size - intval($endRaw)));
             $end = $this->size - 1;
         } else {
             $start = intval($startRaw);
             $end = ($endRaw === '') ? $this->size - 1 : intval($endRaw);
+            if ($start < 0 || $end < 0) {
+                throw new StreamTerminate('Invalid start range');
+            }
         }
 
         if ($start < 0 || $start >= $this->size || ($endRaw !== '' && $start > $end)) {
@@ -252,6 +260,7 @@ class Stream
     {
         $this->respond->getHeader()->set('Content-Length', strval($this->size));
         return function (): void {
+            @rewind($this->file);
             $this->readBuffer($this->size);
         };
     }
@@ -263,7 +272,7 @@ class Stream
      * @param int $size
      * @return void
      */
-    private function readBuffer(int $bytes, int $size = 1024): void
+    private function readBuffer(int $bytes, int $size = 8192): void
     {
         $bytesLeft = $bytes;
         while ($bytesLeft > 0 && !feof($this->file)) {
@@ -274,10 +283,10 @@ class Stream
             $length = @stream_copy_to_stream(
                 $this->file,
                 $this->stream,
-                ($bytesLeft > $size) ? $size : $bytesLeft
+                min($bytesLeft, $size)
             );
 
-            if ($length === false) {
+            if ($length === false || $length === 0) {
                 break;
             }
 
@@ -369,21 +378,24 @@ class Stream
         }
 
         $this->stream = $this->respond->getStream();
-        $range = '';
-        $ranges = [];
-        $t = 0;
 
+        $ranges = [];
         if ($this->request->method(Request::GET) && $this->request->server->get('HTTP_RANGE') !== null) {
-            $range = substr(stristr(trim($this->request->server->get('HTTP_RANGE')), 'bytes='), 6);
-            $raw = strpos($range, ',');
-            $ranges = $raw !== false ? explode(',', $range) : [$range];
-            $t = count($ranges);
+            $rangeHeader = trim($this->request->server->get('HTTP_RANGE'));
+
+            if (stripos($rangeHeader, 'bytes=') === 0) {
+                $range = substr($rangeHeader, 6);
+
+                $ranges = strpos($range, ',') !== false ? array_map('trim', explode(',', $range)) : [trim($range)];
+
+                $ranges = array_filter($ranges, fn($r): bool => !empty($r) && preg_match('/^\d*-\d*$/', $r));
+            }
         }
 
         $this->respond->getHeader()
             ->set('Accept-Ranges', 'bytes')
-            ->set('Content-Type',  $this->type)
-            ->set('Last-Modified', @gmdate(DateTimeInterface::RFC7231, $this->path ? @filemtime($this->path) : null))
+            ->set('Content-Type', $this->type)
+            ->set('Last-Modified', $this->path ? @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)) : @gmdate(DateTimeInterface::RFC7231))
             ->set(
                 'Content-Disposition',
                 $this->type == $this->ftype()
@@ -391,12 +403,11 @@ class Stream
                     : 'inline'
             );
 
-        if ($t > 0) {
-            if ($t === 1) {
-                $this->callback = $this->pushSingle($range);
-            } else {
-                $this->callback = $this->pushMulti($ranges);
-            }
+        $rangeCount = count($ranges);
+        if ($rangeCount > 1) {
+            $this->callback = $this->pushMulti($ranges);
+        } elseif ($rangeCount === 1) {
+            $this->callback = $this->pushSingle($ranges[0]);
         } else {
             $this->callback = $this->readFile();
         }
