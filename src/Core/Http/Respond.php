@@ -166,6 +166,29 @@ class Respond
     }
 
     /**
+     * End of response.
+     * 
+     * @return void
+     */
+    private function flushAll(): void
+    {
+        @flush();
+        @ob_flush();
+        while (ob_get_level() > 0) {
+            @ob_end_flush();
+        }
+
+        // inspire by symfony
+        if (function_exists('fastcgi_finish_request')) {
+            @fastcgi_finish_request();
+        }
+
+        if (function_exists('litespeed_finish_request')) {
+            @litespeed_finish_request();
+        }
+    }
+
+    /**
      * Alihkan halaman ke url.
      *
      * @param string $url
@@ -521,7 +544,8 @@ class Respond
         }
 
         if (is_array($respond) || $respond instanceof JsonSerializable) {
-            $this->content = json($respond, $this->code);
+            $this->headers->set('Content-Type', 'application/json');
+            $this->content = json_encode($respond, JSON_THROW_ON_ERROR, 1024);
             return $this;
         }
 
@@ -568,10 +592,9 @@ class Respond
             fwrite($this->stream, $this->content);
         }
 
-        @flush();
-        @ob_flush();
-        while (ob_get_level() > 0) {
-            @ob_end_flush();
-        }
+        $this->flushAll();
+
+        // ensure is close
+        $this->__destruct();
     }
 }

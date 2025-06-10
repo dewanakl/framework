@@ -72,7 +72,7 @@ class Request
             $this->content = stream_get_contents($this->stream);
             $this->content = !empty($this->content) ? $this->content : null;
 
-            $RAW = $this->content ? (json_decode($this->content, true, 1024, JSON_ERROR_NONE) ?? []) : [];
+            $RAW = $this->content ? (@json_decode($this->content, true, 1024, JSON_ERROR_NONE) ?? []) : [];
 
             $this->server = new Header($_SERVER);
             $this->request = new Header([...$_REQUEST, ...$RAW]);
@@ -80,7 +80,7 @@ class Request
         } else {
             $raw = App::get()->singleton(Request::class);
 
-            $this->content = $raw->getContent();
+            $this->content = $raw->getRawContent();
             $this->server = $raw->server;
             $this->request = $raw->request;
             $this->file = $raw->file;
@@ -136,6 +136,16 @@ class Request
         }
 
         return trim(substr($auth, 6));
+    }
+
+    /**
+     * Get full raw content of request
+     *
+     * @return string|null
+     */
+    public function getRawContent(): string|null
+    {
+        return $this->content;
     }
 
     /**
@@ -200,6 +210,16 @@ class Request
         }
 
         return null;
+    }
+
+    /**
+     * Dapatkan user agent.
+     *
+     * @return string|null
+     */
+    public function userAgent(): string|null
+    {
+        return $this->server->get('HTTP_USER_AGENT');
     }
 
     /**

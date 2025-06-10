@@ -227,7 +227,7 @@ class Stream
             if ($endRaw === '') {
                 throw new StreamTerminate('Invalid range format');
             }
-            $start = max(0, $this->size - intval($endRaw));
+            $start = intval(max(0, $this->size - intval($endRaw)));
             $end = $this->size - 1;
         } else {
             $start = intval($startRaw);
@@ -240,7 +240,7 @@ class Stream
             throw new StreamTerminate;
         }
 
-        return [$start, min($end, $this->size - 1)];
+        return [$start, intval(min($end, $this->size - 1))];
     }
 
     /**
