@@ -1085,7 +1085,7 @@ class Query
 
         if (count($this->dates) > 0) {
             $now = now('Y-m-d H:i:s.u');
-            $data = [...$data, ...array_combine($this->dates, array($now, $now))];
+            $data = [...$data, ...array_combine($this->dates, array_fill(0, count($this->dates), $now))];
         }
 
         $this->param = array_values($data);

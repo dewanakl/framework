@@ -228,11 +228,12 @@ class Stream
                 throw new StreamTerminate('Invalid range format');
             }
 
-            if (intval($endRaw) <= 0) {
+            $endRawInt = intval($endRaw);
+            if ($endRawInt <= 0) {
                 throw new StreamTerminate('Invalid suffix range');
             }
 
-            $start = intval(max(0, $this->size - intval($endRaw)));
+            $start = intval(max(0, $this->size - $endRawInt));
             $end = $this->size - 1;
         } else {
             $start = intval($startRaw);
