@@ -111,14 +111,14 @@ class Request
     }
 
     /**
-     * Get uniq time request id.
+     * Generate unique time request id.
      *
      * @param string $prefix
      * @return string
      */
     private function generateReqId(string $prefix = 'REQ'): string
     {
-        $random = bin2hex(random_bytes(2));
+        $random = bin2hex(random_bytes(6));
         return sprintf('%s-%d-%s', $prefix, hrtime(true), $random);
     }
 
