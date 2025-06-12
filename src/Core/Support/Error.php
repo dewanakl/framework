@@ -86,7 +86,7 @@ class Error
     private function transformToJson(Throwable $th): string
     {
         return json_encode([
-            'request_id' => request()->getRequestId(),
+            'id' => request()->getRequestId(),
             'message' => $th->getMessage(),
             'sql' => ($th instanceof DatabaseException) ? $th->getQueryString() : null,
             'database' => ($th instanceof DatabaseException) ? $th->getInfoDriver() : null,
