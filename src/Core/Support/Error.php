@@ -86,6 +86,7 @@ class Error
     private function transformToJson(Throwable $th): string
     {
         return json_encode([
+            'request_id' => request()->getRequestId(),
             'message' => $th->getMessage(),
             'sql' => ($th instanceof DatabaseException) ? $th->getQueryString() : null,
             'database' => ($th instanceof DatabaseException) ? $th->getInfoDriver() : null,
@@ -168,8 +169,9 @@ class Error
 
         if (is_resource($this->stream)) {
             fwrite($this->stream, sprintf(
-                '[%s] (%s) %s::%s %s',
+                '[%s] [%s] (%s) %s::%s %s',
                 now(DateTimeImmutable::RFC3339_EXTENDED),
+                request()->getRequestId(),
                 execute_time(),
                 $this->throwable->getFile(),
                 $this->throwable->getLine(),

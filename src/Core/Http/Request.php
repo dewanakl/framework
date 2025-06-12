@@ -61,6 +61,13 @@ class Request
     private $content;
 
     /**
+     * Request id.
+     *
+     * @var string $reqId
+     */
+    private $reqId;
+
+    /**
      * Init objek.
      *
      * @return void
@@ -77,6 +84,7 @@ class Request
             $this->server = new Header($_SERVER);
             $this->request = new Header([...$_REQUEST, ...$RAW]);
             $this->file = new Header(UploadedFile::parse($_FILES));
+            $this->reqId = $this->generateReqId();
         } else {
             $raw = App::get()->singleton(Request::class);
 
@@ -84,6 +92,7 @@ class Request
             $this->server = $raw->server;
             $this->request = $raw->request;
             $this->file = $raw->file;
+            $this->reqId = $raw->getRequestId();
         }
     }
 
@@ -99,6 +108,28 @@ class Request
         }
 
         $this->stream = null;
+    }
+
+    /**
+     * Get uniq time request id.
+     *
+     * @param string $prefix
+     * @return string
+     */
+    private function generateReqId(string $prefix = 'REQ'): string
+    {
+        $random = bin2hex(random_bytes(2));
+        return sprintf('%s-%d-%s', $prefix, hrtime(true), $random);
+    }
+
+    /**
+     * Get request id
+     *
+     * @return string
+     */
+    public function getRequestId(): string
+    {
+        return $this->reqId;
     }
 
     /**
