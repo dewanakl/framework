@@ -118,7 +118,7 @@ class Request
      */
     private function generateReqId(string $prefix = 'REQ'): string
     {
-        $random = bin2hex(random_bytes(6));
+        $random = bin2hex(random_bytes(9));
         return sprintf('%s-%d-%s', $prefix, hrtime(true), $random);
     }
 
@@ -157,16 +157,17 @@ class Request
     /**
      * Get bearer token from header.
      *
+     * @param string $type
      * @return string|null
      */
-    public function bearerToken(): string|null
+    public function bearerToken(string $type = 'Bearer'): string|null
     {
         $auth = $this->server->get('HTTP_AUTHORIZATION');
         if (!$auth) {
             return null;
         }
 
-        return trim(substr($auth, 6));
+        return trim(substr($auth, strlen($type)));
     }
 
     /**

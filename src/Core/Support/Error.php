@@ -5,6 +5,7 @@ namespace Core\Support;
 use Core\Database\Exception\DatabaseException;
 use Core\Facades\App;
 use Core\Http\Respond;
+use Core\Routing\Route;
 use Core\View\View;
 use DateTimeImmutable;
 use Exception;
@@ -95,6 +96,10 @@ class Error
             'code' => $th->getCode(),
             'date' => now(DateTimeImmutable::RFC3339_EXTENDED),
             'duration' => execute_time(),
+            'ip' => request()->ip(),
+            'ua' => request()->userAgent(),
+            'route' => Route::route(),
+            'user' => auth()->user(),
             'trace' => array_map(function (array $data): array {
                 unset($data['args']);
                 return $data;

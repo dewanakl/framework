@@ -179,12 +179,15 @@ class Respond
         }
 
         // inspire by symfony
-        if (function_exists('fastcgi_finish_request')) {
-            @fastcgi_finish_request();
-        }
+        $finishRequestFunctions = [
+            'fastcgi_finish_request',
+            'litespeed_finish_request',
+        ];
 
-        if (function_exists('litespeed_finish_request')) {
-            @litespeed_finish_request();
+        foreach ($finishRequestFunctions as $fn) {
+            if (function_exists($fn)) {
+                @$fn();
+            }
         }
     }
 
