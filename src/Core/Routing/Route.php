@@ -27,7 +27,7 @@ final class Route
      */
     public static function &route(): array
     {
-        return static::$route;
+        return static::$route ?? [];
     }
 
     /**
