@@ -200,7 +200,15 @@ class Query
         $this->queryDuration = microtime(true);
 
         if (static::$tz) {
-            $this->db->exec(sprintf('SET TIMEZONE TO \'%s\';', static::$tz));
+            switch ($this->db->getInfoDriver()['DRIVER_NAME']) {
+                case 'pgsql':
+                    $this->db->exec(sprintf("SET TIME ZONE '%s'", static::$tz));
+                    break;
+
+                case 'mysql':
+                    $this->db->exec(sprintf("SET time_zone = '%s'", static::$tz));
+                    break;
+            }
         }
 
         if ($this->query) {

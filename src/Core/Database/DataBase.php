@@ -102,6 +102,7 @@ class DataBase
             'CASE',
             'CLIENT_VERSION',
             'CONNECTION_STATUS',
+            'DRIVER_NAME',
             'ORACLE_NULLS',
             'PERSISTENT',
             'PREFETCH',
