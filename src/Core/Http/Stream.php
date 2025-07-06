@@ -152,7 +152,8 @@ class Stream
 
         if ($start > 0 || $end < ($this->size - 1)) {
             $this->respond->setCode(Respond::HTTP_PARTIAL_CONTENT);
-            $this->respond->getHeader()->set('Content-Length', strval($end - $start + 1))
+            $this->respond->getHeader()
+                ->set('Content-Length', strval($end - $start + 1))
                 ->set('Content-Range', sprintf('bytes %s-%s/%s', $start, $end, $this->size));
 
             return function () use ($start, $end): void {
@@ -294,8 +295,8 @@ class Stream
             $bytesLeft -= $length;
 
             // flush response.
-            @flush();
             @ob_flush();
+            @flush();
         }
     }
 
@@ -397,12 +398,7 @@ class Stream
             ->set('Accept-Ranges', 'bytes')
             ->set('Content-Type', $this->type)
             ->set('Last-Modified', $this->path ? @gmdate(DateTimeInterface::RFC7231, @filemtime($this->path)) : @gmdate(DateTimeInterface::RFC7231))
-            ->set(
-                'Content-Disposition',
-                $this->type == $this->ftype()
-                    ? sprintf('attachment; filename="%s"', $this->name)
-                    : 'inline'
-            );
+            ->set('Content-Disposition', $this->type === $this->ftype() ? sprintf('attachment; filename="%s"', $this->name) : 'inline');
 
         $rangeCount = count($ranges);
         if ($rangeCount > 1) {
@@ -417,13 +413,13 @@ class Stream
     }
 
     /**
-     * Push to echo.
+     * Get callback.
      *
-     * @return void
+     * @return Closure
      */
-    public function push(): void
+    public function getCallback(): Closure
     {
-        call_user_func($this->callback);
+        return $this->callback;
     }
 
     /**

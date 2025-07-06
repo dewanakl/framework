@@ -2,9 +2,11 @@
 
 namespace Core\Http;
 
+use Closure;
 use Core\Facades\App;
 use DateTimeInterface;
 use Exception;
+use Generator;
 use JsonSerializable;
 use Stringable;
 
@@ -112,6 +114,13 @@ class Respond
     private $stream;
 
     /**
+     * Run after all done.
+     *
+     * @var \Closure
+     */
+    private $callback;
+
+    /**
      * Init object.
      *
      * @param string|null $content
@@ -167,16 +176,16 @@ class Respond
 
     /**
      * End of response.
-     * 
+     *
      * @return void
      */
     private function flushAll(): void
     {
-        @flush();
         @ob_flush();
         while (ob_get_level() > 0) {
             @ob_end_flush();
         }
+        @flush();
 
         // inspire by symfony
         $finishRequestFunctions = [
@@ -490,12 +499,63 @@ class Respond
     }
 
     /**
+     * Respond dengan generator.
+     *
+     * @param \Generator $gen
+     * @param array $headers
+     * @return Respond
+     */
+    public function fromGenerator(Generator $gen, array $headers = []): Respond
+    {
+        foreach ($headers as $k => $v) {
+            $this->headers->set($k, $v);
+        }
+
+        $this->callback = function () use ($gen): void {
+            if (!$gen->valid()) {
+                return;
+            }
+
+            foreach ($gen as $value) {
+                if (@connection_aborted()) {
+                    break;
+                }
+
+                fwrite($this->stream, $value);
+                @ob_flush();
+                @flush();
+            }
+        };
+
+        return $this;
+    }
+
+    /**
+     * Get current callback.
+     *
+     * @return Closure|null
+     */
+    public function getCallback(): Closure|null
+    {
+        return $this->callback;
+    }
+
+    /**
      * Send all header queue.
      *
      * @return Respond
      */
     public function prepare(): Respond
     {
+        // Prepare content.
+        if (!$this->callback) {
+            $this->callback = function (): void {
+                if (!empty($this->content)) {
+                    fwrite($this->stream, $this->content);
+                }
+            };
+        }
+
         // Don't send again.
         if (headers_sent()) {
             return $this;
@@ -548,7 +608,7 @@ class Respond
 
         if (is_array($respond) || $respond instanceof JsonSerializable) {
             $this->headers->set('Content-Type', 'application/json');
-            $this->content = json_encode($respond, JSON_THROW_ON_ERROR, 1024);
+            $this->content = strval(json_encode($respond, JSON_THROW_ON_ERROR, 1024));
             return $this;
         }
 
@@ -557,6 +617,7 @@ class Respond
             $this->setContent($respond->getContent());
             $this->headers = new Header([...$this->headers->all(), ...$respond->headers->all()]);
             $this->setParameter([...$this->getParameter(), ...$respond->getParameter()]);
+            $this->callback = $respond->getCallback();
 
             if ($this->code >= 300 && $this->code < 400) {
                 $this->redirect($this->content, $this->code == Respond::HTTP_MOVED_PERMANENTLY);
@@ -571,7 +632,12 @@ class Respond
             $this->setParameter(); // Set empty query parameters.
             $this->content = null;
             $respond->process();
+            $this->callback = $respond->getCallback();
             return $this;
+        }
+
+        if ($respond instanceof Generator) {
+            return $this->fromGenerator($respond);
         }
 
         return $this;
@@ -586,18 +652,10 @@ class Respond
     public function send(mixed $respond): void
     {
         @ob_end_clean();
+        @ob_implicit_flush(true);
 
         $this->transform($respond)->prepare();
-
-        if ($respond instanceof Stream) {
-            $respond->push();
-        } else if (!empty($this->content)) {
-            fwrite($this->stream, $this->content);
-        }
-
+        call_user_func($this->callback);
         $this->flushAll();
-
-        // ensure is close
-        $this->__destruct();
     }
 }
