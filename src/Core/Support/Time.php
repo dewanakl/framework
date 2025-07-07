@@ -48,7 +48,7 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
     public static function factory(string $time = 'now'): Time
     {
         try {
-            return new Time($time, new DateTimeZone(env('TIMEZONE', 'Asia/Jakarta')));
+            return new Time($time, new DateTimeZone(env('TIMEZONE', 'UTC')));
         } catch (Throwable) {
             return new Time($time, new DateTimeZone(date_default_timezone_get()));
         }
@@ -62,6 +62,17 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
     public function now(): DateTimeImmutable
     {
         return $this->factory();
+    }
+
+    /**
+     * Change tz.
+     *
+     * @param string $tz
+     * @return DateTimeImmutable
+     */
+    public function tz(string $tz): DateTimeImmutable
+    {
+        return $this->setTimezone(new DateTimeZone($tz));
     }
 
     /**
@@ -91,7 +102,7 @@ class Time extends DateTimeImmutable implements Stringable, JsonSerializable, Cl
      */
     public static function setTimezoneDefault(): void
     {
-        $status = @date_default_timezone_set(Env::get('TIMEZONE', 'Asia/Jakarta'));
+        $status = @date_default_timezone_set(Env::get('TIMEZONE', 'UTC'));
         if (!$status) {
             error_clear_last();
             date_default_timezone_set('UTC');
