@@ -972,7 +972,7 @@ class Query
      * @param mixed $value
      * @return Query
      */
-    public function orHaving(string|callable $column, mixed $operator = null, mixed $value = null): self
+    public function orHaving(string|callable $column, mixed $operator = null, mixed $value = null): Query
     {
         return $this->having($column, $operator, $value, 'OR');
     }
