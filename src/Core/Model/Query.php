@@ -26,9 +26,9 @@ class Query
     /**
      * Nilai yang akan dimasukan.
      *
-     * @var array<int|string, mixed>|null $param
+     * @var array<int|string, mixed> $param
      */
-    private $param;
+    private array $param = [];
 
     /**
      * Nama tabelnya.
@@ -78,13 +78,6 @@ class Query
      * @var array<int, mixed> $relational
      */
     private $relational;
-
-    /**
-     * Is subquery.
-     *
-     * @var string|null $subQuery
-     */
-    private $subQuery;
 
     /**
      * Object database.
@@ -148,6 +141,70 @@ class Query
      * @var string|null
      */
     public static $tz;
+
+    /**
+     * List of selected columns for SELECT statement.
+     * Example: ['users.id', 'users.name', 'COUNT(posts.id) AS post_count']
+     *
+     * @var array
+     */
+    private array $selects = [];
+
+    /**
+     * WHERE conditions.
+     * Contains structured data for each condition (basic, nested, raw).
+     *
+     * @var array
+     */
+    private array $wheres = [];
+
+    /**
+     * JOIN clauses.
+     * Each item is a string like "LEFT JOIN posts ON posts.user_id = users.id"
+     *
+     * @var array
+     */
+    private array $joins = [];
+
+    /**
+     * GROUP BY columns.
+     * Example: ['users.id', 'users.role']
+     *
+     * @var array
+     */
+    private array $groupByQuery = [];
+
+    /**
+     * ORDER BY clauses.
+     * Example: ['created_at DESC', 'name ASC']
+     *
+     * @var array
+     */
+    private array $orderByQuery = [];
+
+    /**
+     * HAVING conditions (after GROUP BY).
+     * Structured like $wheres: supports nested, basic, and raw.
+     *
+     * @var array
+     */
+    private array $havings = [];
+
+    /**
+     * LIMIT value for result set.
+     * Null if not set.
+     *
+     * @var int|null
+     */
+    private ?int $limitQuery = null;
+
+    /**
+     * OFFSET value for result set.
+     * Null if not set.
+     *
+     * @var int|null
+     */
+    private ?int $offsetQuery = null;
 
     /**
      * Buat objek model.
@@ -230,30 +287,6 @@ class Query
         $this->param = [];
 
         return $result;
-    }
-
-    /**
-     * Cek select syntax query.
-     *
-     * @return void
-     */
-    private function checkSelect(): void
-    {
-        if (!str_contains($this->query ?? '', 'SELECT')) {
-            $this->query = 'SELECT * FROM ' . $this->table . $this->query;
-        }
-    }
-
-    /**
-     * Check query if empty.
-     *
-     * @return void
-     */
-    private function checkQuery(): void
-    {
-        if (!$this->query && !$this->param) {
-            $this->query = 'SELECT * FROM ' . $this->table;
-        }
     }
 
     /**
@@ -342,13 +375,142 @@ class Query
     }
 
     /**
+     * Start build sql query.
+     *
+     * @return string
+     */
+    private function building(): string
+    {
+        $sql = 'SELECT ';
+
+        if (count($this->selects) === 0) {
+            $sql .= '*';
+        }
+
+        $selects = [];
+        foreach ($this->selects as $value) {
+            $selects[] = $value['sql'];
+            $this->param = array_merge($this->param, $value['param']);
+        }
+
+        $this->selects = [];
+
+        $sql .= implode(', ', $selects);
+        $sql .= ' FROM ' . $this->table;
+
+        if (count($this->joins) > 0) {
+            $sql .= ' ' . implode(' ', $this->joins);
+        }
+
+        $this->joins = [];
+
+        if (count($this->wheres) > 0) {
+            list($s, $p) = $this->buildWhere();
+            $sql .= ' WHERE ' . $s;
+            $this->param = array_merge($this->param, $p);
+        }
+
+        $this->wheres = [];
+
+        if (count($this->groupByQuery) > 0) {
+            $sql .= ' GROUP BY ' . implode(', ', $this->groupByQuery);
+        }
+
+        $this->groupByQuery = [];
+
+        if (count($this->havings) > 0) {
+            list($s, $p) = $this->buildHaving();
+            $sql .= ' HAVING ' . $s;
+            $this->param = array_merge($this->param, $p);
+        }
+
+        $this->havings = [];
+
+        if (count($this->orderByQuery) > 0) {
+            $sql .= ' ORDER BY ' . implode(', ', $this->orderByQuery);
+        }
+
+        $this->orderByQuery = [];
+
+        if ($this->limitQuery !== null) {
+            $sql .= ' LIMIT ' . strval($this->limitQuery);
+        }
+
+        $this->limitQuery = null;
+
+        if ($this->offsetQuery !== null) {
+            $sql .= ' OFFSET ' . strval($this->offsetQuery);
+        }
+
+        $this->offsetQuery = null;
+
+        return $sql .= ';';
+    }
+
+    /**
+     * Build where query
+     *
+     * @return array<array|string>
+     */
+    private function buildWhere(): array
+    {
+        $sql = '';
+        $param = [];
+
+        foreach ($this->wheres as $index => $where) {
+            $prefix = $index === 0 ? '' : ' ' . $where['boolean'] . ' ';
+
+            if ($where['type'] === 'basic') {
+                $sql .= $prefix . sprintf('%s %s ?', $where['column'], $where['operator']);
+                $param[] = $where['value'];
+            } elseif ($where['type'] === 'nested') {
+                list($s, $p) = $where['query']->buildWhere();
+                $sql .= $prefix . '(' . $s . ')';
+                $param = array_merge($param, $p);
+            } elseif ($where['type'] === 'raw') {
+                $sql .= $prefix . $where['sql'];
+                $param = array_merge($param, $where['param']);
+            }
+        }
+
+        return [$sql, $param];
+    }
+
+    /**
+     * Build having query
+     *
+     * @return array<array|string>
+     */
+    private function buildHaving(): array
+    {
+        $sql = '';
+        $param = [];
+
+        foreach ($this->havings as $index => $having) {
+            $prefix = $index === 0 ? '' : ' ' . $having['boolean'] . ' ';
+
+            if ($having['type'] === 'basic') {
+                $sql .= $prefix . sprintf('%s %s ?', $having['column'], $having['operator']);
+                $param[] = $having['value'];
+            } elseif ($having['type'] === 'nested') {
+                list($s, $p) = $having['query']->buildHaving();
+                $sql .= $prefix . '(' . $s  . ')';
+                $param = array_merge($param, $p);
+            }
+        }
+
+        return [$sql, $param];
+    }
+
+    /**
      * Debug querynya.
      *
      * @return void
      */
     public function dd(): void
     {
-        $this->checkSelect();
+        $this->query = $this->building();
+
         dd(
             [
                 'query' => $this->query,
@@ -431,7 +593,7 @@ class Query
      */
     public function getQuery(): string
     {
-        $this->checkQuery();
+        $this->query = $this->building();
 
         $replace = $this->query;
         foreach ($this->param as $key => $value) {
@@ -578,50 +740,32 @@ class Query
     /**
      * Where syntax sql.
      *
-     * @param string|Closure $column
+     * @param string|callable $column
      * @param mixed $value
-     * @param string $statment
-     * @param string $agr
+     * @param string $operator
+     * @param string $boolean
      * @return Query
      */
-    public function where(string|Closure $column, mixed $value = null, string $statment = '=', string $agr = 'AND'): Query
+    public function where(string|callable $column, mixed $value = null, string $operator = '=', string $boolean = 'AND'): Query
     {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
+        if (is_callable($column)) {
+            $nested = new static;
+            $column($nested);
+            $this->wheres[] = [
+                'type' => 'nested',
+                'boolean' => strtoupper($boolean),
+                'query' => $nested,
+            ];
+        } else {
+            $this->wheres[] = [
+                'type' => 'basic',
+                'boolean' => strtoupper($boolean),
+                'column' => $column,
+                'operator' => $operator,
+                'value' => $value,
+            ];
         }
 
-        if ($column instanceof Closure) {
-            $this->subQuery = '(';
-            $column($this);
-            $this->subQuery = null;
-            $this->query .= ')';
-            return $this;
-        }
-
-        $this->query = $this->query . sprintf(' %s %s %s %s ?', $agr, $this->subQuery, $column, $statment);
-        $this->param[] = $value;
-
-        return $this;
-    }
-
-    /**
-     * Insert raw query.
-     *
-     * @param string $statment
-     * @param string $agr
-     * @return Query
-     */
-    public function whereRaw(string $statment, string $agr = 'AND'): Query
-    {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
-        }
-
-        $this->query = $this->query . sprintf(' %s %s', $agr, $statment);
         return $this;
     }
 
@@ -629,33 +773,24 @@ class Query
      * Where IN syntax sql.
      *
      * @param string $column
-     * @param array<int, mixed>|Model<int|string, mixed> $value
-     * @param string $agr
+     * @param array $values
+     * @param string $boolean
+     * @param bool $not
      * @return Query
      */
-    public function whereIn(string $column, array|Model $value, string $agr = 'AND'): Query
+    public function whereIn(string $column, array $values, string $boolean = 'AND', bool $not = false): Query
     {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
-        }
-
-        if ($value instanceof Model) {
-            $data = [];
-            foreach ($value->toArray() as $val) {
-                $data[] = array_values($val)[0];
-            }
-            $value = $data;
-        }
-
-        if (empty($value)) {
+        if (count($values) === 0) {
             return $this->where('0', '1');
         }
 
-        $placeholders = implode(', ', array_fill(0, count($value), '?'));
-        $this->query = $this->query . sprintf(' %s %s IN (%s)', $agr, $column, $placeholders);
-        $this->param = array_merge($this->param ?? [], $value);
+        $placeholders = implode(', ', array_fill(0, count($values), '?'));
+        $this->wheres[] = [
+            'type' => 'raw',
+            'boolean' => strtoupper($boolean),
+            'sql' => sprintf('%s %s (%s)', $column, $not ? 'NOT IN' : 'IN', $placeholders),
+            'param' => $values
+        ];
 
         return $this;
     }
@@ -664,53 +799,31 @@ class Query
      * Where Not IN syntax sql.
      *
      * @param string $column
-     * @param array<int, mixed>|Model<int|string, mixed> $value
-     * @param string $agr
+     * @param array $values
+     * @param string $boolean
      * @return Query
      */
-    public function whereNotIn(string $column, array|Model $value, string $agr = 'AND'): Query
+    public function whereNotIn(string $column, array $values, string $boolean = 'AND'): Query
     {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
-        }
-
-        if ($value instanceof Model) {
-            $data = [];
-            foreach ($value->toArray() as $val) {
-                $data[] = array_values($val)[0];
-            }
-            $value = $data;
-        }
-
-        if (empty($value)) {
-            return $this->where('0', '1');
-        }
-
-        $placeholders = implode(', ', array_fill(0, count($value), '?'));
-        $this->query = $this->query . sprintf(' %s %s NOT IN (%s)', $agr, $column, $placeholders);
-        $this->param = array_merge($this->param ?? [], $value);
-
-        return $this;
+        return $this->whereIn($column, $values, $boolean, true);
     }
 
     /**
      * Where NULL syntax sql.
      *
      * @param string $column
-     * @param string $agr
+     * @param string $boolean
+     * @param bool $not
      * @return Query
      */
-    public function whereNull(string $column, string $agr = 'AND'): Query
+    public function whereNull(string $column, string $boolean = 'AND', bool $not = false): Query
     {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
-        }
-
-        $this->query = $this->query . sprintf(' %s %s IS NULL', $agr, $column);
+        $this->wheres[] = [
+            'type' => 'raw',
+            'boolean' => strtoupper($boolean),
+            'sql' => sprintf('%s %s', $column, $not ? 'IS NOT NULL' : 'IS NULL'),
+            'param' => [],
+        ];
 
         return $this;
     }
@@ -719,20 +832,12 @@ class Query
      * Where Not NULL syntax sql.
      *
      * @param string $column
-     * @param string $agr
+     * @param string $boolean
      * @return Query
      */
-    public function whereNotNull(string $column, string $agr = 'AND'): Query
+    public function whereNotNull(string $column, string $boolean = 'AND'): Query
     {
-        $this->checkQuery();
-
-        if (!str_contains($this->query ?? '', 'WHERE')) {
-            $agr = 'WHERE';
-        }
-
-        $this->query = $this->query . sprintf(' %s %s IS NOT NULL', $agr, $column);
-
-        return $this;
+        return $this->whereNull($column, $boolean, true);
     }
 
     /**
@@ -747,8 +852,7 @@ class Query
      */
     public function join(string $table, string $column, string $refers, string $param = '=', string $type = 'INNER'): Query
     {
-        $this->checkQuery();
-        $this->query = $this->query . sprintf(' %s JOIN %s ON %s %s %s', $type, $table, $column, $param, $refers);
+        $this->joins[] = sprintf('%s JOIN %s ON %s %s %s', $type, $table, $column, $param, $refers);
         return $this;
     }
 
@@ -803,11 +907,7 @@ class Query
      */
     public function orderBy(string $name, string $order = 'ASC'): Query
     {
-        $this->checkQuery();
-
-        $agr = str_contains($this->query, 'ORDER BY') ? ', ' : ' ORDER BY ';
-        $this->query = $this->query . $agr . $name . ' ' . ($order === 'ASC' || $order === 'asc' ? 'ASC' : 'DESC');
-
+        $this->orderByQuery[] = sprintf('%s %s', $name, $order === 'ASC' || $order === 'asc' ? 'ASC' : 'DESC');
         return $this;
     }
 
@@ -819,24 +919,62 @@ class Query
      */
     public function groupBy(string|array $param): Query
     {
-        if (is_array($param)) {
-            $param = implode(', ', $param);
+        if (is_string($param)) {
+            $param = [$param];
         }
 
-        $this->query = $this->query . ' GROUP BY ' . $param;
+        $this->groupByQuery = array_merge($this->groupByQuery, $param);
         return $this;
     }
 
     /**
      * Having syntax sql.
      *
-     * @param string $param
+     * @param string|callable $column
+     * @param mixed $operator
+     * @param mixed $value
+     * @param string $boolean
      * @return Query
      */
-    public function having(string $param): Query
+    public function having(string|callable $column, mixed $operator = null, mixed $value = null, string $boolean = 'AND'): Query
     {
-        $this->query = $this->query . ' HAVING ' . $param;
+        if (is_callable($column)) {
+            $nested = new static;
+            $column($nested);
+            $this->havings[] = [
+                'type' => 'nested',
+                'boolean' => strtoupper($boolean),
+                'query' => $nested,
+            ];
+        } else {
+            if ($value === null) {
+                $value = $operator;
+                $operator = '=';
+            }
+
+            $this->havings[] = [
+                'type' => 'basic',
+                'boolean' => strtoupper($boolean),
+                'column' => $column,
+                'operator' => $operator,
+                'value' => $value,
+            ];
+        }
+
         return $this;
+    }
+
+    /**
+     * Simplify or having
+     *
+     * @param string|callable $column
+     * @param mixed $operator
+     * @param mixed $value
+     * @return Query
+     */
+    public function orHaving(string|callable $column, mixed $operator = null, mixed $value = null): self
+    {
+        return $this->having($column, $operator, $value, 'OR');
     }
 
     /**
@@ -847,8 +985,7 @@ class Query
      */
     public function limit(int $param): Query
     {
-        $this->checkSelect();
-        $this->query = $this->query . ' LIMIT ' . strval(intval($param));
+        $this->limitQuery = intval($param);
         return $this;
     }
 
@@ -860,48 +997,42 @@ class Query
      */
     public function offset(int $param): Query
     {
-        $this->query = $this->query . ' OFFSET ' . strval(intval($param));
+        $this->offsetQuery = intval($param);
         return $this;
     }
 
     /**
      * Select raw syntax sql.
      *
-     * @param string|object|array<int, string|object> $select
+     * @param string|array $select
      * @return Query
      */
-    public function select(string|object|array $select): Query
+    public function select(string|array $select): Query
     {
-        $sql = $select;
+        if (is_string($select)) {
+            $this->selects[] = [
+                'sql' => $select,
+                'param' => []
+            ];
 
-        if (is_object($select)) {
-            $this->param = array_merge(@$select?->param ?? [], $this->param ?? []);
-            $sql = @$select?->sql;
+            return $this;
         }
 
-        if (is_array($select)) {
-            $sql = implode(', ', array_map(function (string|object $data): string {
-                if (is_object($data)) {
-                    $this->param = array_merge(@$data?->param ?? [], $this->param ?? []);
-                    $data = @$data?->sql;
-                }
+        foreach ($select as $data) {
+            if (is_string($data)) {
+                $this->selects[] = [
+                    'sql' => $data,
+                    'param' => []
+                ];
 
-                return $data;
-            }, $select));
+                continue;
+            }
+
+            $this->selects[] = [
+                'sql' => $data[0],
+                'param' => $data[1]
+            ];
         }
-
-        $this->checkSelect();
-
-        $lastFromPos = strrpos($this->query, ' FROM');
-        if ($lastFromPos === false) {
-            throw new \LogicException("Missing 'FROM' clause in query.");
-        }
-
-        $beforeFrom = substr($this->query, 0, $lastFromPos);
-        $afterFrom = substr($this->query, $lastFromPos + strlen(' FROM'));
-
-        $this->query = $beforeFrom . (str_contains($this->query, 'SELECT *') ? ' ' : ', ') . $sql . ' FROM' . $afterFrom;
-        $this->query = str_replace('SELECT *', 'SELECT', $this->query);
 
         return $this;
     }
@@ -1034,13 +1165,17 @@ class Query
      */
     public function get(): Model
     {
-        $this->checkSelect();
+        $this->query = $this->building();
         $this->status = static::FETCH_ALL;
 
         return $this->build($this->execute(function (DataBase $db): array {
             $sets = array();
 
             do {
+                if (@connection_aborted()) {
+                    break;
+                }
+
                 $record = $db->fetch();
                 if (!$record) {
                     break;
@@ -1060,7 +1195,7 @@ class Query
      */
     public function first(): Model
     {
-        $this->checkSelect();
+        $this->query = $this->building();
         $this->status = static::FETCH;
 
         return $this->build(
@@ -1092,8 +1227,7 @@ class Query
         }
 
         if (count($this->dates) > 0) {
-            $now = now('Y-m-d H:i:s.u');
-            $data = [...$data, ...array_combine($this->dates, array_fill(0, count($this->dates), $now))];
+            $data = [...$data, ...array_combine($this->dates, array_fill(0, count($this->dates), now('Y-m-d H:i:s.u')))];
         }
 
         $this->param = array_values($data);
@@ -1128,11 +1262,18 @@ class Query
             $data = [...$data, ...[$this->dates[1] => now('Y-m-d H:i:s.u')]];
         }
 
-        $query = is_null($this->query) ? 'UPDATE ' . $this->table . ' WHERE' : str_replace('SELECT * FROM', 'UPDATE', $this->query);
-        $setQuery = 'SET ' . implode(', ', array_map(fn(string $field): string => $field . ' = ?', array_keys($data))) . ($this->query ? ' WHERE' : '');
+        $this->query = 'UPDATE ' . $this->table;
+        $this->query .= ' SET ' . implode(', ', array_map(fn(string $field): string => $field . ' = ?', array_keys($data)));
+        $this->param = array_values($data);
 
-        $this->query = str_replace('WHERE', $setQuery, $query);
-        $this->param = array_values([...$data, ...$this->param ?? []]);
+        if (count($this->wheres) > 0) {
+            list($s, $p) = $this->buildWhere();
+            $this->query .= ' WHERE ' . $s;
+            $this->param = array_merge($this->param, $p);
+        }
+
+        $this->wheres = [];
+        $this->query .= ';';
 
         return $this->execute(function (DataBase $db): int {
             return $db->rowCount();
@@ -1146,7 +1287,16 @@ class Query
      */
     public function delete(): int
     {
-        $this->query = is_null($this->query) ? 'DELETE FROM ' . $this->table : str_replace('SELECT *', 'DELETE', $this->query);
+        $this->query = 'DELETE FROM ' . $this->table;
+
+        if (count($this->wheres) > 0) {
+            list($s, $p) = $this->buildWhere();
+            $this->query .= ' WHERE ' . $s;
+            $this->param = array_merge($this->param, $p);
+        }
+
+        $this->wheres = [];
+        $this->query .= ';';
 
         return $this->execute(function (DataBase $db): int {
             return $db->rowCount();

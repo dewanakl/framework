@@ -343,9 +343,9 @@ class Request
      * Ambil file yang masuk.
      *
      * @param string $name
-     * @return UploadedFile|array<int, UploadedFile>
+     * @return null|UploadedFile|array<int, UploadedFile>
      */
-    public function file(string $name): UploadedFile|array
+    public function file(string $name): null|UploadedFile|array
     {
         return $this->file->get($name);
     }

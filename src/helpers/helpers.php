@@ -16,7 +16,7 @@ if (!function_exists('context')) {
         }
 
         if (!$val) {
-            return $ctx->{$key};
+            return isset($ctx->{$key}) ? $ctx->{$key} : null;
         }
 
         $ctx->{$key} = $val;

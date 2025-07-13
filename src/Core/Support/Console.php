@@ -204,7 +204,10 @@ class Console
         $files = scandir($baseFile, ($up) ? 0 : 1);
         $files = array_diff($files, array('..', '.'));
 
+        $total = count($files);
+        $now = 0;
         foreach ($files as $file) {
+            $now++;
             $arg = require $baseFile . $file;
             if (!($arg instanceof Migration)) {
                 $this->exception('File ' . $file . ' bukan migrasi !');
@@ -212,7 +215,7 @@ class Console
 
             ($up) ? $arg->up() : $arg->down();
             $info = ($up) ? $this->createColor('green', ' Migrasi ') : $this->createColor('yellow', ' Migrasi kembali ');
-            print("\n" . $file . $info . $this->executeTime());
+            print("\n" . $file . $info . $this->executeTime() . sprintf(' [%d/%d]', $now, $total));
         }
     }
 

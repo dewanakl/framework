@@ -548,11 +548,9 @@ class Respond
     public function prepare(): Respond
     {
         // Prepare content.
-        if (!$this->callback) {
+        if (!$this->callback && !empty($this->content)) {
             $this->callback = function (): void {
-                if (!empty($this->content)) {
-                    fwrite($this->stream, $this->content);
-                }
+                fwrite($this->stream, $this->content);
             };
         }
 
