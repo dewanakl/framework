@@ -118,8 +118,7 @@ class Request
      */
     private function generateReqId(string $prefix = 'REQ'): string
     {
-        $random = bin2hex(random_bytes(9));
-        return sprintf('%s-%d-%s', $prefix, hrtime(true), $random);
+        return sprintf('%s-%s', $prefix, uuid());
     }
 
     /**
