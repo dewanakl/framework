@@ -4,6 +4,7 @@ namespace Core\Valid;
 
 use Core\File\UploadedFile;
 use Exception;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Validasi sebuah nilai.
@@ -161,7 +162,7 @@ class Validator
                 break;
 
             case $rule == 'uuid':
-                if (!preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/im', $value ?? '')) {
+                if (!Uuid::isValid($value ?? '')) {
                     $this->setError($param, 'request.uuid');
                 }
                 break;

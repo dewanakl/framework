@@ -8,6 +8,7 @@ use Core\Routing\Route;
 use Core\Valid\Exception\ValidationException;
 use Core\Valid\Validator;
 use Exception;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Request yang masuk.
@@ -84,7 +85,7 @@ class Request
             $this->server = new Header($_SERVER);
             $this->request = new Header([...$_REQUEST, ...$RAW]);
             $this->file = new Header(UploadedFile::parse($_FILES));
-            $this->reqId = $this->generateReqId();
+            $this->reqId = Uuid::uuid4()->toString();
         } else {
             $raw = App::get()->singleton(Request::class);
 
@@ -108,17 +109,6 @@ class Request
         }
 
         $this->stream = null;
-    }
-
-    /**
-     * Generate unique time request id.
-     *
-     * @param string $prefix
-     * @return string
-     */
-    private function generateReqId(string $prefix = 'REQ'): string
-    {
-        return sprintf('%s-%s', $prefix, uuid());
     }
 
     /**
