@@ -5,6 +5,10 @@ namespace Core\Valid;
 use Core\File\UploadedFile;
 use Exception;
 use Ramsey\Uuid\Uuid;
+use Egulias\EmailValidator\EmailValidator;
+use Egulias\EmailValidator\Validation\DNSCheckValidation;
+use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
+use Egulias\EmailValidator\Validation\RFCValidation;
 
 /**
  * Validasi sebuah nilai.
@@ -132,7 +136,13 @@ class Validator
                 break;
 
             case $rule == 'email':
-                if (filter_var($value, FILTER_VALIDATE_EMAIL)) {
+                $ev = new EmailValidator();
+                $mv = new MultipleValidationWithAnd([
+                    new RFCValidation(),
+                    new DNSCheckValidation()
+                ]);
+
+                if (filter_var($value, FILTER_VALIDATE_EMAIL) && $ev->isValid($value ?? '', $mv)) {
                     $this->__set($param, filter_var($value, FILTER_SANITIZE_EMAIL));
                 } else {
                     $this->setError($param, 'request.email');

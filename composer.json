@@ -20,6 +20,7 @@
     "require": {
         "php": "^8.1",
         "ext-openssl": "*",
+        "egulias/email-validator": "^4.0",
         "psr/clock": "^1.0",
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
