@@ -5,7 +5,6 @@ namespace Core\Support;
 use Core\Database\Generator;
 use Core\Database\Migration;
 use Core\Database\Schema;
-use Core\Http\Request;
 use Core\Queue\Routine;
 use Core\Routing\Route;
 use Core\Valid\Hash;
@@ -53,15 +52,19 @@ class Console
      * @var float $timenow
      */
     private $timenow;
+
     /**
      * Buat objek console.
      *
      * @return void
      */
-    public function __construct(Request $request)
+    public function __construct()
     {
-        $this->timenow = $request->server->get('REQUEST_TIME_FLOAT');
-        $argv = $request->server->get('argv');
+        $this->timenow = microtime(true);
+        $argv = $_SERVER['argv'];
+        if (!$argv) {
+            return;
+        }
 
         array_shift($argv);
         $this->command = $argv[0] ?? null;
@@ -70,6 +73,32 @@ class Console
         array_shift($argv);
 
         $this->args = $argv;
+    }
+
+    /**
+     * Call directive method.
+     *
+     * @param string $command
+     * @return string
+     */
+    public static function call(string $command): string
+    {
+        $c = new static();
+        $c->timenow = microtime(true);
+
+        $argv = explode(' ', $command);
+        $c->command = $argv[0] ?? null;
+        array_shift($argv);
+        $c->options = $argv[0] ?? null;
+        array_shift($argv);
+        $c->args = $argv;
+
+        ob_start();
+        $c->run();
+        $output = ob_get_contents();
+        ob_end_clean();
+
+        return strval($output);
     }
 
     /**
@@ -137,7 +166,7 @@ class Console
      */
     public function createColor(string $name, string $value): string
     {
-        if (!stream_isatty(STDOUT)) {
+        if (!defined('STDOUT') || !stream_isatty(STDOUT)) {
             return $value;
         }
 

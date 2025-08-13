@@ -45,6 +45,8 @@ use Traversable;
  * @method static int destroy()
  * @method static int update(array $data)
  * @method static int delete()
+ * @method static \Core\Model\Query lockForUpdate()
+ * @method static \Core\Model\Query sharedLock()
  *
  * @see \Core\Model\Query
  *

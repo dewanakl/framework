@@ -207,6 +207,13 @@ class Query
     private ?int $offsetQuery = null;
 
     /**
+     * Lock mode for the query.
+     *
+     * @var string|null
+     */
+    private ?string $lock = null;
+
+    /**
      * Buat objek model.
      *
      * @return void
@@ -443,6 +450,12 @@ class Query
         }
 
         $this->offsetQuery = null;
+
+        if ($this->lock !== null) {
+            $sql .= ' ' . $this->lock;
+        }
+
+        $this->lock = null;
 
         return $sql .= ';';
     }
@@ -734,6 +747,35 @@ class Query
         }
 
         $this->relational = [$relational, $optional];
+        return $this;
+    }
+
+    /**
+     * Lock rows for update (exclusive lock).
+     *
+     * @return Query
+     */
+    public function lockForUpdate(): Query
+    {
+        $this->lock = 'FOR UPDATE';
+
+        return $this;
+    }
+
+    /**
+     * Shared lock (read lock).
+     *
+     * @return Query
+     */
+    public function sharedLock(): Query
+    {
+        $this->lock = 'FOR SHARE';
+
+        $info = $this->db->getInfoDriver();
+        if (in_array($info['DRIVER_NAME'], ['mysql', 'mariadb']) && version_compare($info['SERVER_VERSION'], '8.0.0', '<')) {
+            $this->lock = 'LOCK IN SHARE MODE';
+        }
+
         return $this;
     }
 

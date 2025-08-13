@@ -3,7 +3,6 @@
 namespace Core\Middleware;
 
 use Closure;
-use Core\Facades\App;
 use Core\Http\Request;
 
 /**
