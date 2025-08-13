@@ -61,18 +61,7 @@ class Console
     public function __construct()
     {
         $this->timenow = microtime(true);
-        $argv = $_SERVER['argv'];
-        if (!$argv) {
-            return;
-        }
-
-        array_shift($argv);
-        $this->command = $argv[0] ?? null;
-        array_shift($argv);
-        $this->options = $argv[0] ?? null;
-        array_shift($argv);
-
-        $this->args = $argv;
+        $this->parseArgv($_SERVER['argv']);
     }
 
     /**
@@ -84,14 +73,7 @@ class Console
     public static function call(string $command): string
     {
         $c = new static();
-        $c->timenow = microtime(true);
-
-        $argv = explode(' ', $command);
-        $c->command = $argv[0] ?? null;
-        array_shift($argv);
-        $c->options = $argv[0] ?? null;
-        array_shift($argv);
-        $c->args = $argv;
+        $c->parseArgv(explode(' ', ' ' . $command));
 
         ob_start();
         $c->run();
@@ -99,6 +81,27 @@ class Console
         ob_end_clean();
 
         return strval($output);
+    }
+
+    /**
+     * Parse command line arguments.
+     *
+     * @param array $argv
+     * @return void
+     */
+    private function parseArgv(array $argv): void
+    {
+        if (count($argv) === 0) {
+            return;
+        }
+
+        array_shift($argv);
+        $this->command = $argv[0] ?? null;
+        array_shift($argv);
+        $this->options = $argv[0] ?? null;
+        array_shift($argv);
+
+        $this->args = $argv;
     }
 
     /**
