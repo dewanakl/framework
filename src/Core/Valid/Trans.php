@@ -36,11 +36,12 @@ class Trans
      */
     public function __construct()
     {
-        try {
-            $this->data = (array) @require_once base_path('/resources/lang/' . static::getLanguage() . '.php');
-        } catch (Throwable) {
+        $path = base_path('/resources/lang/' . static::getLanguage() . '.php');
+        if (!file_exists($path)) {
             throw new Exception('"' . static::getLanguage() . '.php" Not Found!');
         }
+
+        $this->data = (array) require_once $path;
     }
 
     /**

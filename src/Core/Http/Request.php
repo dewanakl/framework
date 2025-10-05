@@ -75,7 +75,7 @@ class Request
      */
     public function __construct()
     {
-        if (!App::get()->has(Request::class) && !is_resource($this->stream)) {
+        if (!App::get()->has(Request::class)) {
             $this->stream = fopen('php://input', 'rb');
             $this->content = stream_get_contents($this->stream);
             $this->content = !empty($this->content) ? $this->content : null;

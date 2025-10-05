@@ -143,7 +143,7 @@ class Respond
         $this->message = $this->codeHttpMessage($code);
         $this->parameter = [];
 
-        if (!App::get()->has(Respond::class) && !is_resource($this->stream)) {
+        if (!App::get()->has(Respond::class)) {
             $this->createStream();
         }
     }

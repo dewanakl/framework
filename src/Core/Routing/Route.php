@@ -158,14 +158,13 @@ final class Route
      */
     public static function setRouteFromCacheIfExist(): bool
     {
-        try {
-            $routes = (array) @require_once base_path('/cache/routes/routes.php');
-            static::router()->setRoutes($routes);
-            return true;
-        } catch (Throwable) {
-            error_clear_last();
+        $path = base_path('/cache/routes/routes.php');
+        if (!file_exists($path)) {
             return false;
         }
+
+        static::router()->setRoutes((array) require_once $path);
+        return true;
     }
 
     /**

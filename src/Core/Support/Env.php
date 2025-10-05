@@ -59,13 +59,12 @@ final class Env
      */
     public static function loadFromDotEnv(): void
     {
-        try {
-            foreach ((array) @require_once base_path('/cache/env/env.php') as $key => $value) {
+        $path = base_path('/cache/env/env.php');
+        if (file_exists($path)) {
+            foreach ((array) require_once $path as $key => $value) {
                 static::set($key, $value);
             }
-        } catch (Throwable) {
-            error_clear_last();
-
+        } else {
             $lines = is_file(base_path('/.env'))
                 ? file(base_path('/.env'), FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES)
                 : [];
